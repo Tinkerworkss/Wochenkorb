@@ -81,6 +81,11 @@ class Ingredient:
 
 
 INGREDIENTS = [Ingredient(*row) for row in _RAW]
+# Fleisch und Fisch prägen ein Rezept stärker als Käse, Käse stärker als Gemüse:
+# ein Rabatt auf Tomaten soll ein Hähnchengericht nicht vor ein Hackfleischgericht mit ähnlichem Rabatt schieben.
+_MEAT = {"Hähnchenbrust", "Hähnchenschenkel", "Hackfleisch", "Rindfleisch", "Schweinefleisch", "Pute", "Lachs", "Garnelen", "Fischfilet", "Bacon"}
+_CHEESE = {"Feta", "Mozzarella", "Gouda", "Cheddar", "Hartkäse"}
+WEIGHT = {ing.label: 1.0 if ing.label in _MEAT else 0.8 if ing.label in _CHEESE else 0.6 for ing in INGREDIENTS}
 BY_LABEL = {ing.label: ing for ing in INGREDIENTS}
 
 
@@ -181,9 +186,12 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None):
         hits = [label for label in recipe.get("mains", []) if label in best]
         if not hits:
             continue
-        hits.sort(key=lambda label: (-best[label][1], best[label][0].get("price") or 0))
+        # Reihenfolge: gewichteter Rabatt, bei Gleichstand die prägendere Zutat
+        hits.sort(key=lambda label: (-best[label][1] * WEIGHT[label], -WEIGHT[label], best[label][0].get("price") or 0))
         top = hits[0]
-        candidates.append(((-best[top][1], -len(hits), recipe.get("name") or slug), slug, top, hits[1:]))
+        candidates.append(
+            ((-best[top][1] * WEIGHT[top], -WEIGHT[top], -len(hits), recipe.get("name") or slug), slug, top, hits[1:])
+        )
     candidates.sort(key=lambda c: c[0])
     result, per_ingredient = [], {}
     for _, slug, top, others in candidates:
