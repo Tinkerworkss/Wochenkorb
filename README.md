@@ -79,7 +79,7 @@ The folder [`examples/`](examples/) contains the setup this fork was built for: 
 | `automation_quellen_ueberwachen.yaml` | Daily notification if marktguru or meinprospekt delivers no offers. |
 | `script_abgleich_wert_setzen.yaml` | Script to set usual price, rhythm and stock date per article, e.g. from receipts. |
 | `dashboard_card_rezepte.yaml` | Recipe card: up to five Mealie recipes whose main ingredient is on offer. A tap opens ingredients and steps in a popup, the calendar button plans the recipe. |
-| `script_rezept_einplanen.yaml` | Puts a recipe on the next free evening of the Mealie meal plan, starting with the coming Saturday, and adds its ingredients to the Mealie shopping list. |
+| `script_rezept_einplanen.yaml` | Asks in a popup for the evening (suggesting the next free one), puts the recipe into the Mealie meal plan and adds its ingredients to the Mealie shopping list. |
 
 Requirements:
 
