@@ -1,7 +1,8 @@
-# Weekly staples on the shopping list, with stock-up quantities for good offers.
-# Adjust start (a Thursday), the artikel list and todo.einkauf_bring.
+# Weekly staples on the shopping list, with stock-up quantities for good offers and a push summary.
+# Adjust start (a Thursday), the artikel list, todo.einkauf_bring, notify.mobile_app_DEIN_HANDY
+# and the dashboard path in clickAction/url.
 alias: 'Einkauf: Grundartikel auf Bring!'
-description: Setzt donnerstags Grundartikel im Rhythmus auf die Bring!-Liste. Liegt ein Angebot bei Marktkauf, REWE oder EDEKA mindestens 15 % unter dem üblichen Grundpreis, wird die Menge auf Vorrat erhöht und der Artikel so lange nicht erneut eingetragen.
+description: Setzt donnerstags Grundartikel im Rhythmus auf die Bring!-Liste. Liegt ein Angebot bei Marktkauf, REWE oder EDEKA mindestens 15 % unter dem üblichen Grundpreis, wird die Menge auf Vorrat erhöht und der Artikel so lange nicht erneut eingetragen. Übernommene Angebote verschwinden aus der Angebotskarte, danach geht eine Zusammenfassung aufs Handy.
 triggers:
 - trigger: time
   at: '18:00:00'
@@ -47,7 +48,7 @@ actions:
       {%- if markt and (von is none or von <= heute + timedelta(days=1)) and (ende is none or ende >= heute + timedelta(hours=18)) -%}
       {%- set preis = s.state | float(0) -%}
       {%- set alt = a.old_price | float(0) -%}
-      {%- set ang.l = ang.l + [{'begriff': s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1'), 'markt': markt, 'produkt': a.product_name or '', 'text': ((a.brand_name or '') ~ ' ' ~ (a.product_name or '')) | lower, 'preis': preis, 'wert': ((a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else preis), 'gp': (a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else 0, 'gpe': a.grundpreis_einheit or '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0}] -%}
+      {%- set ang.l = ang.l + [{'begriff': s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1'), 'markt': markt, 'schluessel': ((markt ~ '|' ~ ((a.product_name or '') | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6], 'produkt': a.product_name or '', 'text': ((a.brand_name or '') ~ ' ' ~ (a.product_name or '')) | lower, 'preis': preis, 'wert': ((a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else preis), 'gp': (a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else 0, 'gpe': a.grundpreis_einheit or '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0}] -%}
       {%- endif -%}
       {%- endfor -%}
       {%- set euro = '%.2f' -%}
@@ -70,31 +71,35 @@ actions:
       {%- if faellig -%}
       {#- Höchstens 5 Obstsorten: je Sorte das beste Angebot, rabattierte zuerst, dann nach Grundpreis -#}
       {%- set sorten_namen = {'apfel': 'Äpfel', 'birnen': 'Birnen', 'bananen': 'Bananen', 'clementinen': 'Clementinen', 'orangen': 'Orangen', 'kaki': 'Kaki', 'trauben': 'Trauben', 'heidelbeeren': 'Heidelbeeren', 'himbeeren': 'Himbeeren', 'mango': 'Mango', 'avocado': 'Avocado'} -%}
-      {%- set tipps = namespace(l=[], sorten=[]) -%}
+      {%- set tipps = namespace(l=[], sorten=[], schluessel=[]) -%}
       {%- set obst = ang.l | selectattr('begriff', 'in', fruit) | list -%}
       {%- for o in (obst | selectattr('rabatt', 'gt', 0) | sort(attribute='rabatt', reverse=true) | list) + (obst | selectattr('rabatt', 'eq', 0) | sort(attribute='wert') | list) -%}
       {%- if o.begriff not in tipps.sorten and tipps.l | count < 5 and not o.text is search(kein_obst) -%}
       {%- set tipps.sorten = tipps.sorten + [o.begriff] -%}
+      {%- set tipps.schluessel = tipps.schluessel + [o.schluessel] -%}
       {%- set tipps.l = tipps.l + [sorten_namen[o.begriff] ~ ' ' ~ (euro | format(o.preis) | replace('.', ',')) ~ ' € (' ~ (('−' ~ o.rabatt ~ ' %, ') if o.rabatt > 0 else '') ~ o.markt ~ ')'] -%}
       {%- endif -%}
       {%- endfor -%}
-      {%- set out.l = out.l + [{'name': art.name, 'text': (tipps.l | join('; ')) if tipps.l else ('Saison: ' ~ saison), 'angebot': (1 if tipps.l else 0), 'vorrat': ''}] -%}
+      {%- set out.l = out.l + [{'name': art.name, 'text': (tipps.l | join('; ')) if tipps.l else ('Saison: ' ~ saison), 'angebot': (1 if tipps.l else 0), 'vorrat': '', 'schluessel': tipps.schluessel}] -%}
       {%- endif -%}
       {%- elif lohnt and not gesperrt -%}
       {%- set o = best.o -%}
       {%- set hinweis = 'Angebot ' ~ o.markt ~ ': ' ~ (o.produkt | title) ~ ' ' ~ (euro | format(o.preis) | replace('.', ',')) ~ ' € (' ~ (euro | format(best.gp) | replace('.', ',')) ~ ' €/' ~ (o.gpe or art.je | default('Einheit')) ~ ', −' ~ (ersparnis * 100) | round | int ~ ' % ggü. üblich)' -%}
       {%- set menge = ((art.anzahl * faktor) ~ ' ' ~ art.einheit) if art.anzahl is defined else normal_text -%}
       {%- set reichweite = faktor * alle -%}
-      {%- set out.l = out.l + [{'name': art.name, 'text': ([menge, hinweis, ('Vorrat für ' ~ reichweite ~ ' Wochen') if faktor > 1 else ''] | select | join(' · ')), 'angebot': 1, 'vorrat': (heute.date() + timedelta(days=reichweite * 7 - 1)).isoformat() if faktor > 1 else ''}] -%}
+      {%- set out.l = out.l + [{'name': art.name, 'text': ([menge, hinweis, ('Vorrat für ' ~ reichweite ~ ' Wochen') if faktor > 1 else ''] | select | join(' · ')), 'angebot': 1, 'vorrat': (heute.date() + timedelta(days=reichweite * 7 - 1)).isoformat() if faktor > 1 else '', 'schluessel': [o.schluessel]}] -%}
       {%- elif faellig and not gesperrt -%}
-      {%- set out.l = out.l + [{'name': art.name, 'text': normal_text, 'angebot': 0, 'vorrat': ''}] -%}
+      {%- set out.l = out.l + [{'name': art.name, 'text': normal_text, 'angebot': 0, 'vorrat': '', 'schluessel': []}] -%}
       {%- endif -%}
       {%- endfor -%}
       {%- set merker = namespace(m=vorrat.m) -%}
       {%- for e in out.l if e.vorrat -%}{%- set merker.m = dict(merker.m, **{e.name: e.vorrat}) -%}{%- endfor -%}
       {%- set teile = namespace(l=[]) -%}
       {%- for k, v in merker.m.items() -%}{%- set teile.l = teile.l + [k ~ '=' ~ v] -%}{%- endfor -%}
-      {{ {'eintraege': out.l, 'vorrat': teile.l | join(';')} | tojson }}
+      {#- Schlüssel der übernommenen Angebote: die Angebotskarte blendet sie aus -#}
+      {%- set ks = namespace(l=[]) -%}
+      {%- for e in out.l -%}{%- set ks.l = ks.l + e['schluessel'] -%}{%- endfor -%}
+      {{ {'eintraege': out.l, 'vorrat': teile.l | join(';'), 'uebernommen': (ks.l | unique | list)[:36] | join(',')} | tojson }}
 - repeat:
     for_each: '{{ plan.eintraege }}'
     sequence:
@@ -124,6 +129,31 @@ actions:
     entity_id: input_text.einkauf_vorrat
   data:
     value: '{{ plan.vorrat }}'
+- action: input_text.set_value
+  target:
+    entity_id: input_text.einkauf_uebernommen
+  data:
+    value: '{{ plan.uebernommen }}'
+- alias: 'Push: Zusammenfassung aufs Handy, nur wenn etwas Neues auf die Liste kam'
+  if:
+  - condition: template
+    value_template: '{{ plan.eintraege | map(attribute=''name'') | map(''lower'') | reject(''in'', offene) | list | count > 0 or plan.eintraege | selectattr(''vorrat'', ''ne'', '''') | list | count > 0 }}'
+  then:
+  - action: notify.mobile_app_DEIN_HANDY
+    data:
+      title: Einkaufsliste ist vorbereitet
+      message: |-
+        {%- set neu = namespace(l=[]) -%}
+        {%- for e in plan.eintraege if not e.vorrat and (e.name | lower) not in offene -%}{%- set neu.l = neu.l + [e.name] -%}{%- endfor -%}
+        {%- set vorrat = plan.eintraege | selectattr('vorrat', 'ne', '') | list -%}
+        {%- if neu.l -%}Neu auf der Liste: {{ neu.l | join(', ') }}.{%- endif -%}
+        {%- for e in vorrat %}
+        {{ '\n' if loop.first and neu.l else '' }}Auf Vorrat: {{ e.name }} – {{ e.text }}
+        {%- endfor -%}
+      data:
+        clickAction: /dashboard-tablet/kuche
+        url: /dashboard-tablet/kuche
+        tag: einkauf-donnerstag
 mode: single
 variables:
   start: '2026-11-26'

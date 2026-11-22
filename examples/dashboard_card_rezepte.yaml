@@ -1,0 +1,37 @@
+# Recipe suggestions from Mealie whose main ingredient is on offer. Paste as a manual card.
+# Needs the option mealie_recipes of the integration, browser_mod (popup) and the script
+# script_rezept_einplanen.yaml. Replace DEINE_PLZ with your ZIP code.
+type: vertical-stack
+cards:
+- type: heading
+  heading: Rezepte zu den Angeboten
+  icon: mdi:chef-hat
+  heading_style: title
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {%- set res = state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'results') or [] -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if res | count == 0 -%}
+      {%- set rows.l = [{'type': 'section', 'label': 'Gerade passt kein Rezept zu den Angeboten'}] -%}
+      {%- endif -%}
+      {%- for r in res[:5] -%}
+      {%- set o = r.offer -%}
+      {%- set h = (o.retailer or '') | lower -%}
+      {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
+      {%- set preis = '%.2f' | format(o.price | float(0)) | replace('.', ',') -%}
+      {%- set info = r.ingredient ~ ' · ' ~ markt ~ ' ' ~ preis ~ ' €' -%}
+      {%- set mehr = ('auch im Angebot: ' ~ (r.also_on_offer[:3] | join(', '))) if r.also_on_offer else '' -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
+      {%- endfor -%}
+      {{ rows.l | tojson }}

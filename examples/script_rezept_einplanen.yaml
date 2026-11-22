@@ -1,0 +1,75 @@
+# Puts a recipe on the next free evening in the Mealie meal plan (from the coming Saturday).
+# Replace MEALIE_EINTRAG with the config entry id of the Mealie integration and DEINE_PLZ.
+einkauf_rezept_einplanen:
+  alias: 'Einkauf: Rezept einplanen'
+  description: Setzt ein Mealie-Rezept als Abendessen auf den nächsten freien Tag ab dem kommenden Samstag. Wird vom Kalender-Knopf der Rezeptkarte aufgerufen.
+  icon: mdi:calendar-plus
+  mode: queued
+  max: 10
+  fields:
+    slug:
+      name: Rezept
+      description: Slug des Rezepts in Mealie
+      required: true
+      selector:
+        text: {}
+    name:
+      name: Name
+      description: Name des Rezepts für die Rückmeldung
+      selector:
+        text: {}
+    browser_id:
+      name: Browser
+      description: browser_mod-Kennung des Geräts, das die Rückmeldung zeigen soll
+      selector:
+        text: {}
+  sequence:
+  - variables:
+      mealie: MEALIE_EINTRAG
+      start: '{{ (now().date() + timedelta(days=(5 - now().weekday()) % 7)).isoformat() }}'
+      ende: '{{ (now().date() + timedelta(days=(5 - now().weekday()) % 7 + 13)).isoformat() }}'
+  - action: mealie.get_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      start_date: '{{ start }}'
+      end_date: '{{ ende }}'
+    response_variable: plan
+  - action: mealie.get_recipe
+    data:
+      config_entry_id: '{{ mealie }}'
+      recipe_id: '{{ slug }}'
+    response_variable: rezept
+  - variables:
+      tag: |-
+        {%- set belegt = plan.mealplan | selectattr('entry_type', 'eq', 'dinner') | map(attribute='mealplan_date') | map('string') | list -%}
+        {%- set ns = namespace(t='') -%}
+        {%- for i in range(14) -%}
+        {%- set d = (strptime(start, '%Y-%m-%d').date() + timedelta(days=i)).isoformat() -%}
+        {%- if not ns.t and d not in belegt -%}{%- set ns.t = d -%}{%- endif -%}
+        {%- endfor -%}
+        {{ ns.t }}
+  - variables:
+      meldung: '{%- if tag -%}{%- set t = strptime(tag, ''%Y-%m-%d'') -%}„{{ name | default(slug) }}“ ist für {{ [''Montag'', ''Dienstag'', ''Mittwoch'', ''Donnerstag'', ''Freitag'', ''Samstag'', ''Sonntag''][t.weekday()] }}, {{ t.strftime(''%d.%m.'') }} eingeplant{%- else -%}In den nächsten zwei Wochen ist kein Abend mehr frei{%- endif -%}'
+  - if:
+    - condition: template
+      value_template: '{{ tag != '''' }}'
+    then:
+    - action: mealie.set_mealplan
+      data:
+        config_entry_id: '{{ mealie }}'
+        date: '{{ tag }}'
+        entry_type: dinner
+        recipe_id: '{{ rezept.recipe.recipe_id }}'
+    - action: homeassistant.update_entity
+      target:
+        entity_id: sensor.marktguru_rezepte_DEINE_PLZ
+  - if:
+    - condition: template
+      value_template: '{{ browser_id | default('''') != '''' }}'
+    then:
+    - action: browser_mod.notification
+      data:
+        message: '{{ meldung }}'
+        duration: 5000
+        browser_id:
+        - '{{ browser_id }}'

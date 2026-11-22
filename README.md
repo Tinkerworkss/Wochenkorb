@@ -74,15 +74,23 @@ The folder [`examples/`](examples/) contains the setup this fork was built for: 
 | File | What it does |
 | --- | --- |
 | `dashboard_template.yaml` | `button_card_templates` entry for one offer row (image, name, base price, discount badge, link to the offer, add-to-list button). Goes to the top level of the dashboard's raw configuration. |
-| `dashboard_card.yaml` | The card: search field, tabs (fruit, Marktkauf, REWE, EDEKA), scrolling offer lists sorted by discount, live search results. |
-| `automation_grundartikel.yaml` | Every Thursday puts staples on the list in a per-article rhythm. If an offer is at least 15 % below the usual base price, the quantity is raised (stock-up) and the article is skipped until the stock is used up. "Fruit of the week" lists up to five fruit offers. |
+| `dashboard_card.yaml` | The card: search field, tabs (fruit, Marktkauf, REWE, EDEKA), scrolling offer lists sorted by discount, live search results. Tab and search text are kept per device. |
+| `automation_grundartikel.yaml` | Every Thursday puts staples on the list in a per-article rhythm. If an offer is at least 15 % below the usual base price, the quantity is raised (stock-up) and the article is skipped until the stock is used up. "Fruit of the week" lists up to five fruit offers. Offers it took over disappear from the card until the next run, and a push summary is sent if something new was added. |
 | `automation_quellen_ueberwachen.yaml` | Daily notification if marktguru or meinprospekt delivers no offers. |
 | `script_abgleich_wert_setzen.yaml` | Script to set usual price, rhythm and stock date per article, e.g. from receipts. |
+| `dashboard_card_rezepte.yaml` | Recipe card: up to five Mealie recipes whose main ingredient is on offer. A tap opens ingredients and steps in a popup, the calendar button plans the recipe. |
+| `script_rezept_einplanen.yaml` | Puts a recipe on the next free evening of the Mealie meal plan, starting with the coming Saturday. |
 
 Requirements:
 
 - Frontend (HACS): [auto-entities](https://github.com/thomasloven/lovelace-auto-entities), [button-card](https://github.com/custom-cards/button-card), [card-mod](https://github.com/thomasloven/lovelace-card-mod)
-- Helpers: `input_select.angebote_reiter` (options `Obst`, `Marktkauf`, `REWE`, `EDEKA`), `input_text.angebote_suche`, and, each with the maximum length of 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`
+- Helpers: `input_select.angebote_reiter` (options `Obst`, `Marktkauf`, `REWE`, `EDEKA`), `input_text.angebote_suche`, and, each with the maximum length of 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
+- Per device (optional): `input_select.angebote_reiter_<id>` and `input_text.angebote_suche_<id>`, where `<id>` is the device's browser_mod id without the leading `browser_mod_`. Reload the integration after creating them, it adds one search sensor per search helper. Devices without their own helpers share the two general ones.
+- For the recipe card: the Mealie integration, [browser_mod](https://github.com/thomasloven/hass-browser_mod) and the option `mealie_recipes` of this integration
 - A to-do list entity for the shopping list (here `todo.einkauf_bring` from the Bring! integration)
 
-Replace before use: `DEINE_PLZ` (your ZIP code, in lower case as part of the search sensor's entity id), `todo.einkauf_bring`, `notify.mobile_app_DEIN_HANDY`, the retailer names if you use other shops, and `start` plus the `artikel` list in the automation.
+Replace before use: `GERAET_1` (browser_mod id of a device), `MEALIE_EINTRAG` (config entry id of the Mealie integration), `DEINE_PLZ` (your ZIP code, in lower case as part of the search sensor's entity id), `todo.einkauf_bring`, `notify.mobile_app_DEIN_HANDY`, the retailer names if you use other shops, and `start` plus the `artikel` list in the automation.
+
+### Recipe suggestions
+
+With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.marktguru_rezepte_<zip>` lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. Recipes in the meal plan of the last 14 days or the coming week are left out. Recipe images are copied to `www/marktguru_rezepte` so the card can show them without a Mealie login.
