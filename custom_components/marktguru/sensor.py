@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import os
 import re
 from datetime import timedelta, datetime, timezone
 import aiohttp
@@ -14,7 +15,17 @@ from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util
-from .const import DOMAIN, CONF_PRODUCTS, CONF_ZIP, CONF_RETAILERS, API_URL, HEADERS, SEARCH_ENTITY
+from . import recipes as rc
+from .const import (
+    DOMAIN,
+    CONF_PRODUCTS,
+    CONF_ZIP,
+    CONF_RETAILERS,
+    CONF_RECIPES,
+    API_URL,
+    HEADERS,
+    SEARCH_ENTITY,
+)
 
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(hours=1)
@@ -27,6 +38,10 @@ MP_HEADERS = {
     "Accept-Language": "de-DE,de;q=0.9",
 }
 MP_INTERVAL = timedelta(hours=6)
+# Rezepte aus Mealie: Rezeptliste täglich, Angebote zu den Hauptzutaten alle sechs Stunden
+RECIPE_INTERVAL = timedelta(hours=24)
+RECIPE_OFFER_INTERVAL = timedelta(hours=6)
+RECIPE_IMAGE_DIR = "marktguru_rezepte"
 _NEXT_DATA_RE = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 
 
@@ -130,7 +145,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         if r.strip()
     ]
 
-    coordinator = MarktguruDataCoordinator(hass, zip_code, products, retailers)
+    recipes_enabled = bool(conf.get(CONF_RECIPES))
+    coordinator = MarktguruDataCoordinator(hass, zip_code, products, retailers, recipes_enabled)
     await coordinator.async_config_entry_first_refresh()
 
     current_sensors = {}
@@ -157,15 +173,33 @@ async def async_setup_entry(hass, entry, async_add_entities):
     sensors.append(queries_sensor)
     current_sensors[queries_sensor_id] = queries_sensor
 
-    # Such-Sensor: liefert Treffer für den Text im Helfer SEARCH_ENTITY
-    search_sensor_id = f"marktguru_search_{zip_code}"
-    sensors.append(MarktguruSearchSensor(coordinator, zip_code))
-    current_sensors[search_sensor_id] = sensors[-1]
+    registry = er.async_get(hass)
+
+    # Such-Sensoren: je Text-Helfer einer. SEARCH_ENTITY gilt für alle Geräte gemeinsam,
+    # Helfer mit angehängter Kennung (input_text.angebote_suche_<kennung>) für ein einzelnes Gerät.
+    fixed_sensor_ids = set()
+    search_entities = [SEARCH_ENTITY] + sorted(
+        reg_entry.entity_id
+        for reg_entry in registry.entities.values()
+        if reg_entry.entity_id.startswith(SEARCH_ENTITY + "_")
+    )
+    for search_entity in search_entities:
+        suffix = search_entity[len(SEARCH_ENTITY) + 1:]
+        search_sensor = MarktguruSearchSensor(coordinator, zip_code, search_entity, suffix)
+        sensors.append(search_sensor)
+        current_sensors[search_sensor.unique_id] = search_sensor
+        fixed_sensor_ids.add(search_sensor.unique_id)
+
+    # Rezept-Sensor: Vorschläge aus Mealie, deren Hauptzutat im Angebot ist
+    if recipes_enabled:
+        recipes_sensor = MarktguruRecipesSensor(coordinator, zip_code)
+        sensors.append(recipes_sensor)
+        current_sensors[recipes_sensor.unique_id] = recipes_sensor
+        fixed_sensor_ids.add(recipes_sensor.unique_id)
 
     async_add_entities(sensors, True)
 
     # Verwaiste Sensoren entfernen (z. B. von gelöschten Suchbegriffen)
-    registry = er.async_get(hass)
     for reg_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
         if reg_entry.unique_id not in current_sensors:
             registry.async_remove(reg_entry.entity_id)
@@ -191,7 +225,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         # Queries-Sensor immer behalten/ggf. neu anlegen
         queries_sensor_id = f"marktguru_queries_{zip_code}"
         new_sensor_ids.add(queries_sensor_id)
-        new_sensor_ids.add(search_sensor_id)
+        new_sensor_ids.update(fixed_sensor_ids)
         if queries_sensor_id not in current_sensors:
             queries_sensor = MarktguruQueriesSensor(coordinator, coordinator.products, zip_code)
             new_entities.append(queries_sensor)
@@ -239,7 +273,7 @@ def _offer_summary(offer):
 
 
 class MarktguruDataCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, zip_code, products, retailers=None):
+    def __init__(self, hass, zip_code, products, retailers=None, recipes_enabled=False):
         super().__init__(
             hass,
             _LOGGER,
@@ -251,6 +285,16 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         self.retailers = retailers or []
         self._mp_cache = {}
         self._mp_time = None
+        # Rezeptvorschläge (optional, braucht die Mealie-Integration)
+        self.recipes_enabled = recipes_enabled
+        self.suggestions = []
+        self.recipe_terms = []
+        self._recipes = {}
+        self._recipes_time = None
+        self._recipe_offers = []
+        self._recipe_offers_time = None
+        self._recipe_task = None
+        self._planned = set()
 
     async def _fetch_meinprospekt(self, session, query):
         params = {
@@ -301,6 +345,15 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         if any(ok for _, _, ok in fetched):
             self._mp_time = now
 
+    async def _fetch_marktguru(self, session, query):
+        params = {"as": "web", "limit": 24, "offset": 0, "q": query, "zipCode": self.zip_code}
+        async with session.get(
+            API_URL, headers=HEADERS, params=params, timeout=aiohttp.ClientTimeout(total=10)
+        ) as resp:
+            resp.raise_for_status()
+            data = await resp.json()
+        return [offer for offer in data.get("results", []) if self._retailer_ok(offer)]
+
     def _retailer_ok(self, offer):
         if not self.retailers:
             return True
@@ -310,14 +363,8 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
     async def async_search(self, query):
         """Freie Suche in beiden Quellen, mit demselben Händlerfilter."""
         async with aiohttp.ClientSession() as session:
-            params = {"as": "web", "limit": 24, "offset": 0, "q": query, "zipCode": self.zip_code}
             try:
-                async with session.get(
-                    API_URL, headers=HEADERS, params=params, timeout=aiohttp.ClientTimeout(total=10)
-                ) as resp:
-                    resp.raise_for_status()
-                    data = await resp.json()
-                    offers = [o for o in data.get("results", []) if self._retailer_ok(o)]
+                offers = await self._fetch_marktguru(session, query)
             except Exception as e:
                 _LOGGER.warning(f"Marktguru search error for {query}: {e}")
                 offers = []
@@ -345,21 +392,8 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         async with aiohttp.ClientSession() as session:
             for product in self.products:
                 query = product["query"]
-                params = {
-                    "as": "web",
-                    "limit": 24,
-                    "offset": 0,
-                    "q": query,
-                    "zipCode": self.zip_code,
-                }
                 try:
-                    async with session.get(API_URL, headers=HEADERS, params=params, timeout=10) as resp:
-                        resp.raise_for_status()
-                        data = await resp.json()
-                        results[query] = [
-                            offer for offer in data.get("results", [])
-                            if self._retailer_ok(offer)
-                        ]
+                    results[query] = await self._fetch_marktguru(session, query)
                 except Exception as e:
                     _LOGGER.error(f"Marktguru API error for {query}: {e}")
                     results[query] = []
@@ -385,7 +419,200 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
                     continue
                 seen.add(key)
                 results.setdefault(query, []).append(offer)
+
+        if self.recipes_enabled and (self._recipe_task is None or self._recipe_task.done()):
+            # Im Hintergrund, damit die Angebots-Sensoren nicht auf die Rezepte warten
+            self._recipe_task = self.hass.async_create_background_task(
+                self._update_recipes(results, covered), f"marktguru_recipes_{self.zip_code}"
+            )
         return results
+
+    # ----- Rezeptvorschläge aus Mealie -----
+
+    def _mealie_entry(self):
+        for entry in self.hass.config_entries.async_entries("mealie"):
+            if entry.state.value == "loaded":
+                return entry
+        return None
+
+    async def _mealie(self, entry, service, **data):
+        response = await self.hass.services.async_call(
+            "mealie",
+            service,
+            {"config_entry_id": entry.entry_id, **data},
+            blocking=True,
+            return_response=True,
+        )
+        return response or {}
+
+    async def _load_recipes(self, entry):
+        listing = await self._mealie(entry, "get_recipes", result_limit=1000)
+        items = (listing.get("recipes") or {}).get("items") or []
+        limit = asyncio.Semaphore(4)
+
+        async def load(item):
+            slug = item.get("slug")
+            known = self._recipes.get(slug)
+            async with limit:
+                try:
+                    recipe = (await self._mealie(entry, "get_recipe", recipe_id=slug)).get("recipe") or {}
+                except Exception as e:
+                    _LOGGER.debug(f"Mealie recipe {slug} not loaded: {e}")
+                    return slug, known
+            texts = [rc.ingredient_text(i) for i in recipe.get("ingredients") or []]
+            texts = [t for t in texts if t]
+            steps = [
+                (step.get("text") or "").strip()
+                for step in recipe.get("instructions") or []
+                if (step.get("text") or "").strip()
+            ]
+            return slug, {
+                "name": recipe.get("name") or item.get("name"),
+                "recipe_id": recipe.get("recipe_id") or item.get("recipe_id"),
+                "has_image": bool(recipe.get("image")),
+                "time": recipe.get("total_time"),
+                "ingredients": texts,
+                "steps": steps,
+                "mains": rc.main_ingredients(texts),
+            }
+
+        loaded = await asyncio.gather(*(load(item) for item in items if item.get("slug")))
+        return {slug: recipe for slug, recipe in loaded if recipe}
+
+    async def _load_planned(self, entry):
+        """Rezepte, die in den letzten 14 Tagen oder der kommenden Woche im Essensplan stehen."""
+        today = dt_util.now().date()
+        plan = await self._mealie(
+            entry,
+            "get_mealplan",
+            start_date=(today - timedelta(days=14)).isoformat(),
+            end_date=(today + timedelta(days=8)).isoformat(),
+        )
+        return {
+            (item.get("recipe") or {}).get("slug")
+            for item in plan.get("mealplan") or []
+            if (item.get("recipe") or {}).get("slug")
+        }
+
+    async def _recipe_image(self, entry, recipe):
+        """Rezeptbild lokal ablegen, damit die Karte es ohne Mealie-Anmeldung zeigen kann."""
+        recipe_id = recipe.get("recipe_id")
+        if not recipe_id or not recipe.get("has_image"):
+            return None
+        folder = self.hass.config.path("www", RECIPE_IMAGE_DIR)
+        path = os.path.join(folder, f"{recipe_id}.webp")
+        url = f"/local/{RECIPE_IMAGE_DIR}/{recipe_id}.webp"
+        if await self.hass.async_add_executor_job(os.path.exists, path):
+            return url
+        host = (entry.data.get("host") or "").rstrip("/")
+        if not host:
+            return None
+        if not host.startswith("http"):
+            host = f"http://{host}"
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"{host}/api/media/recipes/{recipe_id}/images/min-original.webp",
+                    timeout=aiohttp.ClientTimeout(total=15),
+                    ssl=bool(entry.data.get("verify_ssl", True)),
+                ) as resp:
+                    resp.raise_for_status()
+                    content = await resp.read()
+
+            def save():
+                os.makedirs(folder, exist_ok=True)
+                with open(path, "wb") as handle:
+                    handle.write(content)
+
+            await self.hass.async_add_executor_job(save)
+            return url
+        except Exception as e:
+            _LOGGER.debug(f"Mealie image for {recipe.get('name')} not loaded: {e}")
+            return None
+
+    async def _update_recipe_offers(self, covered):
+        """Angebote für die Hauptzutaten laden, getrennt von den eigenen Suchbegriffen."""
+        self.recipe_terms = rc.recipe_terms(self._recipes, [p["query"] for p in self.products])
+        offers = []
+        limit = asyncio.Semaphore(4)
+        ok = False
+        async with aiohttp.ClientSession() as session:
+            for term in self.recipe_terms:
+                try:
+                    offers.extend(await self._fetch_marktguru(session, term))
+                    ok = True
+                except Exception as e:
+                    _LOGGER.warning(f"Marktguru API error for recipe term {term}: {e}")
+
+            async def fetch(term):
+                async with limit:
+                    try:
+                        return await self._fetch_meinprospekt(session, term)
+                    except Exception as e:
+                        _LOGGER.warning(f"meinprospekt error for recipe term {term}: {e}")
+                        return None
+
+            covered = covered | {
+                _first_word(adv.get("name")) for o in offers for adv in (o.get("advertisers") or [])
+            }
+            for extra in await asyncio.gather(*(fetch(term) for term in self.recipe_terms)):
+                if extra is None:
+                    continue
+                ok = True
+                for offer in extra:
+                    retailer = offer["advertisers"][0].get("name")
+                    if _first_word(retailer) not in covered and self._retailer_ok(offer):
+                        offers.append(offer)
+        if ok or not self.recipe_terms:
+            self._recipe_offers = offers
+            self._recipe_offers_time = datetime.now(timezone.utc)
+
+    async def _update_recipes(self, results, covered):
+        try:
+            entry = self._mealie_entry()
+            if entry is None or not self.hass.services.has_service("mealie", "get_recipes"):
+                return
+            now = datetime.now(timezone.utc)
+            if not self._recipes or self._recipes_time is None or now - self._recipes_time > RECIPE_INTERVAL:
+                self._recipes = await self._load_recipes(entry)
+                self._recipes_time = now
+                self._recipe_offers_time = None
+            if self._recipe_offers_time is None or now - self._recipe_offers_time > RECIPE_OFFER_INTERVAL:
+                await self._update_recipe_offers(covered)
+            await self.async_refresh_suggestions(results)
+        except Exception as e:
+            _LOGGER.warning(f"Recipe suggestions not updated: {e}")
+
+    async def async_refresh_suggestions(self, results=None):
+        """Essensplan neu lesen und Vorschläge neu berechnen (ohne die Angebote neu zu laden)."""
+        entry = self._mealie_entry()
+        if entry is None:
+            return
+        try:
+            self._planned = await self._load_planned(entry)
+        except Exception as e:
+            _LOGGER.debug(f"Mealie meal plan not loaded: {e}")
+        results = results if results is not None else (self.data or {})
+        offers = [offer for group in results.values() for offer in group] + self._recipe_offers
+        suggestions = []
+        for slug, label, offer, discount, others in rc.suggest(self._recipes, offers, self._planned):
+            recipe = self._recipes[slug]
+            suggestions.append(
+                {
+                    "name": recipe["name"],
+                    "slug": slug,
+                    "image": await self._recipe_image(entry, recipe),
+                    "time": recipe.get("time"),
+                    "ingredient": label,
+                    "discount": discount,
+                    "offer": _offer_summary(offer),
+                    "also_on_offer": others,
+                    "ingredients": recipe["ingredients"],
+                    "steps": recipe["steps"],
+                }
+            )
+        self.suggestions = suggestions
+        self.async_update_listeners()
 
 class MarktguruSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, name, query, idx, zip_code):
@@ -529,20 +756,22 @@ class MarktguruSearchSensor(SensorEntity):
     _attr_should_poll = False
     _unrecorded_attributes = frozenset({"results"})
 
-    def __init__(self, coordinator, zip_code):
+    def __init__(self, coordinator, zip_code, search_entity=SEARCH_ENTITY, suffix=""):
         self._coordinator = coordinator
         self._zip_code = zip_code
+        self._search_entity = search_entity
+        self._suffix = suffix
         self._query = ""
         self._done_query = ""
         self._results = []
 
     @property
     def name(self):
-        return f"Marktguru Suche ({self._zip_code})"
+        return f"Marktguru Suche ({self._zip_code})" + (f" {self._suffix}" if self._suffix else "")
 
     @property
     def unique_id(self):
-        return f"marktguru_search_{self._zip_code}"
+        return f"marktguru_search_{self._zip_code}" + (f"_{self._suffix}" if self._suffix else "")
 
     @property
     def icon(self):
@@ -554,13 +783,18 @@ class MarktguruSearchSensor(SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        return {"query": self._done_query, "results": self._results, "zip_code": self._zip_code}
+        return {
+            "query": self._done_query,
+            "results": self._results,
+            "zip_code": self._zip_code,
+            "search_entity": self._search_entity,
+        }
 
     async def async_added_to_hass(self):
         self.async_on_remove(
-            async_track_state_change_event(self.hass, [SEARCH_ENTITY], self._handle_change)
+            async_track_state_change_event(self.hass, [self._search_entity], self._handle_change)
         )
-        current = self.hass.states.get(SEARCH_ENTITY)
+        current = self.hass.states.get(self._search_entity)
         if current is not None:
             self.hass.async_create_task(self._search(current.state))
 
@@ -580,3 +814,41 @@ class MarktguruSearchSensor(SensorEntity):
         self._results = results
         self._done_query = query
         self.async_write_ha_state()
+
+
+class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
+    """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
+
+    _unrecorded_attributes = frozenset({"results"})
+
+    def __init__(self, coordinator, zip_code):
+        super().__init__(coordinator)
+        self._zip_code = zip_code
+
+    @property
+    def name(self):
+        return f"Marktguru Rezepte ({self._zip_code})"
+
+    @property
+    def unique_id(self):
+        return f"marktguru_recipes_{self._zip_code}"
+
+    @property
+    def icon(self):
+        return "mdi:chef-hat"
+
+    @property
+    def state(self):
+        return len(self.coordinator.suggestions)
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "results": self.coordinator.suggestions,
+            "search_terms": self.coordinator.recipe_terms,
+            "zip_code": self._zip_code,
+        }
+
+    async def async_update(self):
+        # homeassistant.update_entity: nur Essensplan und Vorschläge, keine neuen Angebotsabfragen
+        await self.coordinator.async_refresh_suggestions()

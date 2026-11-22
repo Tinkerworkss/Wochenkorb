@@ -2,6 +2,8 @@ DOMAIN = "marktguru"
 CONF_PRODUCTS = "products"
 CONF_ZIP = "zip_code"
 CONF_RETAILERS = "retailers"
+# Rezeptvorschläge aus Mealie (braucht die Mealie-Integration)
+CONF_RECIPES = "mealie_recipes"
 API_URL = "https://api.marktguru.de/api/v1/offers/search"
 HEADERS = {
     "x-clientkey": "WU/RH+PMGDi+gkZer3WbMelt6zcYHSTytNB7VpTia90=",
