@@ -4,7 +4,7 @@
 # the to-do entity of the Mealie shopping list and DEINE_PLZ.
 einkauf_rezept_einplanen:
   alias: 'Einkauf: Rezept einplanen'
-  description: 'Fragt in einem Fenster, an welchem Abend ein Mealie-Rezept gekocht werden soll (Vorschlag: der nächste freie Abend), trägt es in den Essensplan ein und legt die Zutaten, die noch nicht auf der Einkaufsliste stehen, auf die Mealie-Einkaufsliste. Wird vom Kalender-Knopf der Rezeptkarte aufgerufen. Ohne browser_mod-Kennung wird ohne Nachfrage der nächste freie Abend genommen.'
+  description: 'Fragt in einem Fenster, an welchem Abend ein Mealie-Rezept gekocht werden soll (Vorschlag: der nächste freie Abend), trägt es in den Essensplan ein und legt alle Zutaten auf die Mealie-Einkaufsliste (auch solche, die schon auf der Liste stehen, damit sich die Mengen addieren lassen). Wird vom Kalender-Knopf der Rezeptkarte aufgerufen. Ohne browser_mod-Kennung wird ohne Nachfrage der nächste freie Abend genommen.'
   icon: mdi:calendar-plus
   mode: queued
   max: 10
@@ -65,9 +65,7 @@ einkauf_rezept_einplanen:
         {%- set ns.l = ns.l + [{'d': d.isoformat(), 'text': wt[d.weekday()] ~ ', ' ~ d.strftime('%d.%m.'), 'essen': essen.l | join(', ')}] -%}
         {%- endfor -%}
         {{ ns.l }}
-      zutaten: |-
-        {%- set v = (state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'results') or []) | selectattr('slug', 'eq', slug) | list -%}
-        {{ (v[0].shopping if v else (rezept.recipe.ingredients | map(attribute='display') | select | list)) | tojson }}
+      zutaten: '{{ rezept.recipe.ingredients | map(attribute=''display'') | select | list | tojson }}'
   - variables:
       vorschlag: '{{ (tage | selectattr(''essen'', ''eq'', '''') | map(attribute=''d'') | first) | default('''') }}'
       ziel: '{{ datum | default('''') or ('''' if browser_id | default('''') else (tage | selectattr(''essen'', ''eq'', '''') | map(attribute=''d'') | first | default(''''))) }}'
