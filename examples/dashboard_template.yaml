@@ -147,7 +147,7 @@ button_card_templates:
                     [[[
                       const v = variables;
                       return (v.bild ? `<img src="${v.bild}" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n` : '')
-                        + `**Im Angebot:** ${v.info}` + (v.mehr ? ` (${v.mehr})` : '') + (v.zeit ? `\n\n**Dauer:** ${v.zeit}` : '')
+                        + `**Im Angebot:** ${v.info}` + (v.mehr ? ` (${v.mehr})` : '') + (v.status ? `\n\n✓ ${v.status}` : '') + (v.zeit ? `\n\n**Dauer:** ${v.zeit}` : '')
                         + `\n\n### Zutaten\n` + v.zutaten.map(z => `- ${z}`).join('\n')
                         + `\n\n### Zubereitung\n` + v.schritte.map((s, i) => `${i + 1}. ${s.replace(/\s*\n+\s*/g, ' ')}`).join('\n');
                     ]]]
@@ -172,11 +172,11 @@ button_card_templates:
               - min-width: '0'
           custom_fields:
             img: '[[[ return variables.bild ? `<img src="${variables.bild}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;display:block">` : `<div style="width:64px;height:64px;border-radius:10px;background:rgba(127,127,127,0.2)"></div>`; ]]]'
-            text: '[[[ return `<div style="font-size:15px;line-height:1.3;font-weight:500">${variables.name}</div><div style="font-size:12px;line-height:1.4;color:var(--secondary-text-color)">` + (variables.rabatt > 0 ? `<span style="font-size:11px;font-weight:600;color:#fff;background:#d6453d;border-radius:4px;padding:1px 5px">−${variables.rabatt} %</span> ` : '''') + `${variables.info}</div>` + (variables.mehr ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)">${variables.mehr}</div>` : ''''); ]]]'
+            text: '[[[ return `<div style="font-size:15px;line-height:1.3;font-weight:500">${variables.name}</div><div style="font-size:12px;line-height:1.4;color:var(--secondary-text-color)">` + (variables.rabatt > 0 ? `<span style="font-size:11px;font-weight:600;color:#fff;background:#d6453d;border-radius:4px;padding:1px 5px">−${variables.rabatt} %</span> ` : '''') + `${variables.info}</div>` + (variables.status ? `<div style="font-size:12px;line-height:1.3;color:var(--success-color, #43a047)">✓ ${variables.status}</div>` : '''') + (variables.mehr ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)">${variables.mehr}</div>` : ''''); ]]]'
       plus:
         card:
           type: custom:button-card
-          icon: mdi:calendar-plus
+          icon: '[[[ return variables.geplant ? ''mdi:calendar-check'' : ''mdi:calendar-plus'' ]]]'
           show_name: false
           show_state: false
           tap_action:

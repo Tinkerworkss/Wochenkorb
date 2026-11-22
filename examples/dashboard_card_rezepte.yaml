@@ -32,6 +32,11 @@ cards:
       {%- set preis = '%.2f' | format(o.price | float(0)) | replace('.', ',') -%}
       {%- set info = r.ingredient ~ ' · ' ~ markt ~ ' ' ~ preis ~ ' €' -%}
       {%- set mehr = ('auch im Angebot: ' ~ (r.also_on_offer[:3] | join(', '))) if r.also_on_offer else '' -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
+      {#- Eingeplante Rezepte bleiben stehen; Hauptzutaten, die schon auf der Einkaufsliste stehen, werden genannt -#}
+      {%- set tag = strptime(r.planned, '%Y-%m-%d') if r.planned else none -%}
+      {%- set geplant = ('eingeplant für ' ~ ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'][tag.weekday()] ~ ', ' ~ tag.strftime('%d.%m.')) if tag else '' -%}
+      {%- set drauf = ((r.on_list | join(', ')) ~ ' schon auf der Liste') if r.on_list else '' -%}
+      {%- set status = [geplant, drauf] | select | join(' · ') -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'status': status | e, 'geplant': geplant, 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
       {%- endfor -%}
       {{ rows.l | tojson }}

@@ -22,6 +22,7 @@ from .const import (
     CONF_ZIP,
     CONF_RETAILERS,
     CONF_RECIPES,
+    CONF_SHOPPING_LIST,
     API_URL,
     HEADERS,
     SEARCH_ENTITY,
@@ -146,7 +147,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     ]
 
     recipes_enabled = bool(conf.get(CONF_RECIPES))
-    coordinator = MarktguruDataCoordinator(hass, zip_code, products, retailers, recipes_enabled)
+    shopping_list = (conf.get(CONF_SHOPPING_LIST) or "").strip() or None
+    coordinator = MarktguruDataCoordinator(
+        hass, zip_code, products, retailers, recipes_enabled, shopping_list
+    )
     await coordinator.async_config_entry_first_refresh()
 
     current_sensors = {}
@@ -273,7 +277,7 @@ def _offer_summary(offer):
 
 
 class MarktguruDataCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, zip_code, products, retailers=None, recipes_enabled=False):
+    def __init__(self, hass, zip_code, products, retailers=None, recipes_enabled=False, shopping_list=None):
         super().__init__(
             hass,
             _LOGGER,
@@ -287,6 +291,7 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         self._mp_time = None
         # Rezeptvorschläge (optional, braucht die Mealie-Integration)
         self.recipes_enabled = recipes_enabled
+        self.shopping_list = shopping_list
         self.suggestions = []
         self.recipe_terms = []
         self._recipes = {}
@@ -294,7 +299,8 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         self._recipe_offers = []
         self._recipe_offers_time = None
         self._recipe_task = None
-        self._planned = set()
+        self._planned = {}
+        self._cooked = set()
 
     async def _fetch_meinprospekt(self, session, query):
         params = {
@@ -480,19 +486,39 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         return {slug: recipe for slug, recipe in loaded if recipe}
 
     async def _load_planned(self, entry):
-        """Rezepte, die in den letzten 14 Tagen oder der kommenden Woche im Essensplan stehen."""
+        """Essensplan lesen: kommende Einträge (Slug -> Datum) und die der letzten 14 Tage."""
         today = dt_util.now().date()
         plan = await self._mealie(
             entry,
             "get_mealplan",
             start_date=(today - timedelta(days=14)).isoformat(),
-            end_date=(today + timedelta(days=8)).isoformat(),
+            end_date=(today + timedelta(days=14)).isoformat(),
         )
-        return {
-            (item.get("recipe") or {}).get("slug")
-            for item in plan.get("mealplan") or []
-            if (item.get("recipe") or {}).get("slug")
-        }
+        planned, cooked = {}, set()
+        for item in plan.get("mealplan") or []:
+            slug = (item.get("recipe") or {}).get("slug")
+            day = str(item.get("mealplan_date") or "")
+            if not slug:
+                continue
+            if day >= today.isoformat():
+                planned[slug] = min(day, planned.get(slug, day))
+            else:
+                cooked.add(slug)
+        return planned, cooked
+
+    async def _load_shopping_list(self):
+        """Offene Einträge der Einkaufsliste als Texte (Name und Notiz)."""
+        if not self.shopping_list or self.hass.states.get(self.shopping_list) is None:
+            return []
+        response = await self.hass.services.async_call(
+            "todo",
+            "get_items",
+            {"entity_id": self.shopping_list, "status": ["needs_action"]},
+            blocking=True,
+            return_response=True,
+        )
+        items = ((response or {}).get(self.shopping_list) or {}).get("items") or []
+        return [rc.clean(f"{item.get('summary') or ''} {item.get('description') or ''}") for item in items]
 
     async def _recipe_image(self, entry, recipe):
         """Rezeptbild lokal ablegen, damit die Karte es ohne Mealie-Anmeldung zeigen kann."""
@@ -589,25 +615,45 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         if entry is None:
             return
         try:
-            self._planned = await self._load_planned(entry)
+            self._planned, self._cooked = await self._load_planned(entry)
         except Exception as e:
             _LOGGER.debug(f"Mealie meal plan not loaded: {e}")
+        try:
+            listed = await self._load_shopping_list()
+        except Exception as e:
+            _LOGGER.debug(f"Shopping list not loaded: {e}")
+            listed = []
         results = results if results is not None else (self.data or {})
         offers = [offer for group in results.values() for offer in group] + self._recipe_offers
         suggestions = []
-        for slug, label, offer, discount, others in rc.suggest(self._recipes, offers, self._planned):
+        # Kürzlich Gekochtes fällt weg; Eingeplantes bleibt stehen und wird als eingeplant markiert
+        for slug, label, offer, discount, others in rc.suggest(self._recipes, offers, self._cooked):
             recipe = self._recipes[slug]
+            on_list = [
+                main
+                for main in recipe["mains"]
+                if any(rc.BY_LABEL[main].in_ingredient(text) for text in listed)
+            ]
             suggestions.append(
                 {
                     "name": recipe["name"],
                     "slug": slug,
+                    "recipe_id": recipe.get("recipe_id"),
                     "image": await self._recipe_image(entry, recipe),
                     "time": recipe.get("time"),
                     "ingredient": label,
                     "discount": discount,
                     "offer": _offer_summary(offer),
                     "also_on_offer": others,
+                    "planned": self._planned.get(slug),
+                    "on_list": on_list,
                     "ingredients": recipe["ingredients"],
+                    # Zutaten, die noch zu kaufen sind: ohne Hauptzutaten, die schon auf der Liste stehen
+                    "shopping": [
+                        text
+                        for text in recipe["ingredients"]
+                        if not any(rc.BY_LABEL[main].in_ingredient(rc.clean(text)) for main in on_list)
+                    ],
                     "steps": recipe["steps"],
                 }
             )
@@ -849,6 +895,20 @@ class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
             "zip_code": self._zip_code,
         }
 
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+        # Ändert sich die Einkaufsliste, die Markierung "schon auf der Liste" nachziehen
+        if self.coordinator.shopping_list:
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass, [self.coordinator.shopping_list], self._handle_list_change
+                )
+            )
+
+    @callback
+    def _handle_list_change(self, event):
+        self.hass.async_create_task(self.coordinator.async_refresh_suggestions())
+
     async def async_update(self):
-        # homeassistant.update_entity: nur Essensplan und Vorschläge, keine neuen Angebotsabfragen
+        # homeassistant.update_entity: nur Essensplan, Einkaufsliste und Vorschläge, keine neuen Angebotsabfragen
         await self.coordinator.async_refresh_suggestions()

@@ -79,7 +79,7 @@ The folder [`examples/`](examples/) contains the setup this fork was built for: 
 | `automation_quellen_ueberwachen.yaml` | Daily notification if marktguru or meinprospekt delivers no offers. |
 | `script_abgleich_wert_setzen.yaml` | Script to set usual price, rhythm and stock date per article, e.g. from receipts. |
 | `dashboard_card_rezepte.yaml` | Recipe card: up to five Mealie recipes whose main ingredient is on offer. A tap opens ingredients and steps in a popup, the calendar button plans the recipe. |
-| `script_rezept_einplanen.yaml` | Puts a recipe on the next free evening of the Mealie meal plan, starting with the coming Saturday. |
+| `script_rezept_einplanen.yaml` | Puts a recipe on the next free evening of the Mealie meal plan, starting with the coming Saturday, and adds its ingredients to the Mealie shopping list. |
 
 Requirements:
 
@@ -89,8 +89,8 @@ Requirements:
 - For the recipe card: the Mealie integration, [browser_mod](https://github.com/thomasloven/hass-browser_mod) and the option `mealie_recipes` of this integration
 - A to-do list entity for the shopping list (here `todo.einkauf_bring` from the Bring! integration)
 
-Replace before use: `GERAET_1` (browser_mod id of a device), `MEALIE_EINTRAG` (config entry id of the Mealie integration), `DEINE_PLZ` (your ZIP code, in lower case as part of the search sensor's entity id), `todo.einkauf_bring`, `notify.mobile_app_DEIN_HANDY`, the retailer names if you use other shops, and `start` plus the `artikel` list in the automation.
+Replace before use: `GERAET_1` (browser_mod id of a device), `MEALIE_EINTRAG` (config entry id of the Mealie integration), `MEALIE_LISTE` (to-do entity of the Mealie shopping list), `DEINE_PLZ` (your ZIP code, in lower case as part of the search sensor's entity id), `todo.einkauf_bring`, `notify.mobile_app_DEIN_HANDY`, the retailer names if you use other shops, and `start` plus the `artikel` list in the automation.
 
 ### Recipe suggestions
 
-With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.marktguru_rezepte_<zip>` lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. Recipes in the meal plan of the last 14 days or the coming week are left out. Recipe images are copied to `www/marktguru_rezepte` so the card can show them without a Mealie login.
+With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.marktguru_rezepte_<zip>` lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. Recipes from the meal plan of the last 14 days are left out, recipes planned for the coming days stay and are marked as planned. With the option `shopping_list` (a to-do entity, e.g. the Bring! list) main ingredients that are already on the list are marked, and the planning script only adds the remaining ingredients to the Mealie shopping list. Recipe images are copied to `www/marktguru_rezepte` so the card can show them without a Mealie login.
