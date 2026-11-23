@@ -39,6 +39,8 @@ einkauf_rezept_verschieben:
         {%- set ns = namespace(i='') -%}
         {%- for m in plan.mealplan if m.recipe and m.recipe.slug == slug and (m.mealplan_date | string) == von and not ns.i -%}{%- set ns.i = m.mealplan_id | string -%}{%- endfor -%}
         {{ ns.i }}
+      art: '{{ plan.mealplan | selectattr(''recipe'') | selectattr(''recipe.slug'', ''eq'', slug) | map(attribute=''entry_type'') | first | default(''dinner'') }}'
+      rid: '{{ plan.mealplan | selectattr(''recipe'') | selectattr(''recipe.slug'', ''eq'', slug) | map(attribute=''recipe.recipe_id'') | first | default('''') }}'
   - if:
     - condition: template
       value_template: '{{ eintrag | string == '''' or von == nach }}'
@@ -49,6 +51,8 @@ einkauf_rezept_verschieben:
       config_entry_id: '{{ mealie }}'
       mealplan_id: '{{ eintrag | int }}'
       date: '{{ nach }}'
+      entry_type: '{{ art }}'
+      recipe_id: '{{ rid }}'
   - action: homeassistant.update_entity
     target:
       entity_id: sensor.marktguru_rezepte_DEINE_PLZ

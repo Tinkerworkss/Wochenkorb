@@ -129,7 +129,7 @@ actions:
                         'EL': 'Esslöffel', 'TL': 'Teelöffel', 'Zehen': 'Zehe', 'Prisen': 'Prise',
                         'Packungen': 'Packung', 'Dosen': 'Dose', 'Scheiben': 'Scheibe', 'Zweige': 'Zweig'} %}
       {% set ns = namespace(e=[]) %} {% for i in listen['todo.mealie_to_bring']['items'] %}
-        {% set s = i.summary | replace('¹/₂', '½') | replace('¹⁄₂', '½') | replace('¹/₄', '¼') | replace('¹⁄₄', '¼') | replace('³/₄', '¾') | replace('³⁄₄', '¾') | regex_replace('\\([^()]*\\)', '') | regex_replace('\\([^()]*\\)', '')
+        {% set s = i.summary | replace('¹/₂', '½') | replace('¹⁄₂', '½') | replace('¹/₄', '¼') | replace('¹⁄₄', '¼') | replace('³/₄', '¾') | replace('³⁄₄', '¾') | replace('⁄', '/') | replace('¹', '1') | replace('²', '2') | replace('³', '3') | replace('⁴', '4') | replace('⁵', '5') | replace('⁷', '7') | replace('₂', '2') | replace('₃', '3') | replace('₄', '4') | replace('₅', '5') | replace('₆', '6') | replace('₈', '8') | regex_replace('\\([^()]*\\)', '') | regex_replace('\\([^()]*\\)', '')
                  | regex_replace('\\(.*$', '') | regex_replace('\\s+', ' ') | trim %}
         {% set geschmack = (s | lower).startswith('nach geschmack') %}
         {% set m = s | regex_findall('^([\d.,/½¼¾]+(?:\s*-\s*[\d.,/½¼¾]+)?)\s*(?:(' ~ units ~ ')\s+)?(.+)$') %}
