@@ -1,0 +1,55 @@
+# Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to remove it. Paste as a manual card.
+# Needs the option mealie_recipes of the integration. Replace DEINE_PLZ with your ZIP code.
+type: vertical-stack
+cards:
+- type: heading
+  heading: Abendessen diese Woche
+  icon: mdi:calendar-week
+  heading_style: title
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {#- Abendessen der nächsten sieben Tage; ein Tipp auf ein geplantes Gericht bietet an, es wieder vom Plan zu nehmen -#}
+      {%- set wt = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] -%}
+      {%- set stil = {
+        'card': [{'padding': '9px 14px'}, {'border-radius': '0'}, {'border': 'none'}, {'border-bottom': '1px solid var(--divider-color)'}, {'box-shadow': 'none'}, {'background': 'none'}],
+        'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': '96px 1fr'}, {'column-gap': '10px'}, {'align-items': 'center'}],
+        'name': [{'justify-self': 'start'}, {'font-size': '14px'}, {'font-weight': '600'}],
+        'label': [{'justify-self': 'start'}, {'text-align': 'left'}, {'font-size': '14px'}, {'white-space': 'normal'}]} -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- for p in state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or [] -%}
+      {%- set d = strptime(p.date, '%Y-%m-%d') -%}
+      {%- set diff = (d.date() - now().date()).days -%}
+      {%- if diff >= 0 and diff < 7 -%}
+      {%- set tag = 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')) -%}
+      {%- if p.dinner | count == 0 -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag, 'label': 'noch frei', 'show_icon': 0, 'show_label': 1, 'tap_action': {'action': 'none'},
+        'styles': dict(stil, label=stil.label + [{'color': 'var(--secondary-text-color)'}], card=stil.card + [{'cursor': 'default'}])}] -%}
+      {%- endif -%}
+      {%- for e in p.dinner -%}
+      {%- set weg = {'type': 'custom:button-card', 'name': 'Vom Plan nehmen', 'icon': 'mdi:calendar-remove', 'layout': 'icon_name',
+        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+          {'service': 'browser_mod.close_popup', 'data': {}},
+          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird vom Plan genommen, die Zutaten gehen von der Einkaufsliste', 'duration': 6000}},
+          {'service': 'script.einkauf_rezept_ausplanen', 'data': {'slug': e.slug, 'datum': p.date}}]}}},
+        'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}],
+                   'icon': [{'width': '20px'}, {'color': '#fff'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}} -%}
+      {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards': [
+          {'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**.
+
+      Beim Entfernen werden auch die Zutaten dieses Rezepts wieder von der Einkaufsliste genommen.'}, weg]}}}} if e.slug else {'action': 'none'} -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag if loop.first else '', 'label': e.name, 'show_icon': 0, 'show_label': 1, 'tap_action': tipp, 'styles': stil}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ rows.l | tojson }}

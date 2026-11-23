@@ -1,7 +1,7 @@
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
-from .const import DOMAIN, CONF_PRODUCTS, CONF_ZIP, CONF_RETAILERS
+from .const import DOMAIN, CONF_PRODUCTS, CONF_ZIP, CONF_RETAILERS, CONF_RECIPES, CONF_SHOPPING_LIST
 
 def parse_products(products_str):
     result = []
@@ -45,6 +45,8 @@ class MarktguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_ZIP, default=default_zip): str,
             vol.Required(CONF_PRODUCTS, default=default_products): str,
             vol.Optional(CONF_RETAILERS, default=default_retailers): str,
+            vol.Optional(CONF_RECIPES, default=False): bool,
+            vol.Optional(CONF_SHOPPING_LIST, default=""): str,
         })
 
         return self.async_show_form(
@@ -89,6 +91,8 @@ class MarktguruOptionsFlowHandler(config_entries.OptionsFlow):
             vol.Required(CONF_ZIP, default=zip_code): str,
             vol.Required(CONF_PRODUCTS, default=products_str): str,
             vol.Optional(CONF_RETAILERS, description={"suggested_value": retailers}): str,
+            vol.Optional(CONF_RECIPES, default=bool(current.get(CONF_RECIPES, False))): bool,
+            vol.Optional(CONF_SHOPPING_LIST, description={"suggested_value": current.get(CONF_SHOPPING_LIST, "") or ""}): str,
         })
 
         return self.async_show_form(

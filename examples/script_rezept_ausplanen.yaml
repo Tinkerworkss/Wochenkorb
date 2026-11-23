@@ -1,0 +1,91 @@
+# Removes a recipe from the Mealie meal plan and takes its ingredients off the Mealie shopping list.
+# Replace MEALIE_EINTRAG, MEALIE_LISTE and DEINE_PLZ as in script_rezept_einplanen.yaml.
+einkauf_rezept_ausplanen:
+  alias: 'Einkauf: Rezept vom Plan nehmen'
+  description: Löscht ein Rezept an einem Tag aus dem Mealie-Essensplan und nimmt seine Zutaten wieder von der Mealie-Einkaufsliste. Wird von der Wochenplan-Karte aufgerufen.
+  icon: mdi:calendar-remove
+  mode: queued
+  max: 10
+  fields:
+    slug:
+      name: Rezept
+      description: Slug des Rezepts in Mealie
+      required: true
+      selector:
+        text: {}
+    datum:
+      name: Datum
+      description: Tag (JJJJ-MM-TT), an dem das Rezept im Plan steht
+      required: true
+      selector:
+        text: {}
+  sequence:
+  - variables:
+      mealie: MEALIE_EINTRAG
+      liste: MEALIE_LISTE
+  - action: mealie.get_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      start_date: '{{ datum }}'
+      end_date: '{{ datum }}'
+    response_variable: plan
+  - variables:
+      eintrag: |-
+        {%- set ns = namespace(i='') -%}
+        {%- for m in plan.mealplan if m.recipe and m.recipe.slug == slug and (m.mealplan_date | string) == datum and not ns.i -%}{%- set ns.i = m.mealplan_id | string -%}{%- endfor -%}
+        {{ ns.i }}
+  - if:
+    - condition: template
+      value_template: '{{ eintrag | string == '''' }}'
+    then:
+    - stop: Rezept steht an diesem Tag nicht im Plan
+  - action: mealie.get_recipe
+    data:
+      config_entry_id: '{{ mealie }}'
+      recipe_id: '{{ slug }}'
+    response_variable: rezept
+  - action: todo.get_items
+    target:
+      entity_id: '{{ liste }}'
+    data:
+      status: needs_action
+    response_variable: offen
+  - variables:
+      uids: |-
+        {#- Zu jeder Zutat des Rezepts genau einen offenen Listeneintrag suchen. Mealie schreibt Einträge teils um
+            ("100 g Cheddar-Käse" wird "100 Gramm Cheddar-Käse", "1 Knoblauchzehe" wird "1 Knoblauch"), deshalb zählt
+            nach dem genauen Text auch gleiche Menge plus gleicher Namensanfang. -#}
+        {%- set einheiten = '^(g|gramm|kg|kilogramm|ml|milliliter|l|liter|el|tl|esslöffel|teelöffel|stück|stk|kl\. dose|dosen|dose|bund|packung|päckchen|zehen|zehe|prisen|prise|becher|glas)\s+' -%}
+        {%- set ns = namespace(u=[]) -%}
+        {%- for z in rezept.recipe.ingredients | map(attribute='display') | select | list -%}
+        {%- set zt = z | lower | regex_replace('\([^)]*\)', '') | trim -%}
+        {%- set zq = (zt | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
+        {%- set zn = zt | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
+        {%- set treffer = namespace(u='') -%}
+        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and (i.summary | trim) == (z | trim) -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
+        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and zn | length >= 4 -%}
+        {%- set it = i.summary | lower | regex_replace('\([^)]*\)', '') | trim -%}
+        {%- set iq = (it | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
+        {%- set name = it | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
+        {%- set n = [zn | length, name | length, 8] | min -%}
+        {%- if n >= 4 and iq == zq and zn[:n] == name[:n] -%}{%- set treffer.u = i.uid -%}{%- endif -%}
+        {%- endfor -%}
+        {%- if treffer.u -%}{%- set ns.u = ns.u + [treffer.u] -%}{%- endif -%}
+        {%- endfor -%}
+        {{ ns.u | tojson }}
+  - action: mealie.delete_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      mealplan_id: '{{ eintrag | int }}'
+  - if:
+    - condition: template
+      value_template: '{{ uids | count > 0 }}'
+    then:
+    - action: todo.remove_item
+      target:
+        entity_id: '{{ liste }}'
+      data:
+        item: '{{ uids }}'
+  - action: homeassistant.update_entity
+    target:
+      entity_id: sensor.marktguru_rezepte_DEINE_PLZ

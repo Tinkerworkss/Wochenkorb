@@ -1,0 +1,167 @@
+# Asks for the evening (suggesting the next free one), puts the recipe into the Mealie meal plan
+# and adds the ingredients to the Mealie shopping list.
+# Replace MEALIE_EINTRAG with the config entry id of the Mealie integration, MEALIE_LISTE with
+# the to-do entity of the Mealie shopping list and DEINE_PLZ.
+einkauf_rezept_einplanen:
+  alias: 'Einkauf: Rezept einplanen'
+  description: 'Fragt in einem Fenster, an welchem Abend ein Mealie-Rezept gekocht werden soll (Vorschlag: der nächste freie Abend), trägt es in den Essensplan ein und legt alle Zutaten auf die Mealie-Einkaufsliste (auch solche, die schon auf der Liste stehen, damit sich die Mengen addieren lassen). Wird vom Kalender-Knopf der Rezeptkarte aufgerufen. Ohne browser_mod-Kennung wird ohne Nachfrage der nächste freie Abend genommen.'
+  icon: mdi:calendar-plus
+  mode: queued
+  max: 10
+  fields:
+    slug:
+      name: Rezept
+      description: Slug des Rezepts in Mealie
+      required: true
+      selector:
+        text: {}
+    name:
+      name: Name
+      description: Name des Rezepts für die Rückmeldung
+      selector:
+        text: {}
+    browser_id:
+      name: Browser
+      description: browser_mod-Kennung des Geräts, das Auswahl und Rückmeldung zeigen soll
+      selector:
+        text: {}
+    datum:
+      name: Datum
+      description: 'Tag (JJJJ-MM-TT), auf den das Rezept gelegt wird. Leer: erst nachfragen.'
+      selector:
+        text: {}
+  sequence:
+  - variables:
+      mealie: MEALIE_EINTRAG
+      liste: MEALIE_LISTE
+      titel: '{{ name | default(slug) }}'
+      basis: '{{ (now().date() + timedelta(days=(1 if now().hour >= 18 else 0))).isoformat() }}'
+  - action: mealie.get_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      start_date: '{{ now().date().isoformat() }}'
+      end_date: '{{ (now().date() + timedelta(days=14)).isoformat() }}'
+    response_variable: plan
+  - action: mealie.get_recipe
+    data:
+      config_entry_id: '{{ mealie }}'
+      recipe_id: '{{ slug }}'
+    response_variable: rezept
+  - variables:
+      schon: |-
+        {%- set ns = namespace(t='') -%}
+        {%- for m in plan.mealplan if m.recipe and m.recipe.slug == slug and not ns.t -%}{%- set ns.t = m.mealplan_date | string -%}{%- endfor -%}
+        {{ ns.t }}
+      tage: |-
+        {#- Die nächsten acht Abende mit dem, was dort schon im Essensplan steht -#}
+        {%- set wt = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] -%}
+        {%- set ns = namespace(l=[]) -%}
+        {%- for i in range(8) -%}
+        {%- set d = strptime(basis, '%Y-%m-%d').date() + timedelta(days=i) -%}
+        {%- set essen = namespace(l=[]) -%}
+        {%- for m in plan.mealplan if m.entry_type == 'dinner' and (m.mealplan_date | string) == d.isoformat() -%}
+        {%- set essen.l = essen.l + [(m.recipe.name if m.recipe else (m.title or 'Notiz'))] -%}
+        {%- endfor -%}
+        {%- set ns.l = ns.l + [{'d': d.isoformat(), 'text': wt[d.weekday()] ~ ', ' ~ d.strftime('%d.%m.'), 'essen': essen.l | join(', ')}] -%}
+        {%- endfor -%}
+        {{ ns.l }}
+      zutaten: '{{ rezept.recipe.ingredients | map(attribute=''display'') | select | list | tojson }}'
+  - variables:
+      vorschlag: '{{ (tage | selectattr(''essen'', ''eq'', '''') | map(attribute=''d'') | first) | default('''') }}'
+      ziel: '{{ datum | default('''') or ('''' if browser_id | default('''') else (tage | selectattr(''essen'', ''eq'', '''') | map(attribute=''d'') | first | default(''''))) }}'
+  - choose:
+    - alias: 'Schon eingeplant: nur Bescheid geben'
+      conditions:
+      - condition: template
+        value_template: '{{ schon != '''' }}'
+      sequence:
+      - if:
+        - condition: template
+          value_template: '{{ browser_id | default('''') != '''' }}'
+        then:
+        - action: browser_mod.close_popup
+          data:
+            browser_id:
+            - '{{ browser_id }}'
+      - if:
+        - condition: template
+          value_template: '{{ browser_id | default('''') != '''' }}'
+        then:
+        - action: browser_mod.notification
+          data:
+            message: '{%- set t = strptime(schon, ''%Y-%m-%d'') -%}„{{ titel }}“ ist schon für {{ [''Mo'', ''Di'', ''Mi'', ''Do'', ''Fr'', ''Sa'', ''So''][t.weekday()] }}, {{ t.strftime(''%d.%m.'') }} eingeplant'
+            duration: 6000
+            browser_id:
+            - '{{ browser_id }}'
+    - alias: 'Tag steht fest: eintragen und Zutaten auf die Liste'
+      conditions:
+      - condition: template
+        value_template: '{{ ziel != '''' }}'
+      sequence:
+      - if:
+        - condition: template
+          value_template: '{{ browser_id | default('''') != '''' }}'
+        then:
+        - action: browser_mod.close_popup
+          data:
+            browser_id:
+            - '{{ browser_id }}'
+      - action: mealie.set_mealplan
+        data:
+          config_entry_id: '{{ mealie }}'
+          date: '{{ ziel }}'
+          entry_type: dinner
+          recipe_id: '{{ rezept.recipe.recipe_id }}'
+      - repeat:
+          for_each: '{{ zutaten }}'
+          sequence:
+          - action: todo.add_item
+            target:
+              entity_id: '{{ liste }}'
+            data:
+              item: '{{ repeat.item }}'
+      - action: homeassistant.update_entity
+        target:
+          entity_id: sensor.marktguru_rezepte_DEINE_PLZ
+      - if:
+        - condition: template
+          value_template: '{{ browser_id | default('''') != '''' }}'
+        then:
+        - action: browser_mod.notification
+          data:
+            message: '{%- set t = strptime(ziel, ''%Y-%m-%d'') -%}„{{ titel }}“ ist für {{ [''Mo'', ''Di'', ''Mi'', ''Do'', ''Fr'', ''Sa'', ''So''][t.weekday()] }}, {{ t.strftime(''%d.%m.'') }} eingeplant, {{ zutaten | count }} Zutaten kommen auf die Einkaufsliste'
+            duration: 6000
+            browser_id:
+            - '{{ browser_id }}'
+    - alias: 'Nachfragen: Fenster mit den nächsten Abenden'
+      conditions:
+      - condition: template
+        value_template: '{{ browser_id | default('''') != '''' }}'
+      sequence:
+      - action: browser_mod.popup
+        data:
+          browser_id:
+          - '{{ browser_id }}'
+          title: Wann kochen?
+          content: |-
+            {%- set ns = namespace(cards=[{'type': 'markdown', 'content': '**' ~ titel ~ '**\n\nTippe auf den Abend. Der Vorschlag ist der nächste freie.'}]) -%}
+            {%- for t in tage -%}
+            {%- set vor = t.d == vorschlag -%}
+            {%- set daten = {'slug': slug, 'name': titel, 'browser_id': browser_id, 'datum': t.d} -%}
+            {%- set ns.cards = ns.cards + [{
+              'type': 'custom:button-card',
+              'name': t.text ~ (' · Vorschlag' if vor else ''),
+              'label': t.essen if t.essen else 'frei',
+              'show_icon': 0, 'show_label': 1,
+              'tap_action': {'action': 'call-service', 'service': 'script.einkauf_rezept_einplanen', 'service_data': daten, 'data': daten},
+              'styles': {
+                'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'},
+                         {'background': 'var(--primary-color)' if vor else 'rgba(127,127,127,0.18)'},
+                         {'color': 'var(--text-primary-color, #fff)' if vor else 'var(--primary-text-color)'}],
+                'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': 'auto 1fr'}, {'column-gap': '12px'}],
+                'name': [{'justify-self': 'start'}, {'font-size': '15px'}, {'font-weight': '600'}],
+                'label': [{'justify-self': 'end'}, {'font-size': '13px'}, {'opacity': '0.8'}, {'text-align': 'right'}]
+              }}] -%}
+            {%- endfor -%}
+            {{ {'type': 'vertical-stack', 'cards': ns.cards} }}
+    default: []
