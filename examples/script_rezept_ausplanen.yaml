@@ -52,11 +52,24 @@ einkauf_rezept_ausplanen:
     response_variable: offen
   - variables:
       uids: |-
-        {#- Zu jeder Zutat des Rezepts genau einen offenen Listeneintrag mit demselben Text suchen -#}
+        {#- Zu jeder Zutat des Rezepts genau einen offenen Listeneintrag suchen. Mealie schreibt Einträge teils um
+            ("100 g Cheddar-Käse" wird "100 Gramm Cheddar-Käse", "1 Knoblauchzehe" wird "1 Knoblauch"), deshalb zählt
+            nach dem genauen Text auch gleiche Menge plus gleicher Namensanfang. -#}
+        {%- set einheiten = '^(g|gramm|kg|kilogramm|ml|milliliter|l|liter|el|tl|esslöffel|teelöffel|stück|stk|kl\. dose|dosen|dose|bund|packung|päckchen|zehen|zehe|prisen|prise|becher|glas)\s+' -%}
         {%- set ns = namespace(u=[]) -%}
         {%- for z in rezept.recipe.ingredients | map(attribute='display') | select | list -%}
+        {%- set zt = z | lower | regex_replace('\([^)]*\)', '') | trim -%}
+        {%- set zq = (zt | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
+        {%- set zn = zt | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
         {%- set treffer = namespace(u='') -%}
-        {%- for i in offen[liste]['items'] if not treffer.u and (i.summary | trim) == (z | trim) and i.uid not in ns.u -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
+        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and (i.summary | trim) == (z | trim) -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
+        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and zn | length >= 4 -%}
+        {%- set it = i.summary | lower | regex_replace('\([^)]*\)', '') | trim -%}
+        {%- set iq = (it | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
+        {%- set name = it | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
+        {%- set n = [zn | length, name | length, 8] | min -%}
+        {%- if n >= 4 and iq == zq and zn[:n] == name[:n] -%}{%- set treffer.u = i.uid -%}{%- endif -%}
+        {%- endfor -%}
         {%- if treffer.u -%}{%- set ns.u = ns.u + [treffer.u] -%}{%- endif -%}
         {%- endfor -%}
         {{ ns.u | tojson }}

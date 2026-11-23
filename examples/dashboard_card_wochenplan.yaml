@@ -39,9 +39,9 @@ cards:
       {%- for e in p.dinner -%}
       {%- set weg = {'type': 'custom:button-card', 'name': 'Vom Plan nehmen', 'icon': 'mdi:calendar-remove', 'layout': 'icon_name',
         'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-          {'service': 'script.einkauf_rezept_ausplanen', 'data': {'slug': e.slug, 'datum': p.date}},
           {'service': 'browser_mod.close_popup', 'data': {}},
-          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird vom Plan genommen, die Zutaten gehen von der Einkaufsliste', 'duration': 6000}}]}}},
+          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird vom Plan genommen, die Zutaten gehen von der Einkaufsliste', 'duration': 6000}},
+          {'service': 'script.einkauf_rezept_ausplanen', 'data': {'slug': e.slug, 'datum': p.date}}]}}},
         'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}],
                    'icon': [{'width': '20px'}, {'color': '#fff'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}} -%}
       {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards': [

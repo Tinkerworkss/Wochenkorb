@@ -55,9 +55,9 @@ cards:
       {%- set knoepfe.l = knoepfe.l + [{
         'type': 'custom:button-card', 'name': t.text ~ (' · Vorschlag' if vor else ''), 'label': t.essen or 'frei', 'show_icon': 0, 'show_label': 1,
         'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-          {'service': 'script.einkauf_rezept_einplanen', 'data': {'slug': r.slug, 'name': r.name, 'datum': t.d}},
           {'service': 'browser_mod.close_popup', 'data': {}},
-          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ r.name ~ '“ wird für ' ~ t.text ~ ' eingeplant, die Zutaten kommen auf die Einkaufsliste', 'duration': 6000}}]}}},
+          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ r.name ~ '“ wird für ' ~ t.text ~ ' eingeplant, die Zutaten kommen auf die Einkaufsliste', 'duration': 6000}},
+          {'service': 'script.einkauf_rezept_einplanen', 'data': {'slug': r.slug, 'name': r.name, 'datum': t.d}}]}}},
         'styles': {
           'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'},
                    {'background': 'var(--primary-color)' if vor else 'rgba(127,127,127,0.18)'},
