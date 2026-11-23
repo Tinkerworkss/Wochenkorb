@@ -45,6 +45,7 @@ cards:
       {#- Eingeplante Rezepte bleiben stehen; Hauptzutaten, die schon auf der Einkaufsliste stehen, werden genannt -#}
       {%- set tag = strptime(r.planned, '%Y-%m-%d') if r.planned else none -%}
       {%- set geplant = ('eingeplant für ' ~ wt[tag.weekday()] ~ ', ' ~ tag.strftime('%d.%m.')) if tag else '' -%}
+      {#- Keine true/false in den Zeilen: Home Assistant liefert die Liste sonst als Text und auto-entities zeigt nichts -#}
       {#- Kalender-Knopf: Fenster mit den Abenden; die Auswahl läuft auf dem Gerät selbst und braucht keine browser_mod-Registrierung -#}
       {%- set knoepfe = namespace(l=[{'type': 'markdown', 'content': '**' ~ r.name ~ '**
 
@@ -52,7 +53,7 @@ cards:
       {%- for t in tage.l -%}
       {%- set vor = t.d == tage.vor -%}
       {%- set knoepfe.l = knoepfe.l + [{
-        'type': 'custom:button-card', 'name': t.text ~ (' · Vorschlag' if vor else ''), 'label': t.essen or 'frei', 'show_icon': false, 'show_label': true,
+        'type': 'custom:button-card', 'name': t.text ~ (' · Vorschlag' if vor else ''), 'label': t.essen or 'frei', 'show_icon': 0, 'show_label': 1,
         'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
           {'service': 'script.einkauf_rezept_einplanen', 'data': {'slug': r.slug, 'name': r.name, 'datum': t.d}},
           {'service': 'browser_mod.close_popup', 'data': {}},

@@ -33,7 +33,7 @@ cards:
       {%- if diff >= 0 and diff < 7 -%}
       {%- set tag = 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')) -%}
       {%- if p.dinner | count == 0 -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag, 'label': 'noch frei', 'show_icon': false, 'show_label': true, 'tap_action': {'action': 'none'},
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag, 'label': 'noch frei', 'show_icon': 0, 'show_label': 1, 'tap_action': {'action': 'none'},
         'styles': dict(stil, label=stil.label + [{'color': 'var(--secondary-text-color)'}], card=stil.card + [{'cursor': 'default'}])}] -%}
       {%- endif -%}
       {%- for e in p.dinner -%}
@@ -48,7 +48,7 @@ cards:
           {'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**.
 
       Beim Entfernen werden auch die Zutaten dieses Rezepts wieder von der Einkaufsliste genommen.'}, weg]}}}} if e.slug else {'action': 'none'} -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag if loop.first else '', 'label': e.name, 'show_icon': false, 'show_label': true, 'tap_action': tipp, 'styles': stil}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag if loop.first else '', 'label': e.name, 'show_icon': 0, 'show_label': 1, 'tap_action': tipp, 'styles': stil}] -%}
       {%- endfor -%}
       {%- endif -%}
       {%- endfor -%}
