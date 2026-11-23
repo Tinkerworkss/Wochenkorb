@@ -1,0 +1,294 @@
+# Optional, only with Mealie: keeps the Mealie shopping list and a second to-do list (here Bring!) in step.
+# - New Mealie items go to the shopping list, split into quantity, unit and name.
+# - Equal articles are merged and quantities added up, also when another recipe is planned later.
+# - A note you typed yourself on the shopping list is kept; the recipe share is appended behind an
+#   invisible separator (U+200B), e.g. "6 Stück + 3 Stück".
+# - Items removed from the Mealie list lose their recipe share on the shopping list again.
+# - Items ticked off on the shopping list are deleted in Mealie.
+# - Pantry articles and spices (lists "ignore" and "gewuerze") are not transferred.
+# - Names are normalised by general rules plus the "synonyme" table (German).
+# Replace todo.mealie_to_bring and todo.einkauf_bring with your entities.
+alias: 'Mealie ↔ Bring: Einkaufsliste synchronisieren'
+description: |
+  Überträgt Artikel von Mealie ("To Bring") nach Bring!, fasst gleiche Artikel zusammen (Mengen werden addiert) und entfernt in Mealie, was auf Bring! abgehakt wurde. Ersetzt die beiden bisherigen Automationen. Vorratsartikel (Salz, Öl, ...) werden nicht übertragen, sondern direkt aus Mealie gelöscht. Manuelles "Ausführen" ist sicher: dann wird nur übertragen (und Vorrat aus Mealie entfernt).
+triggers:
+- trigger: state
+  entity_id: todo.mealie_to_bring
+  not_from:
+  - unavailable
+  - unknown
+  not_to:
+  - unavailable
+  - unknown
+  id: mealie
+- trigger: state
+  entity_id: todo.einkauf_bring
+  not_from:
+  - unavailable
+  - unknown
+  not_to:
+  - unavailable
+  - unknown
+  id: bring
+conditions:
+- condition: template
+  value_template: |
+    {{ (trigger.id | default('')) != 'bring'
+       or (trigger.to_state.state | int(0) < trigger.from_state.state | int(0)) }}
+actions:
+- action: todo.get_items
+  target:
+    entity_id:
+    - todo.mealie_to_bring
+    - todo.einkauf_bring
+  data:
+    status: needs_action
+  response_variable: listen
+- variables:
+    bring: '{{ listen[''todo.einkauf_bring''][''items''] }}'
+    eintraege: |
+      {# ===== Einstellungen ===== #} {# Synonyme: 'mealie-name klein' : ['Name auf Bring!', 'Einheit oder leer'] #} {% set synonyme = {
+           'hähnchenbrustfilets': ['Hähnchenbrustfilet', ''], 'avocados': ['Avocado', ''], 'gelbe paprikaschote': ['gelbe Paprika', ''], 'gelbe paprikaschoten': ['gelbe Paprika', ''], 'grüne paprikaschote': ['grüne Paprika', ''], 'grüne paprikaschoten': ['grüne Paprika', ''], 'strauch-tomaten': ['Tomaten', ''], 'créme fraîche': ['Crème fraîche', ''], 'crème fraiche': ['Crème fraîche', ''], 'rinderhackfleischzubereitung': ['Rinderhack', ''], 'tiefkühl-erbsen': ['TK-Erbsen', ''], 'erbsen tiefgekühlt': ['TK-Erbsen', ''], 'weizentortilla': ['Tortilla-Wraps', ''], 'tortilla wraps': ['Tortilla-Wraps', ''], 'basilikumblätter': ['Basilikum', ''], 'rote linsen getrocknet': ['rote Linsen', ''], 'zucker braun': ['Zucker', ''], 'bio-ei': ['Ei', ''], 'lachsfilets': ['Lachsfilet', ''], 'zucchinis': ['Zucchini', ''],
+           'knoblauchzehe': ['Knoblauch', 'Zehe'], 'knoblauchzehen': ['Knoblauch', 'Zehe'],
+           'zitrone, gewachst': ['Zitrone', ''], 'zitrone, unbehandelt': ['Zitrone', ''],
+           'bio-zitrone': ['Zitrone', ''], 'zitronen': ['Zitrone', ''],
+           'limette, gewachst': ['Limette', ''], 'limette, unbehandelt': ['Limette', ''],
+           'bio-limette': ['Limette', ''], 'limetten': ['Limette', ''],
+           'zwiebeln': ['Zwiebel', ''], 'gelbe zwiebel': ['Zwiebel', ''], 'gelbe zwiebeln': ['Zwiebel', ''],
+           'rote zwiebeln': ['rote Zwiebel', ''],
+           'frühlingszwiebeln': ['Frühlingszwiebel', ''], 'lauchzwiebel': ['Frühlingszwiebel', ''],
+           'lauchzwiebeln': ['Frühlingszwiebel', ''],
+           'schalotten': ['Schalotte', ''],
+           'karotten': ['Karotte', ''], 'möhre': ['Karotte', ''], 'möhren': ['Karotte', ''],
+           'kartoffel': ['Kartoffeln', ''], 'festkochende kartoffeln': ['Kartoffeln', ''],
+           'vorwiegend festkochende kartoffeln': ['Kartoffeln', ''],
+           'tomate': ['Tomaten', ''], 'strauchtomaten': ['Tomaten', ''], 'rispentomaten': ['Tomaten', ''],
+           'paprikaschote': ['Paprika', ''], 'paprikaschoten': ['Paprika', ''],
+           'chilischote': ['Chili', ''], 'rote chilischote': ['Chili', ''], 'rote chili': ['Chili', ''],
+           'salatgurke': ['Gurke', ''], 'rauke': ['Rucola', ''],
+           'ingwerwurzel': ['Ingwer', ''], 'frischer ingwer': ['Ingwer', ''], 'ingwer, frisch': ['Ingwer', ''],
+           'glatte petersilie': ['Petersilie', ''], 'petersilie, glatt': ['Petersilie', ''],
+           'krause petersilie': ['Petersilie', ''], 'petersilie glatt': ['Petersilie', ''],
+           'petersilie kraus': ['Petersilie', ''],
+           'frischer koriander': ['Koriander', ''], 'koriander, frisch': ['Koriander', ''],
+           'frisches basilikum': ['Basilikum', ''], 'basilikum, frisch': ['Basilikum', ''],
+           'schlagsahne': ['Sahne', ''], 'kochsahne': ['Sahne', ''],
+           'creme fraiche': ['Crème fraîche', ''], 'crème fraîche': ['Crème fraîche', ''],
+           'crème fraîche légère': ['Crème fraîche', ''],
+           'geriebener hartkäse': ['Hartkäse', ''], 'italienischer hartkäse': ['Hartkäse', ''],
+           'parmesan': ['Hartkäse', ''], 'parmesan, gerieben': ['Hartkäse', ''],
+           'gemüsebrühpulver': ['Gemüsebrühe', ''], 'gemüsebrühe, pulver': ['Gemüsebrühe', ''],
+           'hühnerbrühpulver': ['Hühnerbrühe', ''],
+           'weizenmehl': ['Mehl', ''], 'weizenmehl type 405': ['Mehl', ''],
+           'vollmilch': ['Milch', ''], 'eier': ['Ei', ''], 'ei (größe m)': ['Ei', ''],
+           'honig, flüssig': ['Honig', ''], 'flüssiger honig': ['Honig', ''], 'süßrahmbutter': ['Butter', ''],
+           'maisstärke': ['Speisestärke', ''], 'kartoffelstärke': ['Speisestärke', ''],
+           'panko': ['Pankomehl', ''], 'panko-paniermehl': ['Pankomehl', ''],
+           'tortillas': ['Tortilla-Wraps', ''], 'weizentortillas': ['Tortilla-Wraps', ''],
+           'wraps': ['Tortilla-Wraps', ''],
+           'sojasoße': ['Sojasauce', ''], 'soja sauce': ['Sojasauce', ''],
+           'balsamico': ['Balsamicoessig', ''], 'aceto balsamico': ['Balsamicoessig', ''],
+           'dunkler balsamicoessig': ['Balsamicoessig', ''],
+           'aceto balsamico di modena': ['Balsamicoessig', ''],
+           'kokosnussmilch': ['Kokosmilch', ''], 'kokosmilch, ungesüßt': ['Kokosmilch', ''],
+           'rote paprikaschote': ['rote Paprika', ''], 'rote paprikaschoten': ['rote Paprika', ''],
+           'braune champignons': ['Champignons', ''], 'weiße champignons': ['Champignons', ''],
+           'rinderhackfleisch': ['Rinderhack', ''], 'simmentaler rinderhackfleisch': ['Rinderhack', ''],
+           'hackfleischzubereitung vom weiderind': ['Rinderhack', ''],
+           'bio-ingwer': ['Ingwer', ''], 'rosmarinzweige': ['Rosmarin', ''], 'rosmarinzweig': ['Rosmarin', ''],
+           'thymianzweige': ['Thymian', ''], 'thymianzweig': ['Thymian', ''],
+           'kaiserschoten': ['Zuckerschoten', ''],
+           'gereifter gouda, geraspelt': ['Gouda', ''], 'gouda, gerieben': ['Gouda', ''],
+           'asiatische fischsauce': ['Fischsauce', ''],
+           'mittelscharfer senf': ['Senf', ''], 'senf, mittelscharf': ['Senf', ''],
+           'knoblauch, frisch': ['Knoblauch', ''],
+         } %}
+      {# Vorrat: wird nicht übertragen und direkt aus Mealie gelöscht #} {% set ignore = [
+           'wasser', 'salz', 'meersalz', 'pfeffer', 'schwarzer pfeffer', 'pfeffer, schwarz',
+           'salz und pfeffer', 'salz & pfeffer', 'zucker', 'brauner zucker',
+           'öl', 'olivenöl', 'sonnenblumenöl', 'rapsöl', 'pflanzenöl', 'neutrales öl',
+           'muskat', 'muskatnuss', 'gemahlene muskatnuss', 'essig',
+           'butter', 'mehl', 'ei', 'honig', 'milch', 'fettarme milch',
+           'speisestärke', 'stärke', 'backpulver', 'natron', 'vanillezucker', 'puderzucker',
+           'pfefferkörner', 'schwarze pfefferkörner', 'lorbeerblatt', 'lorbeerblätter',
+           'lorbeerblatt, getrocknet', 'olivenöl extra vergine',
+           'essig', 'weißweinessig', 'rotweinessig', 'apfelessig', 'senf', 'dijonsenf', 'dijon-senf',
+           'körniger senf', 'ketchup', 'honig',
+         ] %}
+      {# Gewürze: alles, was eines dieser Wortteile enthält, gilt als Vorrat #} {% set gewuerze = [
+           'gewürz', 'hello ', 'pfeffer', 'paprikapulver', 'edelsüß', 'rosenscharf', 'geräuchertes paprika',
+           'chiliflocken', 'chilipulver', 'chili, gemahlen', 'cayenne', 'kreuzkümmel', 'cumin', 'kümmel',
+           'kurkuma', 'currypulver', 'curry, mild', 'curry, scharf', 'zimt', 'muskat', 'piment', 'nelke',
+           'kardamom', 'garam masala', 'ras el hanout', 'sumach', 'za\'atar', 'oregano', 'majoran',
+           'kräuter der provence', 'italienische kräuter', 'lorbeer', 'sternanis', 'fenchelsamen',
+           'senfkörner', 'koriandersamen', 'gemahlen', 'gerebelt', 'thymian, getrocknet',
+           'getrockneter thymian', 'rosmarin, getrocknet', 'basilikum, getrocknet', 'meersalz',
+           'brühe', 'brüh', 'bouillon', 'soja', 'worcester', 'tomatenmark', 'balsamico',
+         ] %}
+      {# ======================== #} {% set units = 'Kilogramm|Gramm|Milliliter|Liter|Stück|Zehen|Zehe|Esslöffel|Teelöffel|EL|TL|Prisen|Prise|Packungen|Packung|Päckchen|Bund|Dosen|Dose|Gläser|Glas|Becher|Beutel|Scheiben|Scheibe|Zweige|Zweig|Stangen|Stange|Stiele|Stiel|Knollen|Knolle|Köpfe|Kopf|Blätter|Blatt|Tassen|Tasse|Msp|Handvoll|kg|ml|g|l' %} {% set einheit = {'g': 'Gramm', 'kg': 'Kilogramm', 'ml': 'Milliliter', 'l': 'Liter',
+                        'EL': 'Esslöffel', 'TL': 'Teelöffel', 'Zehen': 'Zehe', 'Prisen': 'Prise',
+                        'Packungen': 'Packung', 'Dosen': 'Dose', 'Scheiben': 'Scheibe', 'Zweige': 'Zweig'} %}
+      {% set ns = namespace(e=[]) %} {% for i in listen['todo.mealie_to_bring']['items'] %}
+        {% set s = i.summary | replace('¹/₂', '½') | replace('¹⁄₂', '½') | replace('¹/₄', '¼') | replace('¹⁄₄', '¼') | replace('³/₄', '¾') | replace('³⁄₄', '¾') | regex_replace('\\([^()]*\\)', '') | regex_replace('\\([^()]*\\)', '')
+                 | regex_replace('\\(.*$', '') | regex_replace('\\s+', ' ') | trim %}
+        {% set geschmack = (s | lower).startswith('nach geschmack') %}
+        {% set m = s | regex_findall('^([\d.,/½¼¾]+(?:\s*-\s*[\d.,/½¼¾]+)?)\s*(?:(' ~ units ~ ')\s+)?(.+)$') %}
+        {% set n = (m[0][0].split('-') | last | trim) if m else '' %}
+        {% set u = (einheit.get(m[0][1], m[0][1]) or 'Stück') if m else '' %}
+        {% set name = (m[0][2] if m else s) | trim(' ,.') %}
+        {% set n = n | replace(',', '.') | replace('½', '0.5') | replace('¼', '0.25') | replace('¾', '0.75') %}
+        {% if '/' in n %}
+          {% set p = n.split('/') %}
+          {% set q = (p[0] | float(0)) / ([p[1] | float(1), 1] | max) %}
+        {% else %}
+          {% set q = n | float(0) %}
+        {% endif %}
+        {# Kräuterpacks wie 'Petersilie glatt/Rosmarin' in Einzelartikel ohne Menge aufteilen #}
+        {% set teile = name.split('/') %}
+        {% for teil in teile %}
+          {% set tname = teil | trim %}
+          {% set tu = u if teile | length == 1 else '' %}
+          {% set tq = q if teile | length == 1 else 0 %}
+          {% set key = tname | lower %}
+          {# Allgemeine Regeln: Zusaetze wie mittelgross, frisch, Bio, kl. Dose streichen, Farben und Sorten vereinheitlichen #}
+          {% if key not in synonyme %}
+            {% set tname = tname
+              | regex_replace('^(?:kleine|große|mittelgroße)[rsn]? (?:oder|bis) ', '', ignorecase=True)
+              | regex_replace('^(.+?), ?(rot|gelb|grün|weiß)(?:e[rsn]?)?(?=$|[ ,]).*$', '\\2e \\1', ignorecase=True)
+              | regex_replace('^(.*(?:käse|gouda|parmesan|cheddar|mozzarella|emmentaler|pecorino|grana).*?), ?(?:frisch )?(?:und )?(?:fein )?(gerieben|gehobelt)(?=$|[ ,]).*$', '\\1 \\2', ignorecase=True)
+              | regex_replace('^(.+?), ?(passiert|stückig|getrocknet|geräuchert|gesalzen|braun|vorwiegend festkochend|festkochend|mehlig ?kochend|tiefgekühlt)(?=$|[ ,]).*$', '\\1 \\2', ignorecase=True)
+              | regex_replace(',.*$', '', ignorecase=True)
+              | regex_replace('^(?:bio[- ]|frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace('^(?:bio[- ]|frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace('^(?:bio[- ]|frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace('^passierte[rsn]? (.+)$', '\\1 passiert', ignorecase=True)
+              | regex_replace('^stückige[rsn]? (.+)$', '\\1 stückig', ignorecase=True)
+              | regex_replace('^getrocknete[rsn]? (.+)$', '\\1 getrocknet', ignorecase=True)
+              | regex_replace('^geräucherte[rsn]? (.+)$', '\\1 geräuchert', ignorecase=True)
+              | regex_replace('^gesalzene[rsn]? (.+)$', '\\1 gesalzen', ignorecase=True)
+              | regex_replace('^geriebene[rsn]? (.*(?:käse|gouda|parmesan|cheddar|mozzarella|emmentaler|pecorino|grana).*)$', '\\1 gerieben', ignorecase=True)
+              | regex_replace('^geriebene[rsn]? ', '', ignorecase=True)
+              | regex_replace('^vorw\\.? ?festk[a-zäö.]* (.+)$', '\\1 vorwiegend festkochend', ignorecase=True)
+              | regex_replace('^mehligk[a-zäö.]* (.+)$', '\\1 mehlig kochend', ignorecase=True)
+              | regex_replace(' mehligkochend$', ' mehlig kochend', ignorecase=True)
+              | regex_replace(' (?:à |je )?ca\\. .*$', '', ignorecase=True)
+              | regex_replace(' (?:oder|bzw\\.) .*$', '', ignorecase=True)
+              | regex_replace(' aus dem glas$', '', ignorecase=True)
+              | regex_replace(' à [0-9].*$', '', ignorecase=True)
+              | regex_replace('[ ,.!]+$', '', ignorecase=True)
+              | trim %}
+            {% set key = tname | lower %}
+          {% endif %}
+          {% if key in synonyme %}
+            {% set tname = synonyme[key][0] %}
+            {% set tu = synonyme[key][1] or tu %}
+            {% set key = tname | lower %}
+          {% endif %}
+          {% set g = namespace(hit=false) %}
+          {% for w in gewuerze %}{% if w in key %}{% set g.hit = true %}{% endif %}{% endfor %}
+          {% if tname %}
+            {% set ns.e = ns.e + [{'key': key, 'name': tname, 'unit': tu, 'qty': tq, 'uid': i.uid,
+                                   'vorrat': key in ignore or geschmack or g.hit}] %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %} {{ ns.e }}
+- choose:
+  - conditions:
+    - condition: template
+      value_template: '{{ (trigger.id | default('''')) != ''bring'' }}'
+    sequence:
+    - variables:
+        plan: |
+          {% set ns = namespace(neu=[], aendern=[], weg=[]) %} {% set liste = eintraege | rejectattr('vorrat') | list %} {% for key in liste | map(attribute='key') | unique %}
+            {% set gruppe = liste | selectattr('key', 'eq', key) | list %}
+            {% set t = namespace(p=[]) %}
+            {% for u in gruppe | map(attribute='unit') | unique %}
+              {% set q = gruppe | selectattr('unit', 'eq', u) | map(attribute='qty') | sum %}
+              {% if q > 0 %}
+                {% set qr = q | round(2) %}
+                {% set qs = (qr | int) if qr == (qr | int) else qr %}
+                {% set t.p = t.p + [((qs | string | replace('.', ',')) ~ ' ' ~ u) | trim] %}
+              {% endif %}
+            {% endfor %}
+            {% set menge = t.p | join(' + ') %}
+            {% set b = namespace(uid='', desc='') %}
+            {% for x in bring %}
+              {% if (x.summary | lower | trim) == key %}
+                {% set b.uid = x.uid %}
+                {% set b.desc = x.description | default('', true) %}
+              {% endif %}
+            {% endfor %}
+            {# Eigene Notiz auf Bring! behalten: der Rezeptanteil steht hinter einem unsichtbaren Trennzeichen (U+200B) #}
+            {% set zw = '​' %}
+            {% set basis = (b.desc.split(zw)[0].rstrip(' +')) if zw in b.desc else (b.desc | trim) %}
+            {% set neu_desc = ((basis ~ ' + ') if basis and menge else basis) ~ ((zw ~ menge) if menge else '') %}
+            {% if not b.uid %}
+              {% set ns.neu = ns.neu + [{'name': gruppe[0].name, 'menge': (zw ~ menge) if menge else ''}] %}
+            {% elif menge and b.desc != neu_desc %}
+              {% set ns.aendern = ns.aendern + [{'uid': b.uid, 'menge': neu_desc}] %}
+            {% endif %}
+          {% endfor %} {# Rezeptanteil wieder entfernen, wenn der Artikel nicht mehr auf der Mealie-Liste steht #}
+          {% set zw = '​' %}
+          {% set keys = liste | map(attribute='key') | list %}
+          {% for x in bring %}
+            {% set xd = x.description | default('', true) %}
+            {% if zw in xd and (x.summary | lower | trim) not in keys %}
+              {% set basis = xd.split(zw)[0].rstrip(' +') %}
+              {% if basis %}
+                {% set ns.aendern = ns.aendern + [{'uid': x.uid, 'menge': basis}] %}
+              {% else %}
+                {% set ns.weg = ns.weg + [x.uid] %}
+              {% endif %}
+            {% endif %}
+          {% endfor %} {{ {'neu': ns.neu, 'aendern': ns.aendern, 'weg': ns.weg} }}
+    - repeat:
+        for_each: '{{ plan.neu }}'
+        sequence:
+        - action: todo.add_item
+          target:
+            entity_id: todo.einkauf_bring
+          data:
+            item: '{{ repeat.item.name }}'
+            description: '{{ repeat.item.menge }}'
+    - repeat:
+        for_each: '{{ plan.aendern }}'
+        sequence:
+        - action: todo.update_item
+          target:
+            entity_id: todo.einkauf_bring
+          data:
+            item: '{{ repeat.item.uid }}'
+            description: '{{ repeat.item.menge }}'
+    - if:
+      - condition: template
+        value_template: '{{ plan.weg | default([]) | count > 0 }}'
+      then:
+      - action: todo.remove_item
+        target:
+          entity_id: todo.einkauf_bring
+        data:
+          item: '{{ plan.weg }}'
+    - if:
+      - condition: template
+        value_template: '{{ eintraege | selectattr(''vorrat'') | list | length > 0 }}'
+      then:
+      - action: todo.remove_item
+        target:
+          entity_id: todo.mealie_to_bring
+        data:
+          item: '{{ eintraege | selectattr(''vorrat'') | map(attribute=''uid'') | unique | list }}'
+  - conditions:
+    - condition: template
+      value_template: '{{ (trigger.id | default('''')) == ''bring'' }}'
+    sequence:
+    - variables:
+        weg: |
+          {% set bkeys = bring | map(attribute='summary') | map('lower') | map('trim') | list %} {{ eintraege | rejectattr('vorrat') | rejectattr('key', 'in', bkeys) | map(attribute='uid') | unique | list }}
+    - condition: template
+      value_template: '{{ weg | length > 0 }}'
+    - action: todo.remove_item
+      target:
+        entity_id: todo.mealie_to_bring
+      data:
+        item: '{{ weg }}'
+mode: queued
