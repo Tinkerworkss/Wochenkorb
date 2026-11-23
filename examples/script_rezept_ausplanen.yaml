@@ -23,6 +23,10 @@ einkauf_rezept_ausplanen:
   - variables:
       mealie: MEALIE_EINTRAG
       liste: MEALIE_LISTE
+  - alias: Läuft das Einplanen noch (Zutaten werden gerade auf die Liste gelegt), erst abwarten
+    wait_template: '{{ is_state(''script.einkauf_rezept_einplanen'', ''off'') }}'
+    timeout: 00:01:00
+    continue_on_timeout: true
   - action: mealie.get_mealplan
     data:
       config_entry_id: '{{ mealie }}'

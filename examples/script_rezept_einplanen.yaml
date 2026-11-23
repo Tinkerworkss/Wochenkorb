@@ -36,6 +36,10 @@ einkauf_rezept_einplanen:
       liste: MEALIE_LISTE
       titel: '{{ name | default(slug) }}'
       basis: '{{ (now().date() + timedelta(days=(1 if now().hour >= 18 else 0))).isoformat() }}'
+  - alias: Wird gerade ein Rezept vom Plan genommen, erst abwarten
+    wait_template: '{{ is_state(''script.einkauf_rezept_ausplanen'', ''off'') }}'
+    timeout: 00:01:00
+    continue_on_timeout: true
   - action: mealie.get_mealplan
     data:
       config_entry_id: '{{ mealie }}'
