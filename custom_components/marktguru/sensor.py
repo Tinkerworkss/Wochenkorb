@@ -208,7 +208,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
     # Einkaufsverlauf: ein Sensor für die ganze Integration, auch bei mehreren Einträgen
     domain_data = hass.data.get(DOMAIN, {})
     if domain_data.get("purchases") and domain_data.setdefault("purchases_entry", entry.entry_id) == entry.entry_id:
-        sensors.append(PurchaseHistorySensor(domain_data["purchases"]))
+        history_sensor = PurchaseHistorySensor(domain_data["purchases"])
+        sensors.append(history_sensor)
+        current_sensors[history_sensor.unique_id] = history_sensor
+        fixed_sensor_ids.add(history_sensor.unique_id)
 
     async_add_entities(sensors, True)
 
