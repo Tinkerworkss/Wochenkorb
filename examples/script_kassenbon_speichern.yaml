@@ -1,0 +1,20 @@
+# Stores the positions of one receipt in the purchase history of the integration.
+# Expose it to Assist if an assistant (e.g. a scheduled Claude task) should deliver the receipts.
+einkauf_kassenbon_speichern:
+  alias: 'Einkauf: Kassenbon speichern'
+  description: 'Speichert die Positionen EINES Kassenbons im Einkaufsverlauf. Ein Aufruf je Bon mit allen seinen Positionen; derselbe Bon wird beim erneuten Senden ersetzt, nicht verdoppelt. Feld zeilen: eine Zeile je Position, Felder mit Semikolon getrennt: bon;markt;bontext;artikel;gruppe;anzahl;menge;einheit;preis;grundartikel. bon = Datum und Uhrzeit des Bons (JJJJ-MM-TT HH:MM), markt = REWE oder Marktkauf, bontext = Text auf dem Bon, artikel = Klartextname, gruppe = Warengruppe, anzahl = Stückzahl, menge = gekaufte Gesamtmenge als Zahl in der Einheit l, kg oder stk (leer, wenn unbekannt), preis = bezahlter Betrag der Zeile in Euro nach Rabatt und ohne Pfand, grundartikel = einer der Grundartikel der Einkaufs-Automation oder leer. Kein Semikolon innerhalb eines Feldes.'
+  icon: mdi:receipt-text-plus
+  mode: queued
+  max: 50
+  fields:
+    zeilen:
+      name: Zeilen
+      description: 'Alle Positionen eines Bons, eine je Zeile: bon;markt;bontext;artikel;gruppe;anzahl;menge;einheit;preis;grundartikel'
+      required: true
+      selector:
+        text:
+          multiline: true
+  sequence:
+  - action: marktguru.add_purchases
+    data:
+      rows: '{{ zeilen }}'

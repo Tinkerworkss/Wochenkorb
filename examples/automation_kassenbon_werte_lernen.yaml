@@ -1,0 +1,27 @@
+# Learns the usual base price and the buying rhythm of the staples from the purchase history
+# (sensor.einkauf_verlauf) and passes them to the staples automation via script_abgleich_wert_setzen.yaml.
+alias: 'Einkauf: Werte aus Kassenbons lernen'
+description: Übernimmt zwei Minuten nach neuen Kassenbons den üblichen Grundpreis und den Kaufrhythmus der Grundartikel aus dem Einkaufsverlauf in die Einkaufs-Automation.
+triggers:
+- trigger: state
+  entity_id: sensor.einkauf_verlauf
+  for: '00:02:00'
+conditions: []
+actions:
+- variables:
+    werte: |-
+      {%- set ns = namespace(l=[]) -%}
+      {%- for name, g in (state_attr('sensor.einkauf_verlauf', 'grundartikel') or {}).items() if g.preis is defined or g.wochen is defined -%}
+      {%- set d = {'artikel': name} -%}
+      {%- set d = dict(d, normalpreis=g.preis) if g.preis is defined else d -%}
+      {%- set d = dict(d, wochen=g.wochen) if g.wochen is defined else d -%}
+      {%- set ns.l = ns.l + [d] -%}
+      {%- endfor -%}
+      {{ ns.l | tojson }}
+- repeat:
+    for_each: '{{ werte }}'
+    sequence:
+    - action: script.einkauf_abgleich_wert_setzen
+      continue_on_error: true
+      data: '{{ repeat.item }}'
+mode: restart

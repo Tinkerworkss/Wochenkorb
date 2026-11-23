@@ -114,3 +114,30 @@ Replace before use: `MEALIE_EINTRAG` (config entry id of the Mealie integration)
 ### How the recipe suggestions work
 
 With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.marktguru_rezepte_<zip>` carries the dinners of the next eight days in the attribute `plan` and lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. The list is mixed: at first only one recipe per main ingredient, at least one vegetarian recipe if one fits, and recipes that were not cooked for a while (Mealie's "last made") get a small bonus. Recipes from the meal plan of the last 14 days are left out, recipes planned for the coming days always stay at the top and are marked as planned. A press on `input_button.rezepte_neu_mischen` puts the current, unplanned suggestions aside and shows the next ones; when all have been shown it starts over. With the option `shopping_list` (a to-do entity, e.g. the Bring! list) main ingredients that are already on the list are marked. The planning script still adds all ingredients to the Mealie shopping list so that quantities can be summed up. Recipe images are copied to `www/marktguru_rezepte` so the card can show them without a Mealie login.
+
+## 8. Optional: purchase history from receipts
+
+The integration can keep a history of what was actually bought. It does not read receipts itself: something else (for example a scheduled assistant task that reads the e-receipts from the mailbox) delivers the positions through the service `marktguru.add_purchases`, one call per receipt. A receipt (time and retailer) is always replaced as a whole, so sending it twice does not duplicate anything. The history is stored locally in `.storage/marktguru_einkaeufe`.
+
+One line per position, fields separated by semicolons:
+
+```
+bon;markt;bontext;artikel;gruppe;anzahl;menge;einheit;preis;grundartikel
+2026-11-20 17:42;REWE;BIO E.WEIDEMILCH;Bio-H-Weidemilch;Molkerei & Eier;2;2;l;2,98;Milch
+```
+
+`menge` is the total quantity in `l`, `kg` or `stk` (empty if unknown), `preis` the amount paid for the line, `grundartikel` the staple of the weekly automation the position belongs to (or empty).
+
+`sensor.einkauf_verlauf` (state: number of receipts) evaluates the history in its attributes:
+
+- `monate`: spending per month, by retailer and by product group
+- `grundartikel`: per staple the number of purchases, the buying rhythm in weeks and the usual base price (median of the last five purchases)
+- `vorschlaege`: articles that are bought regularly but are not a staple
+- `artikel`: the 80 most frequently bought articles with their last prices
+
+| File | What it does |
+| --- | --- |
+| `script_kassenbon_speichern.yaml` | Wrapper around the service that can be exposed to Assist. |
+| `automation_kassenbon_werte_lernen.yaml` | Passes rhythm and usual price of the staples to the staples automation (via `script_abgleich_wert_setzen.yaml`). |
+| `dashboard_view_auswertung.yaml` | Dashboard view: spending per month, product groups, staples, suggestions and price history. |
+
