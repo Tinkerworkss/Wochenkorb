@@ -23,6 +23,10 @@ einkauf_rezept_ausplanen:
   - variables:
       mealie: MEALIE_EINTRAG
       liste: MEALIE_LISTE
+  - alias: Läuft das Einplanen noch (Zutaten werden gerade auf die Liste gelegt), erst abwarten
+    wait_template: '{{ is_state(''script.einkauf_rezept_einplanen'', ''off'') }}'
+    timeout: 00:01:00
+    continue_on_timeout: true
   - action: mealie.get_mealplan
     data:
       config_entry_id: '{{ mealie }}'
@@ -51,41 +55,113 @@ einkauf_rezept_ausplanen:
       status: needs_action
     response_variable: offen
   - variables:
-      uids: |-
-        {#- Zu jeder Zutat des Rezepts genau einen offenen Listeneintrag suchen. Mealie schreibt Einträge teils um
-            ("100 g Cheddar-Käse" wird "100 Gramm Cheddar-Käse", "1 Knoblauchzehe" wird "1 Knoblauch"), deshalb zählt
-            nach dem genauen Text auch gleiche Menge plus gleicher Namensanfang. -#}
-        {%- set einheiten = '^(g|gramm|kg|kilogramm|ml|milliliter|l|liter|el|tl|esslöffel|teelöffel|stück|stk|kl\. dose|dosen|dose|bund|packung|päckchen|zehen|zehe|prisen|prise|becher|glas)\s+' -%}
-        {%- set ns = namespace(u=[]) -%}
-        {%- for z in rezept.recipe.ingredients | map(attribute='display') | select | list -%}
-        {%- set zt = z | lower | regex_replace('\([^)]*\)', '') | trim -%}
-        {%- set zq = (zt | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
-        {%- set zn = zt | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
+      skaliert: |-
+        {#- Mengen auf die Haushaltsgröße umrechnen (input_number.einkauf_portionen, 0 = aus). Umgerechnet wird nur eine
+            einfache Zahl am Anfang ("500 g Hack", "2 Paprika"); Spannen und Brüche ("1 - 2 EL", "1 1/2 TL") bleiben, wie sie sind. -#}
+        {%- set pers = states('input_number.einkauf_portionen') | float(0) -%}
+        {%- set serv = rezept.recipe.recipe_servings | default(0) | float(0) -%}
+        {%- set f = (pers / serv) if pers > 0 and serv > 0 else 1 -%}
+        {%- set ns = namespace(l=[]) -%}
+        {%- for z in rezept.recipe.ingredients | map(attribute='display') | select -%}
+        {%- set m = z | regex_findall('^(\d+(?:[.,]\d+)?)(\s+(?![\d½¼¾⅓⅔¹²³/–-]).*)$') -%}
+        {%- set v = ((m[0][0] | replace(',', '.') | float(0)) * f) if m else 0 -%}
+        {#- Gewogenes und Gemessenes wird gerundet, Gezähltes (Zwiebeln, Dosen, Eier) auf halbe Stück aufgerundet -#}
+        {%- set gemessen = m and (m[0][1] | trim | lower | regex_search('^(g|gramm|kg|kilogramm|ml|milliliter|cl|dl|l|liter|el|tl|esslöffel|teelöffel|prise|prisen)\s')) -%}
+        {%- set v = ((v | round(0)) if v >= 10 else ((v | round(1)) if v >= 1 else (v | round(2)))) if gemessen else ((v * 2) | round(0, 'ceil')) / 2 -%}
+        {%- if f != 1 and m and v > 0 -%}
+        {%- set ns.l = ns.l + [((v | int) if v == (v | int) else v) ~ m[0][1]] -%}
+        {%- else -%}{%- set ns.l = ns.l + [z] -%}{%- endif -%}
+        {%- endfor -%}
+        {{ ns.l | tojson }}
+  - variables:
+      treffer: |-
+        {#- Zu jeder Zutat des Rezepts den passenden offenen Listeneintrag suchen. Mealie schreibt Einträge um
+            ("100 g Cheddar-Käse" wird "100 Gramm Cheddar-Käse", "1 Knoblauchzehe" wird "1 Knoblauch", "0.5 EL" wird "¹/₂ Esslöffel")
+            und legt gleiche Zutaten zusammen, auch über mehrere Rezepte. Deshalb drei Stufen: genauer Text, gleiche Menge plus
+            gleicher Namensanfang, zuletzt die Summe gleicher Zutaten; steht mehr auf der Liste, bleibt der Rest stehen.
+            Gesucht wird mit der auf die Haushaltsgröße umgerechneten Menge und mit der Menge aus dem Rezept. -#}
+        {%- macro menge(t) -%}
+        {%- set x = namespace(s=t | trim | replace('⁄', '/') | replace('½', '1/2') | replace('¼', '1/4') | replace('¾', '3/4')) -%}
+        {%- for a, b in [('⁰','0'),('¹','1'),('²','2'),('³','3'),('⁴','4'),('⁵','5'),('⁶','6'),('⁷','7'),('⁸','8'),('⁹','9'),('₀','0'),('₁','1'),('₂','2'),('₃','3'),('₄','4'),('₅','5'),('₆','6'),('₇','7'),('₈','8'),('₉','9')] -%}{%- set x.s = x.s | replace(a, b) -%}{%- endfor -%}
+        {%- set g = x.s | regex_findall('^(\\d+)\\s+(\\d+)/(\\d+)') -%}
+        {%- set b = x.s | regex_findall('^(\\d+)/(\\d+)') -%}
+        {%- if g and g[0][2] | int > 0 -%}{{ (g[0][0] | int) + (g[0][1] | int) / (g[0][2] | int) }}
+        {%- elif b and b[0][1] | int > 0 -%}{{ (b[0][0] | int) / (b[0][1] | int) }}
+        {%- else -%}{{ (x.s | regex_findall('^([\\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) }}{%- endif -%}
+        {%- endmacro -%}
+        {%- set zahl = '^[\\d.,/½¼¾⁄⁰¹²³⁴-⁹₀-₉\\s]+' -%}
+        {%- set einheiten = '^(gramm|g|kilogramm|kg|milliliter|ml|liter|l|esslöffel|el|teelöffel|tl|stück|stk|kl\\. dose|dosen|dose|bund|packung|päckchen|zehen|zehe|prisen|prise|becher|glas)\\s+' -%}
+        {%- set gleich = {'gramm': 'g', 'kilogramm': 'kg', 'milliliter': 'ml', 'liter': 'l', 'esslöffel': 'el', 'teelöffel': 'tl', 'stk': 'stück', 'dosen': 'dose', 'zehen': 'zehe', 'prisen': 'prise'} -%}
+        {%- set ns = namespace(z=[], i=[], weg=[], neu=[], fertig=[]) -%}
+        {%- set roh = rezept.recipe.ingredients | map(attribute='display') | select | list -%}
+        {%- for z0 in roh -%}
+        {%- set z = skaliert[loop.index0] if skaliert | count == roh | count else z0 -%}
+        {%- set t = z | lower | regex_replace('\\([^)]*\\)', '') | trim -%}
+        {%- set r = t | regex_replace(zahl, '') -%}
+        {%- set e = r | regex_findall(einheiten) | first | default('') -%}
+        {%- set ns.z = ns.z + [{'k': loop.index0, 'z': z | trim, 'z0': z0 | trim, 'q': menge(t) | float(0), 'q0': menge(z0 | lower) | float(0), 'e': gleich.get(e, e), 'n': r | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '')}] -%}
+        {%- endfor -%}
+        {%- for i in offen[liste]['items'] -%}
+        {%- set t = i.summary | lower | regex_replace('\\([^)]*\\)', '') | trim -%}
+        {%- set r = t | regex_replace(zahl, '') -%}
+        {%- set e = r | regex_findall(einheiten) | first | default('') -%}
+        {%- set ns.i = ns.i + [{'uid': i.uid, 's': i.summary | trim, 'q': menge(t) | float(0), 'e': gleich.get(e, e), 'n': r | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', ''), 'rest': i.summary | trim | regex_replace(zahl, '')}] -%}
+        {%- endfor -%}
+        {#- Stufe 1 und 2: genauer Text, sonst gleiche Menge und gleicher Namensanfang -#}
+        {%- for z in ns.z -%}
         {%- set treffer = namespace(u='') -%}
-        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and (i.summary | trim) == (z | trim) -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
-        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and zn | length >= 4 -%}
-        {%- set it = i.summary | lower | regex_replace('\([^)]*\)', '') | trim -%}
-        {%- set iq = (it | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
-        {%- set name = it | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
-        {%- set n = [zn | length, name | length, 8] | min -%}
-        {%- if n >= 4 and iq == zq and zn[:n] == name[:n] -%}{%- set treffer.u = i.uid -%}{%- endif -%}
+        {%- for i in ns.i if not treffer.u and i.uid not in ns.weg and i.s in [z.z, z.z0] -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
+        {%- for i in ns.i if not treffer.u and i.uid not in ns.weg -%}
+        {%- set n = [z.n | length, i.n | length, 8] | min -%}
+        {%- if n >= 4 and z.n[:n] == i.n[:n] and ((i.q - z.q) | abs <= [0.011, z.q * 0.03] | max or (i.q - z.q0) | abs < 0.011) -%}{%- set treffer.u = i.uid -%}{%- endif -%}
         {%- endfor -%}
-        {%- if treffer.u -%}{%- set ns.u = ns.u + [treffer.u] -%}{%- endif -%}
+        {%- if treffer.u -%}{%- set ns.weg = ns.weg + [treffer.u] -%}{%- set ns.fertig = ns.fertig + [z.k] -%}{%- endif -%}
         {%- endfor -%}
-        {{ ns.u | tojson }}
+        {#- Stufe 3: zusammengelegte Einträge. Gleiche Zutaten des Rezepts summieren und vom Listeneintrag abziehen -#}
+        {%- for z in ns.z if z.n | length >= 4 and z.q > 0 -%}
+        {%- if z.k not in ns.fertig -%}
+        {%- set sum = namespace(q=0, q0=0) -%}
+        {%- for y in ns.z if y.k not in ns.fertig and y.e == z.e and y.n[:8] == z.n[:8] -%}
+        {%- set sum.q = sum.q + y.q -%}{%- set sum.q0 = sum.q0 + y.q0 -%}{%- set ns.fertig = ns.fertig + [y.k] -%}
+        {%- endfor -%}
+        {%- set treffer = namespace(u='') -%}
+        {%- for i in ns.i if not treffer.u and i.uid not in ns.weg and i.e == z.e -%}
+        {%- set n = [z.n | length, i.n | length, 8] | min -%}
+        {%- if n >= 4 and z.n[:n] == i.n[:n] and i.q >= sum.q * 0.97 - 0.011 -%}
+        {%- set treffer.u = i.uid -%}
+        {%- set ns.weg = ns.weg + [i.uid] -%}
+        {%- set rest = (i.q - sum.q) | round(2) -%}
+        {#- Mealie rundet (37.5 wird 38): kleine Reste zählen nicht -#}
+        {%- if rest > [0.011, i.q * 0.03] | max and (i.q - sum.q0) | abs > 0.011 -%}
+        {%- set ns.neu = ns.neu + [((rest | int) if rest == (rest | int) else rest) ~ ' ' ~ i.rest] -%}
+        {%- endif -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {{ {'weg': ns.weg, 'neu': ns.neu} | tojson }}
   - action: mealie.delete_mealplan
     data:
       config_entry_id: '{{ mealie }}'
       mealplan_id: '{{ eintrag | int }}'
   - if:
     - condition: template
-      value_template: '{{ uids | count > 0 }}'
+      value_template: '{{ treffer.weg | count > 0 }}'
     then:
     - action: todo.remove_item
       target:
         entity_id: '{{ liste }}'
       data:
-        item: '{{ uids }}'
+        item: '{{ treffer.weg }}'
+  - alias: Stand mehr auf der Liste als das Rezept braucht (zweites Rezept mit derselben Zutat), kommt der Rest zurück
+    repeat:
+      for_each: '{{ treffer.neu }}'
+      sequence:
+      - action: todo.add_item
+        target:
+          entity_id: '{{ liste }}'
+        data:
+          item: '{{ repeat.item }}'
   - action: homeassistant.update_entity
     target:
       entity_id: sensor.marktguru_rezepte_DEINE_PLZ

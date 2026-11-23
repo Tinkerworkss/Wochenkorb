@@ -1,4 +1,4 @@
-# Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to remove it. Paste as a manual card.
+# Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move or remove it. Paste as a manual card.
 # Needs the option mealie_recipes of the integration. Replace DEINE_PLZ with your ZIP code.
 type: vertical-stack
 cards:
@@ -19,7 +19,7 @@ cards:
           #states > div > * { overflow: visible; }
   filter:
     template: |-
-      {#- Abendessen der nächsten sieben Tage; ein Tipp auf ein geplantes Gericht bietet an, es wieder vom Plan zu nehmen -#}
+      {#- Abendessen der nächsten sieben Tage; ein Tipp auf ein geplantes Gericht bietet an, es auf einen anderen Abend zu legen oder wieder vom Plan zu nehmen -#}
       {%- set wt = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] -%}
       {%- set stil = {
         'card': [{'padding': '9px 14px'}, {'border-radius': '0'}, {'border': 'none'}, {'border-bottom': '1px solid var(--divider-color)'}, {'box-shadow': 'none'}, {'background': 'none'}],
@@ -27,6 +27,15 @@ cards:
         'name': [{'justify-self': 'start'}, {'font-size': '14px'}, {'font-weight': '600'}],
         'label': [{'justify-self': 'start'}, {'text-align': 'left'}, {'font-size': '14px'}, {'white-space': 'normal'}]} -%}
       {%- set rows = namespace(l=[]) -%}
+      {#- Die sieben Tage mit dem, was dort schon steht: Ziele zum Verschieben -#}
+      {%- set tage = namespace(l=[]) -%}
+      {%- for p in state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or [] -%}
+      {%- set d = strptime(p.date, '%Y-%m-%d') -%}
+      {%- set diff = (d.date() - now().date()).days -%}
+      {%- if diff >= 0 and diff < 7 -%}
+      {%- set tage.l = tage.l + [{'d': p.date, 'text': 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')), 'essen': p.dinner | map(attribute='name') | join(', ')}] -%}
+      {%- endif -%}
+      {%- endfor -%}
       {%- for p in state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or [] -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set diff = (d.date() - now().date()).days -%}
@@ -44,10 +53,22 @@ cards:
           {'service': 'script.einkauf_rezept_ausplanen', 'data': {'slug': e.slug, 'datum': p.date}}]}}},
         'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}],
                    'icon': [{'width': '20px'}, {'color': '#fff'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}} -%}
-      {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards': [
-          {'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**.
-
-      Beim Entfernen werden auch die Zutaten dieses Rezepts wieder von der Einkaufsliste genommen.'}, weg]}}}} if e.slug else {'action': 'none'} -%}
+      {%- set ziele = namespace(l=[]) -%}
+      {%- for t in tage.l if t.d != p.date -%}
+      {%- set ziele.l = ziele.l + [{'type': 'custom:button-card', 'name': t.text, 'label': t.essen or 'frei', 'show_icon': 0, 'show_label': 1,
+        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+          {'service': 'browser_mod.close_popup', 'data': {}},
+          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird auf ' ~ t.text ~ ' verschoben', 'duration': 4000}},
+          {'service': 'script.einkauf_rezept_verschieben', 'data': {'slug': e.slug, 'von': p.date, 'nach': t.d}}]}}},
+        'styles': {
+          'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
+          'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': 'auto 1fr'}, {'column-gap': '12px'}],
+          'name': [{'justify-self': 'start'}, {'font-size': '15px'}, {'font-weight': '600'}],
+          'label': [{'justify-self': 'end'}, {'font-size': '13px'}, {'opacity': '0.8'}, {'text-align': 'right'}]}}] -%}
+      {%- endfor -%}
+      {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
+          [{'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**. Auf einen anderen Abend legen:'}] + ziele.l +
+          [{'type': 'markdown', 'content': 'Beim Entfernen werden auch die Zutaten dieses Rezepts wieder von der Einkaufsliste genommen.'}, weg]}}}} if e.slug else {'action': 'none'} -%}
       {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag if loop.first else '', 'label': e.name, 'show_icon': 0, 'show_label': 1, 'tap_action': tipp, 'styles': stil}] -%}
       {%- endfor -%}
       {%- endif -%}
