@@ -1,0 +1,20 @@
+# Dinners of the next seven days from the Mealie meal plan. Paste as a manual card.
+# Needs the option mealie_recipes of the integration. Replace DEINE_PLZ with your ZIP code.
+type: vertical-stack
+cards:
+- type: heading
+  heading: Abendessen diese Woche
+  icon: mdi:calendar-week
+  heading_style: title
+- type: markdown
+  content: |-
+    {%- set wt = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] -%}
+    {%- for p in state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or [] -%}
+    {%- set d = strptime(p.date, '%Y-%m-%d') -%}
+    {%- set diff = (d.date() - now().date()).days -%}
+    {%- if diff >= 0 and diff < 7 %}
+    - **{{ 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()]) }}{{ '' if diff < 2 else ', ' ~ d.strftime('%d.%m.') }}:** {{ (p.dinner | map(attribute='name') | join(' · ')) or '*noch frei*' }}
+    {%- endif -%}
+    {%- endfor %}
+  card_mod:
+    style: 'ha-card { border-radius: 16px; }'

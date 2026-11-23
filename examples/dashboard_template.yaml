@@ -179,17 +179,6 @@ button_card_templates:
           icon: '[[[ return variables.geplant ? ''mdi:calendar-check'' : ''mdi:calendar-plus'' ]]]'
           show_name: false
           show_state: false
-          tap_action:
-            action: call-service
-            service: script.einkauf_rezept_einplanen
-            service_data:
-              slug: '[[[ return variables.slug ]]]'
-              name: '[[[ return variables.titel ]]]'
-              browser_id: '[[[ return localStorage.getItem(''browser_mod-browser-id'') || '''' ]]]'
-            data:
-              slug: '[[[ return variables.slug ]]]'
-              name: '[[[ return variables.titel ]]]'
-              browser_id: '[[[ return localStorage.getItem(''browser_mod-browser-id'') || '''' ]]]'
           styles:
             card:
             - width: 38px

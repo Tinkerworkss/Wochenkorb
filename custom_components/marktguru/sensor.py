@@ -301,6 +301,7 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         self._recipe_task = None
         self._planned = {}
         self._cooked = set()
+        self.plan = []
 
     async def _fetch_meinprospekt(self, session, query):
         params = {
@@ -495,15 +496,21 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
             end_date=(today + timedelta(days=14)).isoformat(),
         )
         planned, cooked = {}, set()
+        # Abendessen der nächsten acht Tage für Wochenplan und Tagesauswahl
+        dinners = {(today + timedelta(days=offset)).isoformat(): [] for offset in range(8)}
         for item in plan.get("mealplan") or []:
             slug = (item.get("recipe") or {}).get("slug")
             day = str(item.get("mealplan_date") or "")
+            if day in dinners and item.get("entry_type") == "dinner":
+                name = (item.get("recipe") or {}).get("name") or item.get("title") or "Notiz"
+                dinners[day].append({"name": name, "slug": slug})
             if not slug:
                 continue
             if day >= today.isoformat():
                 planned[slug] = min(day, planned.get(slug, day))
             else:
                 cooked.add(slug)
+        self.plan = [{"date": day, "dinner": entries} for day, entries in dinners.items()]
         return planned, cooked
 
     async def _load_shopping_list(self):
@@ -865,7 +872,7 @@ class MarktguruSearchSensor(SensorEntity):
 class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
     """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
 
-    _unrecorded_attributes = frozenset({"results"})
+    _unrecorded_attributes = frozenset({"results", "plan"})
 
     def __init__(self, coordinator, zip_code):
         super().__init__(coordinator)
@@ -891,6 +898,7 @@ class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         return {
             "results": self.coordinator.suggestions,
+            "plan": self.coordinator.plan,
             "search_terms": self.coordinator.recipe_terms,
             "zip_code": self._zip_code,
         }
