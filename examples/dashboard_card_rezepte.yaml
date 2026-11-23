@@ -1,6 +1,6 @@
 # Recipe suggestions from Mealie whose main ingredient is on offer. Paste as a manual card.
-# Needs the option mealie_recipes of the integration, browser_mod (popup) and the script
-# script_rezept_einplanen.yaml. Replace DEINE_PLZ with your ZIP code.
+# Needs the option mealie_recipes of the integration, browser_mod (popup), the script
+# script_rezept_einplanen.yaml and the helper input_button.rezepte_neu_mischen (button Andere Vorschläge). Replace DEINE_PLZ with your ZIP code.
 type: vertical-stack
 cards:
 - type: heading
@@ -72,3 +72,28 @@ cards:
       {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'custom_fields': {'plus': {'card': {'tap_action': tipp}}}, 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'status': status | e, 'geplant': geplant, 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
       {%- endfor -%}
       {{ rows.l | tojson }}
+- type: custom:button-card
+  name: Andere Vorschläge
+  icon: mdi:shuffle-variant
+  layout: icon_name
+  tap_action:
+    action: call-service
+    service: input_button.press
+    service_data:
+      entity_id: input_button.rezepte_neu_mischen
+  styles:
+    card:
+    - padding: 9px 14px
+    - border-radius: 12px
+    - border: none
+    - box-shadow: none
+    - background: rgba(127,127,127,0.18)
+    icon:
+    - width: 20px
+    name:
+    - font-size: 14px
+    - font-weight: '600'
+    grid:
+    - grid-template-columns: min-content min-content
+    - justify-content: center
+    - column-gap: 6px

@@ -1,0 +1,54 @@
+# Moves a recipe in the Mealie meal plan to another day (called by the week plan card).
+# Replace MEALIE_EINTRAG and DEINE_PLZ as in script_rezept_einplanen.yaml.
+einkauf_rezept_verschieben:
+  alias: 'Einkauf: Rezept verschieben'
+  description: Legt ein Rezept im Mealie-Essensplan auf einen anderen Tag. Die Einkaufsliste bleibt, wie sie ist. Wird von der Wochenplan-Karte aufgerufen.
+  icon: mdi:calendar-arrow-right
+  mode: queued
+  max: 10
+  fields:
+    slug:
+      name: Rezept
+      description: Slug des Rezepts in Mealie
+      required: true
+      selector:
+        text: {}
+    von:
+      name: Von
+      description: Tag (JJJJ-MM-TT), an dem das Rezept im Plan steht
+      required: true
+      selector:
+        text: {}
+    nach:
+      name: Nach
+      description: Tag (JJJJ-MM-TT), auf den es gelegt wird
+      required: true
+      selector:
+        text: {}
+  sequence:
+  - variables:
+      mealie: MEALIE_EINTRAG
+  - action: mealie.get_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      start_date: '{{ von }}'
+      end_date: '{{ von }}'
+    response_variable: plan
+  - variables:
+      eintrag: |-
+        {%- set ns = namespace(i='') -%}
+        {%- for m in plan.mealplan if m.recipe and m.recipe.slug == slug and (m.mealplan_date | string) == von and not ns.i -%}{%- set ns.i = m.mealplan_id | string -%}{%- endfor -%}
+        {{ ns.i }}
+  - if:
+    - condition: template
+      value_template: '{{ eintrag | string == '''' or von == nach }}'
+    then:
+    - stop: Rezept steht an diesem Tag nicht im Plan
+  - action: mealie.update_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      mealplan_id: '{{ eintrag | int }}'
+      date: '{{ nach }}'
+  - action: homeassistant.update_entity
+    target:
+      entity_id: sensor.marktguru_rezepte_DEINE_PLZ

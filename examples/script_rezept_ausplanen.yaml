@@ -51,24 +51,47 @@ einkauf_rezept_ausplanen:
       status: needs_action
     response_variable: offen
   - variables:
+      skaliert: |-
+        {#- Mengen auf die Haushaltsgröße umrechnen (input_number.einkauf_portionen, 0 = aus). Umgerechnet wird nur eine
+            einfache Zahl am Anfang ("500 g Hack", "2 Paprika"); Spannen und Brüche ("1 - 2 EL", "1 1/2 TL") bleiben, wie sie sind. -#}
+        {%- set pers = states('input_number.einkauf_portionen') | float(0) -%}
+        {%- set serv = rezept.recipe.recipe_servings | default(0) | float(0) -%}
+        {%- set f = (pers / serv) if pers > 0 and serv > 0 else 1 -%}
+        {%- set ns = namespace(l=[]) -%}
+        {%- for z in rezept.recipe.ingredients | map(attribute='display') | select -%}
+        {%- set m = z | regex_findall('^(\d+(?:[.,]\d+)?)(\s+(?![\d½¼¾⅓⅔¹²³/–-]).*)$') -%}
+        {%- set v = ((m[0][0] | replace(',', '.') | float(0)) * f) if m else 0 -%}
+        {#- Gewogenes und Gemessenes wird gerundet, Gezähltes (Zwiebeln, Dosen, Eier) auf halbe Stück aufgerundet -#}
+        {%- set gemessen = m and (m[0][1] | trim | lower | regex_search('^(g|gramm|kg|kilogramm|ml|milliliter|cl|dl|l|liter|el|tl|esslöffel|teelöffel|prise|prisen)\s')) -%}
+        {%- set v = ((v | round(0)) if v >= 10 else ((v | round(1)) if v >= 1 else (v | round(2)))) if gemessen else ((v * 2) | round(0, 'ceil')) / 2 -%}
+        {%- if f != 1 and m and v > 0 -%}
+        {%- set ns.l = ns.l + [((v | int) if v == (v | int) else v) ~ m[0][1]] -%}
+        {%- else -%}{%- set ns.l = ns.l + [z] -%}{%- endif -%}
+        {%- endfor -%}
+        {{ ns.l | tojson }}
+  - variables:
       uids: |-
         {#- Zu jeder Zutat des Rezepts genau einen offenen Listeneintrag suchen. Mealie schreibt Einträge teils um
             ("100 g Cheddar-Käse" wird "100 Gramm Cheddar-Käse", "1 Knoblauchzehe" wird "1 Knoblauch"), deshalb zählt
-            nach dem genauen Text auch gleiche Menge plus gleicher Namensanfang. -#}
+            nach dem genauen Text auch gleiche Menge plus gleicher Namensanfang. Gesucht wird mit der auf die Haushaltsgröße
+            umgerechneten Menge und mit der Menge aus dem Rezept (falls die Portionenzahl inzwischen geändert wurde). -#}
         {%- set einheiten = '^(g|gramm|kg|kilogramm|ml|milliliter|l|liter|el|tl|esslöffel|teelöffel|stück|stk|kl\. dose|dosen|dose|bund|packung|päckchen|zehen|zehe|prisen|prise|becher|glas)\s+' -%}
         {%- set ns = namespace(u=[]) -%}
-        {%- for z in rezept.recipe.ingredients | map(attribute='display') | select | list -%}
+        {%- set roh = rezept.recipe.ingredients | map(attribute='display') | select | list -%}
+        {%- for z0 in roh -%}
+        {%- set z = skaliert[loop.index0] if skaliert | count == roh | count else z0 -%}
         {%- set zt = z | lower | regex_replace('\([^)]*\)', '') | trim -%}
         {%- set zq = (zt | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
+        {%- set zq0 = (z0 | trim | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
         {%- set zn = zt | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
         {%- set treffer = namespace(u='') -%}
-        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and (i.summary | trim) == (z | trim) -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
+        {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and (i.summary | trim) in [z | trim, z0 | trim] -%}{%- set treffer.u = i.uid -%}{%- endfor -%}
         {%- for i in offen[liste]['items'] if not treffer.u and i.uid not in ns.u and zn | length >= 4 -%}
         {%- set it = i.summary | lower | regex_replace('\([^)]*\)', '') | trim -%}
         {%- set iq = (it | regex_findall('^([\d.,]+)') | first | default('0')) | replace(',', '.') | float(0) -%}
         {%- set name = it | regex_replace('^[\d.,/½¼¾]+\s*', '') | regex_replace(einheiten, '') | regex_replace('[^a-zäöüß]', '') -%}
         {%- set n = [zn | length, name | length, 8] | min -%}
-        {%- if n >= 4 and iq == zq and zn[:n] == name[:n] -%}{%- set treffer.u = i.uid -%}{%- endif -%}
+        {%- if n >= 4 and iq in [zq, zq0] and zn[:n] == name[:n] -%}{%- set treffer.u = i.uid -%}{%- endif -%}
         {%- endfor -%}
         {%- if treffer.u -%}{%- set ns.u = ns.u + [treffer.u] -%}{%- endif -%}
         {%- endfor -%}

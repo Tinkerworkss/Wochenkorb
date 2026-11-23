@@ -7,8 +7,10 @@ from datetime import datetime, timezone
 
 # Höchstzahl zusätzlicher Suchbegriffe, die für Rezepte geladen werden
 MAX_RECIPE_TERMS = 20
-# Höchstens so viele Vorschläge mit derselben Hauptzutat
-MAX_PER_INGREDIENT = 2
+# Höchstens so viele Vorschläge mit derselben Hauptzutat (wird nur gelockert, wenn sonst Plätze frei blieben)
+MAX_PER_INGREDIENT = 1
+# Bonus in Rabattpunkten für Rezepte, die lange nicht gekocht wurden
+FRESH_BONUS = 5
 
 # Hauptzutaten: (Anzeigename, Suchbegriff, Muster Zutat, Ausschluss Zutat, Muster Angebot, Ausschluss Angebot)
 # Gewürze, Öle, Grundzutaten und Konserven zählen bewusst nicht dazu.
@@ -87,6 +89,24 @@ _MEAT = {"Hähnchenbrust", "Hähnchenschenkel", "Hackfleisch", "Rindfleisch", "S
 _CHEESE = {"Feta", "Mozzarella", "Gouda", "Cheddar", "Hartkäse"}
 WEIGHT = {ing.label: 1.0 if ing.label in _MEAT else 0.8 if ing.label in _CHEESE else 0.6 for ing in INGREDIENTS}
 BY_LABEL = {ing.label: ing for ing in INGREDIENTS}
+
+
+# Fleisch und Fisch in Zutatentexten, auch außerhalb der Hauptzutaten-Tabelle (für "vegetarisch")
+_MEAT_RE = re.compile(
+    r"hähnchen|huhn|hühner|pute|rind|schwein|hack|speck|bacon|schinken|salami|chorizo|wurst|würst|kasseler|"
+    r"\bente\b|lamm|kalb|gulasch|\bmett|köttbullar|frikadelle|nduja|leberkäse|steak|schnitzel|"
+    r"lachs|fisch|garnele|shrimp|gambas|thunfisch|sardelle|kabeljau|seelachs|zander|forelle"
+)
+_NOT_MEAT_RE = re.compile(r"brühe|fond|vegan|vegetar|planted|ersatz|fleischtomate")
+
+
+def is_vegetarian(ingredient_texts):
+    """Kein Fleisch und kein Fisch in den Zutaten (Brühe zählt nicht)."""
+    for text in ingredient_texts:
+        text = clean(text)
+        if _MEAT_RE.search(text) and not _NOT_MEAT_RE.search(text):
+            return False
+    return True
 
 
 def clean(text):
@@ -172,33 +192,64 @@ def best_offers(offers, now=None):
     return {label: (offer, -rank[0]) for label, (rank, offer) in best.items()}
 
 
-def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None):
-    """Rezepte, deren Hauptzutat im Angebot ist, sortiert nach Rabatt.
+def _freshness(recipe, now):
+    """Bonus für lange nicht Gekochtes; ohne Datum gilt ein Rezept als lange her."""
+    made = recipe.get("last_made")
+    if not made:
+        return FRESH_BONUS
+    try:
+        days = (now - datetime.fromisoformat(str(made).replace("Z", "+00:00")).replace(tzinfo=now.tzinfo)).days
+    except (ValueError, TypeError):
+        return FRESH_BONUS
+    return FRESH_BONUS if days > 60 else (FRESH_BONUS * 0.6 if days > 30 else 0)
+
+
+def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=()):
+    """Rezepte, deren Hauptzutat im Angebot ist.
+
+    - pinned: Rezepte, die immer zuerst stehen, solange eine Hauptzutat im Angebot ist (schon Eingeplantes)
+    - skipped: Rezepte, die gerade nicht gezeigt werden sollen ("andere Vorschläge")
+    - von jeder Hauptzutat zunächst nur ein Rezept, mindestens ein vegetarisches, lange nicht Gekochtes bevorzugt
 
     Liefert Tupel (slug, Anzeigename der Zutat, Angebot, Rabatt in Prozent, weitere Zutaten im Angebot).
     """
+    now = now or datetime.now(timezone.utc)
     best = best_offers(offers, now)
-    blocked = set(blocked_slugs)
-    candidates = []
+    blocked, skipped = set(blocked_slugs), set(skipped)
+    rows = {}
     for slug, recipe in recipes.items():
-        if slug in blocked:
-            continue
         hits = [label for label in recipe.get("mains", []) if label in best]
         if not hits:
             continue
         # Reihenfolge: gewichteter Rabatt, bei Gleichstand die prägendere Zutat
         hits.sort(key=lambda label: (-best[label][1] * WEIGHT[label], -WEIGHT[label], best[label][0].get("price") or 0))
         top = hits[0]
-        candidates.append(
-            ((-best[top][1] * WEIGHT[top], -WEIGHT[top], -len(hits), recipe.get("name") or slug), slug, top, hits[1:])
-        )
-    candidates.sort(key=lambda c: c[0])
-    result, per_ingredient = [], {}
-    for _, slug, top, others in candidates:
-        if per_ingredient.get(top, 0) >= MAX_PER_INGREDIENT:
-            continue
-        per_ingredient[top] = per_ingredient.get(top, 0) + 1
-        result.append((slug, top, best[top][0], best[top][1], others))
-        if len(result) >= limit:
-            break
-    return result
+        score = best[top][1] * WEIGHT[top] + _freshness(recipe, now)
+        rows[slug] = ((-score, -WEIGHT[top], -len(hits), recipe.get("name") or slug), top, hits[1:])
+
+    def row(slug):
+        _, top, others = rows[slug]
+        return (slug, top, best[top][0], best[top][1], others)
+
+    result = [slug for slug in pinned if slug in rows][:limit]
+    free = limit - len(result)
+    candidates = sorted(
+        (slug for slug in rows if slug not in blocked and slug not in skipped and slug not in result),
+        key=lambda slug: rows[slug][0],
+    )
+    picked, per_ingredient = [], {}
+    for cap in (MAX_PER_INGREDIENT, MAX_PER_INGREDIENT + 1, limit):
+        for slug in candidates:
+            if len(picked) >= free:
+                break
+            top = rows[slug][1]
+            if slug in picked or per_ingredient.get(top, 0) >= cap:
+                continue
+            per_ingredient[top] = per_ingredient.get(top, 0) + 1
+            picked.append(slug)
+    # Mindestens ein vegetarischer Vorschlag, wenn es einen passenden gibt
+    if picked and not any(recipes[slug].get("vegetarian") for slug in result + picked):
+        veggie = next((slug for slug in candidates if recipes[slug].get("vegetarian")), None)
+        if veggie:
+            picked[-1] = veggie
+    return [row(slug) for slug in result + picked]

@@ -26,6 +26,7 @@ from .const import (
     API_URL,
     HEADERS,
     SEARCH_ENTITY,
+    RESHUFFLE_ENTITY,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -302,6 +303,8 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         self._planned = {}
         self._cooked = set()
         self.plan = []
+        # Rezepte, die nach "andere Vorschläge" gerade nicht gezeigt werden
+        self._skipped = set()
 
     async def _fetch_meinprospekt(self, session, query):
         params = {
@@ -478,6 +481,9 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
                 "recipe_id": recipe.get("recipe_id") or item.get("recipe_id"),
                 "has_image": bool(recipe.get("image")),
                 "time": recipe.get("total_time"),
+                "servings": recipe.get("recipe_servings") or 0,
+                "last_made": recipe.get("last_made"),
+                "vegetarian": rc.is_vegetarian(texts),
                 "ingredients": texts,
                 "steps": steps,
                 "mains": rc.main_ingredients(texts),
@@ -633,8 +639,14 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         results = results if results is not None else (self.data or {})
         offers = [offer for group in results.values() for offer in group] + self._recipe_offers
         suggestions = []
-        # Kürzlich Gekochtes fällt weg; Eingeplantes bleibt stehen und wird als eingeplant markiert
-        for slug, label, offer, discount, others in rc.suggest(self._recipes, offers, self._cooked):
+        # Kürzlich Gekochtes fällt weg; Eingeplantes steht immer oben und wird als eingeplant markiert
+        pinned = sorted(self._planned, key=lambda slug: self._planned[slug])
+        rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped)
+        if self._skipped and len(rows) < 5:
+            # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
+            self._skipped = set()
+            rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned)
+        for slug, label, offer, discount, others in rows:
             recipe = self._recipes[slug]
             on_list = [
                 main
@@ -648,6 +660,8 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
                     "recipe_id": recipe.get("recipe_id"),
                     "image": await self._recipe_image(entry, recipe),
                     "time": recipe.get("time"),
+                    "servings": recipe.get("servings") or 0,
+                    "vegetarian": bool(recipe.get("vegetarian")),
                     "ingredient": label,
                     "discount": discount,
                     "offer": _offer_summary(offer),
@@ -666,6 +680,11 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
             )
         self.suggestions = suggestions
         self.async_update_listeners()
+
+    async def async_reshuffle(self):
+        """Andere Vorschläge zeigen: die aktuellen, nicht eingeplanten zurückstellen."""
+        self._skipped |= {s["slug"] for s in self.suggestions if not s.get("planned")}
+        await self.async_refresh_suggestions()
 
 class MarktguruSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, name, query, idx, zip_code):
@@ -905,6 +924,10 @@ class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
+        # Knopf "andere Vorschläge": ein input_button, dessen Zustand sich bei jedem Druck ändert
+        self.async_on_remove(
+            async_track_state_change_event(self.hass, [RESHUFFLE_ENTITY], self._handle_reshuffle)
+        )
         # Ändert sich die Einkaufsliste, die Markierung "schon auf der Liste" nachziehen
         if self.coordinator.shopping_list:
             self.async_on_remove(
@@ -912,6 +935,13 @@ class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
                     self.hass, [self.coordinator.shopping_list], self._handle_list_change
                 )
             )
+
+    @callback
+    def _handle_reshuffle(self, event):
+        old, new = event.data.get("old_state"), event.data.get("new_state")
+        if old is None or new is None or new.state in ("unknown", "unavailable") or old.state == new.state:
+            return
+        self.hass.async_create_task(self.coordinator.async_reshuffle())
 
     @callback
     def _handle_list_change(self, event):
