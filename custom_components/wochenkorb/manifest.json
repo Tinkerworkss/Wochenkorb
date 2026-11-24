@@ -1,7 +1,7 @@
 {
   "domain": "wochenkorb",
   "name": "Wochenkorb",
-  "documentation": "https://github.com/Tinkerworkss/ha-marktguru",
+  "documentation": "https://github.com/Tinkerworkss/Wochenkorb",
   "dependencies": [],
   "after_dependencies": [
     "mealie"
