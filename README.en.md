@@ -83,7 +83,7 @@ The folder [`examples/`](examples/) contains the setup this fork was built for. 
 | File | What it does |
 | --- | --- |
 | `dashboard_template.yaml` | `button_card_templates` entries. `angebot_zeile` is one offer row (image, name, base price, discount badge, link to the offer, add-to-list button). `rezept_zeile` is only needed for the Mealie recipe card below and can be left out. Goes to the top level of the dashboard's raw configuration. |
-| `dashboard_card.yaml` | The card: search field, one row of tabs for up to six free lists from the settings, one for the retailers (Marktkauf, REWE, EDEKA), scrolling offer lists sorted by discount, live search results. Tab and search text are kept per device. |
+| `dashboard_card.yaml` | The card: search field, one row of tabs with up to six free lists from the settings and the retailers (Marktkauf, REWE, EDEKA), all equally wide and wrapping when space runs out, scrolling offer lists sorted by discount, live search results. Tab and search text are kept per device. |
 | `automation_grundartikel.yaml` | Every Thursday puts staples on the list in a per-article rhythm. If an offer is at least 15 % below the usual base price, the quantity is raised (stock-up) and the article is skipped until the stock is used up. "Fruit of the week" lists up to five offers from the free list "Obst". Offers it took over disappear from the card until the next run, and a push summary is sent if something new was added. |
 | `automation_quellen_ueberwachen.yaml` | Daily notification if marktguru or meinprospekt delivers no offers. |
 | `script_abgleich_wert_setzen.yaml` | Script to set usual price, rhythm and stock date per article, e.g. from receipts. |

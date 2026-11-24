@@ -283,29 +283,6 @@ cards:
     - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
     - input_select.angebote_reiter_GERAET_1
     - input_text.angebote_suche_GERAET_1
-  card_mod:
-    style: |-
-      {%- set nl = (state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or []) | count -%}
-      {%- if nl <= 0 %}
-      #root > :nth-child(1) { display: none !important; }
-      {%- endif %}
-      {%- if nl <= 1 %}
-      #root > :nth-child(2) { display: none !important; }
-      {%- endif %}
-      {%- if nl <= 2 %}
-      #root > :nth-child(3) { display: none !important; }
-      {%- endif %}
-      {%- if nl <= 3 %}
-      #root > :nth-child(4) { display: none !important; }
-      {%- endif %}
-      {%- if nl <= 4 %}
-      #root > :nth-child(5) { display: none !important; }
-      {%- endif %}
-      {%- if nl <= 5 %}
-      #root > :nth-child(6) { display: none !important; }
-      {%- endif %}
-- type: horizontal-stack
-  cards:
   - type: custom:button-card
     name: Marktkauf
     icon: mdi:cart
@@ -432,6 +409,29 @@ cards:
     - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
     - input_select.angebote_reiter_GERAET_1
     - input_text.angebote_suche_GERAET_1
+  card_mod:
+    style: |-
+      #root { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; }
+      #root > * { margin: 0 !important; min-width: 0; }
+      {%- set nl = (state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or []) | count -%}
+      {%- if nl <= 0 %}
+      #root > :nth-child(1) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 1 %}
+      #root > :nth-child(2) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 2 %}
+      #root > :nth-child(3) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 3 %}
+      #root > :nth-child(4) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 4 %}
+      #root > :nth-child(5) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 5 %}
+      #root > :nth-child(6) { display: none !important; }
+      {%- endif %}
 - type: custom:button-card
   name: Suche löschen
   icon: mdi:close
@@ -1293,45 +1293,42 @@ card_mod:
     {%- if gid != 'GERAET_1' %}
     #root > :nth-child(3) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl == 0 %}
+    {%- if sucht %}
     #root > :nth-child(4) { display: none !important; }
     {%- endif %}
-    {%- if sucht %}
+    {%- if not sucht %}
     #root > :nth-child(5) { display: none !important; }
     {%- endif %}
-    {%- if not sucht %}
+    {%- if sucht or nl <= 0 or reiter != listen[0].name %}
     #root > :nth-child(6) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl <= 0 or reiter != listen[0].name %}
+    {%- if sucht or nl <= 1 or reiter != listen[1].name %}
     #root > :nth-child(7) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl <= 1 or reiter != listen[1].name %}
+    {%- if sucht or nl <= 2 or reiter != listen[2].name %}
     #root > :nth-child(8) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl <= 2 or reiter != listen[2].name %}
+    {%- if sucht or nl <= 3 or reiter != listen[3].name %}
     #root > :nth-child(9) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl <= 3 or reiter != listen[3].name %}
+    {%- if sucht or nl <= 4 or reiter != listen[4].name %}
     #root > :nth-child(10) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl <= 4 or reiter != listen[4].name %}
+    {%- if sucht or nl <= 5 or reiter != listen[5].name %}
     #root > :nth-child(11) { display: none !important; }
     {%- endif %}
-    {%- if sucht or nl <= 5 or reiter != listen[5].name %}
+    {%- if sucht or reiter != 'Marktkauf' %}
     #root > :nth-child(12) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'Marktkauf' %}
+    {%- if sucht or reiter != 'REWE' %}
     #root > :nth-child(13) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'REWE' %}
+    {%- if sucht or reiter != 'EDEKA' %}
     #root > :nth-child(14) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'EDEKA' %}
+    {%- if not sucht or qs %}
     #root > :nth-child(15) { display: none !important; }
     {%- endif %}
-    {%- if not sucht or qs %}
-    #root > :nth-child(16) { display: none !important; }
-    {%- endif %}
     {%- if not sucht or gid != 'GERAET_1' %}
-    #root > :nth-child(17) { display: none !important; }
+    #root > :nth-child(16) { display: none !important; }
     {%- endif %}
