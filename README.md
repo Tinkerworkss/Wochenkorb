@@ -1,146 +1,132 @@
 # ha-marktguru
-AI generated proof of concept of an Home Assistant integration for Marktguru supermarket offer notifications
 
-The Marktguru Home Assistant integration allows you to display current supermarket offers from the Marktguru search directly as sensors in Home Assistant.
-For any products and postal codes, sensors with price, retailer, offer period, image, and other details are automatically created and updated hourly.
-New offers appear automatically, expired ones are removed — no restart or manual intervention required.
+**Deutsch** · [English](README.en.md)
 
-## About this fork
+Home-Assistant-Integration, die aktuelle Prospekt-Angebote aus der Marktguru-Suche als Sensoren bereitstellt. Für beliebige Suchbegriffe und eine Postleitzahl entstehen Sensoren mit Preis, Händler, Gültigkeit, Bild und weiteren Angaben; sie werden stündlich aktualisiert. Neue Angebote kommen von selbst dazu, abgelaufene verschwinden, ohne Neustart.
 
-This is a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru). All credit for the original integration goes there. The fork adds:
-
-- **Editable settings.** Postal code, search terms and retailer filter can be changed under *Configure* without deleting the integration. The entry reloads itself and sensors of removed search terms are cleaned up.
-- **Retailer filter.** Optional comma-separated list (for example `Marktkauf, REWE, EDEKA`); only offers of these retailers become sensors.
-- **Second source: meinprospekt.de.** Covers retailers that Marktguru does not list for some regions (for example Marktkauf). It is queried every six hours with the Home Assistant home coordinates. Retailers already delivered by Marktguru are not added twice.
-- **More attributes.** `source`, `link` (offer page or brochure page), `grundpreis` and `grundpreis_einheit` (price per kg or litre).
-- **Search sensor.** `sensor.marktguru_suche_<zip>` runs a live search in both sources for the text in the helper `input_text.angebote_suche` and returns the hits in its `results` attribute.
-- **Optional: recipes from Mealie.** If the Mealie integration is set up, the option `mealie_recipes` adds a sensor with recipes whose main ingredient is on offer and the meal plan of the next days. Without Mealie nothing changes. See section 7.
-- **Fixes.** Unloading the entry works, new offers create sensors during the hourly refresh, and the search-term sensor reports the number of terms instead of a string that could exceed 255 characters.
-
-Both sources are unofficial and can change or stop working at any time. Like the original, this is a hobby project without support.
-
-| Offers of the week | Recipes for the offers | Planning a recipe |
+| Angebote der Woche | Rezepte zu den Angeboten | Rezept einplanen |
 | --- | --- | --- |
-| <img src="docs/angebote.png" width="260" alt="Offers card with search and retailer tabs"> | <img src="docs/rezepte.png" width="260" alt="Recipe suggestions whose main ingredient is on offer"> | <img src="docs/wann-kochen.png" width="260" alt="Popup to pick the evening and the portions"> |
+| <img src="docs/angebote.png" width="260" alt="Angebotskarte mit Suche und Reitern je Markt"> | <img src="docs/rezepte.png" width="260" alt="Rezeptvorschläge, deren Hauptzutat im Angebot ist"> | <img src="docs/wann-kochen.png" width="260" alt="Fenster zur Auswahl von Abend und Portionen"> |
 
+## Über diesen Fork
 
-# Disclaimer
-This is not a robust software implementation. It's merely an AI-generated proof of concept. I provide no support and don't have the expertise to develop it into a finished implementation.
-Anyone who wants to complete the integration is welcome to join!
+Dies ist ein Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru); die ursprüngliche Integration stammt von dort. Der Fork ergänzt:
 
-# Known Issues
-- None known for the search term list in this fork (fixed, see above).
-- The search helper `input_text.angebote_suche` has to be created by hand (Settings → Devices & Services → Helpers → Text) if you want to use the search sensor.
+- **Einstellungen änderbar.** Postleitzahl, Suchbegriffe und Händlerfilter lassen sich unter *Konfigurieren* ändern, ohne die Integration zu löschen. Der Eintrag lädt sich neu, Sensoren entfernter Suchbegriffe werden aufgeräumt.
+- **Händlerfilter.** Optionale, kommagetrennte Liste (zum Beispiel `Marktkauf, REWE, EDEKA`); nur Angebote dieser Händler werden zu Sensoren.
+- **Zweite Quelle: meinprospekt.de.** Deckt Händler ab, die Marktguru in manchen Regionen nicht führt (zum Beispiel Marktkauf). Sie wird alle sechs Stunden mit den Heimkoordinaten von Home Assistant abgefragt. Händler, die Marktguru schon liefert, kommen nicht doppelt.
+- **Mehr Attribute.** `source`, `link` (Angebots- oder Prospektseite), `grundpreis` und `grundpreis_einheit` (Preis je Kilogramm oder Liter).
+- **Such-Sensor.** `sensor.marktguru_suche_<plz>` sucht live in beiden Quellen nach dem Text im Helfer `input_text.angebote_suche` und liefert die Treffer im Attribut `results`.
+- **Optional: Rezepte aus Mealie.** Ist die Mealie-Integration eingerichtet, liefert die Option `mealie_recipes` einen Sensor mit Rezepten, deren Hauptzutat im Angebot ist, und dem Essensplan der nächsten Tage. Ohne Mealie ändert sich nichts. Siehe Abschnitt 6.
+- **Optional: Einkaufsverlauf aus Kassenbons.** Ein Dienst speichert Bonpositionen lokal, ein Sensor wertet sie aus. Siehe Abschnitt 7.
+- **Korrekturen.** Das Entladen des Eintrags funktioniert, neue Angebote erzeugen ihre Sensoren bei der stündlichen Aktualisierung, und der Suchbegriff-Sensor meldet die Anzahl der Begriffe statt eines Textes, der länger als 255 Zeichen werden konnte.
 
-# Installation & Configuration Guide
-## 1. Requirements
-Home Assistant (Core, OS, Supervised, or Container)
+Beide Quellen sind inoffiziell und können sich jederzeit ändern oder ausfallen. Wie das Original ist dies ein Hobbyprojekt ohne Support. Große Teile des Codes sind mit KI-Unterstützung entstanden.
+
+## 1. Voraussetzungen
+
+Home Assistant (Core, OS, Supervised oder Container).
+
 ## 2. Installation
-Manual Installation
-- Download the repository from GitHub.
-- Copy the marktguru folder into your Home Assistant directory:
-- <config>/custom_components/marktguru
-- Restart Home Assistant.
-## 3. Configuration
-Add the integration:
-Go to
-Settings → Devices & Services → Add Integration
-Search for “Marktguru” and select it.
 
-Fill in the configuration:
+- Repository von GitHub herunterladen.
+- Den Ordner `custom_components/marktguru` nach `<config>/custom_components/marktguru` kopieren.
+- Home Assistant neu starten.
 
-- Postal code:
-The ZIP code for which you want to receive offers (e.g., 10115).
-- Search terms:
-Comma-separated list of products you want to monitor, e.g.:
-Havana Rum, Bacardi Spiced, Wernesgruner
-Finish:
-After saving, the sensors are automatically created.
-You can add as many instances of the integration as you like (e.g., for different ZIP codes or product lists).
+## 3. Einrichtung
 
-## 4. Usage
-Sensors:
-For each found offer, a sensor like
-sensor.marktguru_havana_rum_1_10115
-is created, with attributes such as price, retailer, offer period, etc.
-Automatic updates:
-New offers appear automatically, expired ones are removed.
-Multiple configurations:
-You can monitor the same products for different ZIP codes.
-## 5. Example Lovelace cards
-The cards of this fork are in [`examples/`](examples/), see sections 6 to 8.
+Unter Einstellungen → Geräte & Dienste → Integration hinzufügen nach „Marktguru“ suchen.
 
-## 6. Example setup: offers and weekly staples
+- **Postleitzahl:** die PLZ, für die Angebote gesucht werden (zum Beispiel 10115).
+- **Suchbegriffe:** kommagetrennte Liste der Produkte, zum Beispiel `Butter, Hackfleisch, Pepsi`.
+- **Händler (optional):** kommagetrennte Liste, auf die die Angebote beschränkt werden.
 
-The folder [`examples/`](examples/) contains the setup this fork was built for. This part works without Mealie: an offers card with tabs and search, and an automation that puts weekly staples on a shopping list. Texts and article names are in German, adjust them to your household.
+Nach dem Speichern entstehen die Sensoren von selbst. Die Integration lässt sich mehrfach einrichten, etwa für verschiedene Postleitzahlen.
 
-| File | What it does |
+Für den Such-Sensor muss der Helfer `input_text.angebote_suche` von Hand angelegt werden (Einstellungen → Geräte & Dienste → Helfer → Text).
+
+## 4. Verwendung
+
+Für jedes gefundene Angebot entsteht ein Sensor wie `sensor.marktguru_butter_1_10115` mit Attributen wie Preis, Händler und Gültigkeit. Neue Angebote erscheinen von selbst, abgelaufene werden entfernt.
+
+## 5. Beispiel-Einrichtung: Angebote und wöchentliche Grundartikel
+
+Der Ordner [`examples/`](examples/) enthält die Einrichtung, für die dieser Fork gebaut wurde. Dieser Teil funktioniert ohne Mealie: eine Angebotskarte mit Reitern und Suche und eine Automation, die wöchentliche Grundartikel auf eine Einkaufsliste setzt. Artikelnamen und Mengen sind Beispiele und an den eigenen Haushalt anzupassen.
+
+| Datei | Zweck |
 | --- | --- |
-| `dashboard_template.yaml` | `button_card_templates` entries. `angebot_zeile` is one offer row (image, name, base price, discount badge, link to the offer, add-to-list button). `rezept_zeile` is only needed for the Mealie recipe card below and can be left out. Goes to the top level of the dashboard's raw configuration. |
-| `dashboard_card.yaml` | The card: search field, tabs (fruit, Marktkauf, REWE, EDEKA), scrolling offer lists sorted by discount, live search results. Tab and search text are kept per device. |
-| `automation_grundartikel.yaml` | Every Thursday puts staples on the list in a per-article rhythm. If an offer is at least 15 % below the usual base price, the quantity is raised (stock-up) and the article is skipped until the stock is used up. "Fruit of the week" lists up to five fruit offers. Offers it took over disappear from the card until the next run, and a push summary is sent if something new was added. |
-| `automation_quellen_ueberwachen.yaml` | Daily notification if marktguru or meinprospekt delivers no offers. |
-| `script_abgleich_wert_setzen.yaml` | Script to set usual price, rhythm and stock date per article, e.g. from receipts. |
+| `dashboard_template.yaml` | Einträge für `button_card_templates`. `angebot_zeile` ist eine Angebotszeile (Bild, Name, Grundpreis, Rabatt, Link zum Angebot, Knopf „auf die Liste“). `rezept_zeile` wird nur für die Rezeptkarte aus Abschnitt 6 gebraucht. Kommt auf die oberste Ebene der Dashboard-Konfiguration (Raw-Editor). |
+| `dashboard_card.yaml` | Die Karte: Suchfeld, Reiter (Obst, Marktkauf, REWE, EDEKA), scrollende Angebotslisten nach Rabatt sortiert, Live-Suchergebnisse. Reiter und Suchtext werden je Gerät gemerkt. |
+| `automation_grundartikel.yaml` | Setzt jeden Donnerstag Grundartikel im eigenen Rhythmus je Artikel auf die Liste. Liegt ein Angebot mindestens 15 % unter dem üblichen Grundpreis, wird die Menge erhöht (Vorrat) und der Artikel pausiert, bis der Vorrat aufgebraucht ist. „Obst der Woche“ nennt bis zu fünf Obst-Angebote. Übernommene Angebote verschwinden bis zum nächsten Lauf aus der Karte; kam etwas Neues auf die Liste, geht eine Zusammenfassung aufs Handy. |
+| `automation_quellen_ueberwachen.yaml` | Tägliche Meldung, wenn marktguru oder meinprospekt keine Angebote liefert. |
+| `script_abgleich_wert_setzen.yaml` | Setzt üblichen Preis, Rhythmus und Vorratsdatum je Artikel, zum Beispiel aus Kassenbons. |
 
-Requirements:
+Voraussetzungen:
 
 - Frontend (HACS): [auto-entities](https://github.com/thomasloven/lovelace-auto-entities), [button-card](https://github.com/custom-cards/button-card), [card-mod](https://github.com/thomasloven/lovelace-card-mod)
-- Helpers: `input_select.angebote_reiter` (options `Obst`, `Marktkauf`, `REWE`, `EDEKA`), `input_text.angebote_suche`, and, each with the maximum length of 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
-- Per device (optional): `input_select.angebote_reiter_<id>` and `input_text.angebote_suche_<id>`, where `<id>` is the device's browser_mod id without the leading `browser_mod_`. This needs [browser_mod](https://github.com/thomasloven/hass-browser_mod). Reload the integration after creating the helpers, it adds one search sensor per search helper. Devices without their own helpers share the two general ones.
-- A to-do list entity for the shopping list (here `todo.einkauf_bring` from the Bring! integration)
+- Helfer: `input_select.angebote_reiter` (Optionen `Obst`, `Marktkauf`, `REWE`, `EDEKA`), `input_text.angebote_suche` und, jeweils mit maximaler Länge 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
+- Je Gerät (optional): `input_select.angebote_reiter_<id>` und `input_text.angebote_suche_<id>`, wobei `<id>` die browser_mod-Kennung des Geräts ohne das führende `browser_mod_` ist. Das braucht [browser_mod](https://github.com/thomasloven/hass-browser_mod). Nach dem Anlegen der Helfer die Integration neu laden; sie legt je Such-Helfer einen Such-Sensor an. Geräte ohne eigene Helfer teilen sich die beiden allgemeinen.
+- Eine To-do-Liste als Einkaufsliste (hier `todo.einkauf_bring` aus der Bring!-Integration)
 
-Replace before use: `GERAET_1` (browser_mod id of a device), `DEINE_PLZ` (your ZIP code, in lower case as part of the search sensor's entity id), `todo.einkauf_bring`, `notify.mobile_app_DEIN_HANDY`, the retailer names if you use other shops, and `start` plus the `artikel` list in the automation.
+Vor dem Einsatz ersetzen: `GERAET_1` (browser_mod-Kennung eines Geräts), `DEINE_PLZ` (die eigene PLZ, als Teil der Entitäts-ID des Such-Sensors), `todo.einkauf_bring`, `notify.mobile_app_DEIN_HANDY`, die Händlernamen bei anderen Märkten sowie `start` und die Liste `artikel` in der Automation.
 
-## 7. Optional: Mealie (recipes, week plan, shopping list)
+## 6. Optional: Mealie (Rezepte, Wochenplan, Einkaufsliste)
 
-Everything in this section is optional. Without the Mealie integration, leave the option `mealie_recipes` off and skip these files; the integration and the setup from section 6 work unchanged.
+Alles in diesem Abschnitt ist optional. Ohne die Mealie-Integration bleibt die Option `mealie_recipes` aus und diese Dateien werden übersprungen; die Integration und die Einrichtung aus Abschnitt 5 funktionieren unverändert.
 
-| File | What it does |
+| Datei | Zweck |
 | --- | --- |
-| `dashboard_card_rezepte.yaml` | Recipe card: up to five Mealie recipes whose main ingredient is on offer. A tap opens ingredients and steps in a popup, the calendar button asks for the evening and, if wanted, a larger number of portions, and plans the recipe. The button "Andere Vorschläge" shows other recipes; planned ones stay. |
-| `dashboard_card_wochenplan.yaml` | The dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move it to another evening, to change the portions or to remove it. |
-| `script_rezept_einplanen.yaml` | Puts a recipe into the Mealie meal plan on the chosen evening and adds its ingredients to the Mealie shopping list, converted to the household size. Called without a date and with a browser_mod id it asks for the evening itself. |
-| `script_rezept_ausplanen.yaml` | Removes a recipe from the meal plan again and takes its ingredients off the Mealie shopping list. |
-| `script_rezept_portionen.yaml` | Changes for how many portions a planned recipe is bought: unplans it and plans it again on the same day. |
-| `script_rezept_verschieben.yaml` | Moves a planned recipe to another day. The shopping list stays as it is. |
-| `automation_mealie_einkaufsliste_abgleich.yaml` | Keeps the Mealie shopping list and the real shopping list (here Bring!) in step: merges equal articles, adds up quantities, keeps notes you typed yourself and skips pantry articles. Independent of this integration, but the scripts above rely on it. |
+| `dashboard_card_rezepte.yaml` | Rezeptkarte: bis zu fünf Mealie-Rezepte, deren Hauptzutat im Angebot ist. Ein Tipp öffnet Zutaten und Zubereitung, der Kalender-Knopf fragt nach dem Abend und auf Wunsch nach einer größeren Portionenzahl und plant das Rezept ein. Der Knopf „Andere Vorschläge“ zeigt andere Rezepte; Eingeplantes bleibt stehen. |
+| `dashboard_card_wochenplan.yaml` | Die Abendessen der nächsten sieben Tage aus dem Mealie-Essensplan; ein Tipp auf ein Gericht bietet an, es zu verschieben, die Portionen zu ändern oder es vom Plan zu nehmen. |
+| `script_rezept_einplanen.yaml` | Trägt ein Rezept am gewählten Abend in den Essensplan ein und legt seine Zutaten, umgerechnet auf die Portionenzahl, auf die Mealie-Einkaufsliste. Ohne Datum und mit browser_mod-Kennung fragt es selbst nach dem Abend. |
+| `script_rezept_ausplanen.yaml` | Nimmt ein Rezept wieder vom Plan und seine Zutaten von der Mealie-Einkaufsliste. |
+| `script_rezept_portionen.yaml` | Ändert, für wie viele Portionen eines eingeplanten Rezepts eingekauft wird: nimmt es vom Plan und plant es am selben Tag neu ein. |
+| `script_rezept_verschieben.yaml` | Legt ein eingeplantes Rezept auf einen anderen Tag. Die Einkaufsliste bleibt unverändert. |
+| `automation_mealie_einkaufsliste_abgleich.yaml` | Hält die Mealie-Einkaufsliste und die eigentliche Einkaufsliste (hier Bring!) im Gleichschritt: legt gleiche Artikel zusammen, summiert Mengen, behält selbst getippte Notizen und überspringt Vorratsartikel. Unabhängig von dieser Integration, aber die Skripte oben bauen darauf auf. |
 
-Additional requirements:
+Zusätzliche Voraussetzungen:
 
-- The [Mealie integration](https://www.home-assistant.io/integrations/mealie/) with its shopping list as a to-do entity
-- [browser_mod](https://github.com/thomasloven/hass-browser_mod) for the popups
-- Helpers: `input_button.rezepte_neu_mischen` (each press shows other suggestions) and `input_number.einkauf_portionen` (household size in portions, steps of 0.5; quantities of a recipe are converted from its servings when it is planned, counted things are rounded up to halves; 0 or no helper keeps the recipe quantities), `input_number.rezept_portionen_wahl` (0 to 12, steps of 0.5; holds the portions picked in the planning popup) and `input_text.einkauf_portionen_plan` (maximum length 255; remembers the portions per meal plan entry so that unplanning removes the same quantities)
-- The options `mealie_recipes` and, to mark ingredients that are already on the list, `shopping_list` of this integration
+- Die [Mealie-Integration](https://www.home-assistant.io/integrations/mealie/) mit ihrer Einkaufsliste als To-do-Entität
+- [browser_mod](https://github.com/thomasloven/hass-browser_mod) für die Fenster
+- Helfer:
+  - `input_button.rezepte_neu_mischen`: jeder Druck zeigt andere Vorschläge
+  - `input_number.einkauf_portionen`: Haushaltsgröße in Portionen, Schritte von 0,5. Beim Einplanen werden die Mengen eines Rezepts von seiner Portionsangabe umgerechnet, Gezähltes wird auf halbe Stück aufgerundet; 0 oder kein Helfer lässt die Mengen wie im Rezept.
+  - `input_number.rezept_portionen_wahl`: 0 bis 12, Schritte von 0,5; hält die im Fenster gewählte Portionenzahl
+  - `input_text.einkauf_portionen_plan`: maximale Länge 255; merkt die Portionen je Planeintrag, damit das Ausplanen dieselben Mengen wieder abzieht
+- Die Optionen `mealie_recipes` und, um schon vorhandene Zutaten zu markieren, `shopping_list` dieser Integration
 
-Replace before use: `MEALIE_EINTRAG` (config entry id of the Mealie integration), `MEALIE_LISTE` (to-do entity of the Mealie shopping list), `DEINE_PLZ`, and `todo.mealie_to_bring` / `todo.einkauf_bring` in the sync automation.
+Vor dem Einsatz ersetzen: `MEALIE_EINTRAG` (ID des Konfigurationseintrags der Mealie-Integration), `MEALIE_LISTE` (To-do-Entität der Mealie-Einkaufsliste), `DEINE_PLZ` sowie `todo.mealie_to_bring` / `todo.einkauf_bring` in der Abgleich-Automation.
 
-### How the recipe suggestions work
+### So entstehen die Rezeptvorschläge
 
-With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.marktguru_rezepte_<zip>` carries the dinners of the next eight days in the attribute `plan` and lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. The list is mixed: at first only one recipe per main ingredient, at least one vegetarian recipe if one fits, and recipes that were not cooked for a while (Mealie's "last made") get a small bonus. Recipes from the meal plan of the last 14 days are left out, recipes planned for the coming days always stay at the top and are marked as planned. A press on `input_button.rezepte_neu_mischen` puts the current, unplanned suggestions aside and shows the next ones; when all have been shown it starts over. With the option `shopping_list` (a to-do entity, e.g. the Bring! list) main ingredients that are already on the list are marked. The planning script still adds all ingredients to the Mealie shopping list so that quantities can be summed up. Recipe images are copied to `www/marktguru_rezepte` so the card can show them without a Mealie login.
+Mit der Option `mealie_recipes` liest die Integration einmal täglich alle Rezepte aus der Mealie-Integration, sucht darin Hauptzutaten (Fleisch, Fisch, Käse, Gemüse; Gewürze und Grundvorräte zählen nicht) und lädt für die häufigsten Angebote, als bis zu 20 zusätzliche Suchbegriffe. Diese erzeugen keine Angebotssensoren.
 
-## 8. Optional: purchase history from receipts
+`sensor.marktguru_rezepte_<plz>` führt im Attribut `plan` die Abendessen der nächsten acht Tage und nennt bis zu fünf Rezepte, deren Hauptzutat im Angebot ist: bester Rabatt zuerst, Fleisch und Fisch höher gewichtet als Käse und Gemüse. Die Liste ist gemischt: zunächst nur ein Rezept je Hauptzutat, mindestens ein vegetarisches, wenn eines passt, und Rezepte, die länger nicht gekocht wurden (Mealies „zuletzt gekocht“), bekommen einen kleinen Bonus. Rezepte aus dem Essensplan der letzten 14 Tage bleiben außen vor; für die nächsten Tage Eingeplantes steht immer oben und ist markiert. Ein Druck auf `input_button.rezepte_neu_mischen` stellt die aktuellen, nicht eingeplanten Vorschläge zurück und zeigt die nächsten; sind alle gezeigt, beginnt es von vorn.
 
-The integration can keep a history of what was actually bought. It does not read receipts itself: something else (for example a scheduled assistant task that reads the e-receipts from the mailbox) delivers the positions through the service `marktguru.add_purchases`, one call per receipt. A receipt (time and retailer) is always replaced as a whole, so sending it twice does not duplicate anything. The history is stored locally in `.storage/marktguru_einkaeufe`.
+Mit der Option `shopping_list` (eine To-do-Entität, etwa die Bring!-Liste) werden Hauptzutaten markiert, die schon auf der Liste stehen. Das Einplan-Skript legt trotzdem alle Zutaten auf die Mealie-Einkaufsliste, damit sich die Mengen addieren lassen. Rezeptbilder werden nach `www/marktguru_rezepte` kopiert, damit die Karte sie ohne Mealie-Anmeldung zeigen kann.
 
-One line per position, fields separated by semicolons:
+## 7. Optional: Einkaufsverlauf aus Kassenbons
+
+Die Integration kann festhalten, was tatsächlich gekauft wurde. Sie liest keine Bons selbst: Etwas anderes (zum Beispiel eine geplante Assistenten-Aufgabe, die die eBons aus dem Postfach liest) liefert die Positionen über den Dienst `marktguru.add_purchases`, ein Aufruf je Bon. Ein Bon (Zeitpunkt und Markt) wird immer als Ganzes ersetzt; ihn zweimal zu senden legt nichts doppelt an. Der Verlauf liegt lokal in `.storage/marktguru_einkaeufe`.
+
+Eine Zeile je Position, Felder mit Semikolon getrennt:
 
 ```
 bon;markt;bontext;artikel;gruppe;anzahl;menge;einheit;preis;grundartikel
 2026-11-20 17:42;REWE;BIO E.WEIDEMILCH;Bio-H-Weidemilch;Molkerei & Eier;2;2;l;2,98;Milch
 ```
 
-`menge` is the total quantity in `l`, `kg` or `stk` (empty if unknown), `preis` the amount paid for the line, `grundartikel` the staple of the weekly automation the position belongs to (or empty).
+`menge` ist die Gesamtmenge in `l`, `kg` oder `stk` (leer, wenn unbekannt), `preis` der bezahlte Betrag der Zeile, `grundartikel` der Grundartikel der Wochen-Automation, zu dem die Position gehört (oder leer).
 
-`sensor.einkauf_verlauf` (state: number of receipts) evaluates the history in its attributes:
+`sensor.einkauf_verlauf` (Zustand: Zahl der Bons) wertet den Verlauf in seinen Attributen aus:
 
-- `monate`: spending per month, by retailer and by product group
-- `grundartikel`: per staple the number of purchases, the buying rhythm in weeks and the usual base price (median of the last five purchases)
-- `vorschlaege`: articles that are bought regularly but are not a staple
-- `artikel`: the 80 most frequently bought articles with their last prices
+- `monate`: Ausgaben je Monat, nach Markt und nach Warengruppe
+- `grundartikel`: je Grundartikel die Zahl der Käufe, der Kaufrhythmus in Wochen und der übliche Grundpreis (Median der letzten fünf Käufe)
+- `vorschlaege`: Artikel, die regelmäßig gekauft werden, aber kein Grundartikel sind
+- `artikel`: die 80 am häufigsten gekauften Artikel mit ihren letzten Preisen
 
-| File | What it does |
+| Datei | Zweck |
 | --- | --- |
-| `script_kassenbon_speichern.yaml` | Wrapper around the service that can be exposed to Assist. |
-| `automation_kassenbon_werte_lernen.yaml` | Passes rhythm and usual price of the staples to the staples automation (via `script_abgleich_wert_setzen.yaml`). |
-| `dashboard_view_auswertung.yaml` | Dashboard view: spending per month, product groups, staples, suggestions and price history. |
-
+| `script_kassenbon_speichern.yaml` | Hülle um den Dienst, die sich für Assist freigeben lässt. |
+| `automation_kassenbon_werte_lernen.yaml` | Übergibt Rhythmus und üblichen Preis der Grundartikel an die Grundartikel-Automation (über `script_abgleich_wert_setzen.yaml`). |
+| `dashboard_view_auswertung.yaml` | Dashboard-Ansicht: Ausgaben je Monat, Warengruppen, Grundartikel, Vorschläge und Preisverlauf. |
