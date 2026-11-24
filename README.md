@@ -20,6 +20,7 @@ Wochenkorb ist aus einem Fork von [thorschtn/ha-marktguru](https://github.com/th
 - **Händlerfilter.** Optionale Auswahl (zum Beispiel Marktkauf, REWE, EDEKA); nur Angebote dieser Händler werden zu Sensoren.
 - **Zweite Quelle: meinprospekt.de.** Deckt Händler ab, die Marktguru in manchen Regionen nicht führt (zum Beispiel Marktkauf). Sie wird alle sechs Stunden mit den Heimkoordinaten von Home Assistant abgefragt. Händler, die Marktguru schon liefert, kommen nicht doppelt.
 - **Mehr Attribute.** `source`, `link` (Angebots- oder Prospektseite), `grundpreis` und `grundpreis_einheit` (Preis je Kilogramm oder Liter).
+- **Freie Listen.** Unter *Konfigurieren → Listen* lassen sich Suchbegriffe zu benannten Listen zusammenfassen (zum Beispiel „Obst“ oder „Getränke“), jede mit eigenem Symbol und optionalen Ausschlusswörtern. Jede Liste wird ein eigener Reiter der Angebotskarte; ihre Angebote stehen dort statt beim Händler. Die Angebotssensoren tragen dafür die Attribute `suchbegriff`, `liste` und `liste_ohne`, der Sensor `sensor.wochenkorb_suchbegriffe_<plz>` das Attribut `listen`.
 - **Such-Sensor.** `sensor.wochenkorb_suche_<plz>` sucht live in beiden Quellen nach dem Text im Helfer `input_text.angebote_suche` und liefert die Treffer im Attribut `results`.
 - **Optional: Rezepte aus Mealie.** Ist die Mealie-Integration eingerichtet, liefert die Option `mealie_recipes` einen Sensor mit Rezepten, deren Hauptzutat im Angebot ist, und dem Essensplan der nächsten Tage. Ohne Mealie ändert sich nichts. Siehe Abschnitt 6.
 - **Optional: Einkaufsverlauf aus Kassenbons.** Ein Dienst speichert Bonpositionen lokal, ein Sensor wertet sie aus. Siehe Abschnitt 7.
@@ -65,15 +66,15 @@ Der Ordner [`examples/`](examples/) enthält die Einrichtung, für die dieser Fo
 | Datei | Zweck |
 | --- | --- |
 | `dashboard_template.yaml` | Einträge für `button_card_templates`. `angebot_zeile` ist eine Angebotszeile (Bild, Name, Grundpreis, Rabatt, Link zum Angebot, Knopf „auf die Liste“). `rezept_zeile` wird nur für die Rezeptkarte aus Abschnitt 6 gebraucht. Kommt auf die oberste Ebene der Dashboard-Konfiguration (Raw-Editor). |
-| `dashboard_card.yaml` | Die Karte: Suchfeld, Reiter (Obst, Marktkauf, REWE, EDEKA), scrollende Angebotslisten nach Rabatt sortiert, Live-Suchergebnisse. Reiter und Suchtext werden je Gerät gemerkt. |
-| `automation_grundartikel.yaml` | Setzt jeden Donnerstag Grundartikel im eigenen Rhythmus je Artikel auf die Liste. Liegt ein Angebot mindestens 15 % unter dem üblichen Grundpreis, wird die Menge erhöht (Vorrat) und der Artikel pausiert, bis der Vorrat aufgebraucht ist. „Obst der Woche“ nennt bis zu fünf Obst-Angebote. Übernommene Angebote verschwinden bis zum nächsten Lauf aus der Karte; kam etwas Neues auf die Liste, geht eine Zusammenfassung aufs Handy. |
+| `dashboard_card.yaml` | Die Karte: Suchfeld, eine Reiterzeile für bis zu sechs freie Listen aus den Einstellungen, eine für die Händler (Marktkauf, REWE, EDEKA), scrollende Angebotslisten nach Rabatt sortiert, Live-Suchergebnisse. Reiter und Suchtext werden je Gerät gemerkt. |
+| `automation_grundartikel.yaml` | Setzt jeden Donnerstag Grundartikel im eigenen Rhythmus je Artikel auf die Liste. Liegt ein Angebot mindestens 15 % unter dem üblichen Grundpreis, wird die Menge erhöht (Vorrat) und der Artikel pausiert, bis der Vorrat aufgebraucht ist. „Obst der Woche“ nennt bis zu fünf Angebote aus der freien Liste „Obst“. Übernommene Angebote verschwinden bis zum nächsten Lauf aus der Karte; kam etwas Neues auf die Liste, geht eine Zusammenfassung aufs Handy. |
 | `automation_quellen_ueberwachen.yaml` | Tägliche Meldung, wenn marktguru oder meinprospekt keine Angebote liefert. |
 | `script_abgleich_wert_setzen.yaml` | Setzt üblichen Preis, Rhythmus und Vorratsdatum je Artikel, zum Beispiel aus Kassenbons. |
 
 Voraussetzungen:
 
 - Frontend (HACS): [auto-entities](https://github.com/thomasloven/lovelace-auto-entities), [button-card](https://github.com/custom-cards/button-card), [card-mod](https://github.com/thomasloven/lovelace-card-mod)
-- Helfer: `input_select.angebote_reiter` (Optionen `Obst`, `Marktkauf`, `REWE`, `EDEKA`), `input_text.angebote_suche` und, jeweils mit maximaler Länge 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
+- Helfer: `input_select.angebote_reiter` (Optionen: die Namen der Listen und der Händler; die Integration hält sie bei jedem Start aktuell), `input_text.angebote_suche` und, jeweils mit maximaler Länge 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
 - Je Gerät (optional): `input_select.angebote_reiter_<id>` und `input_text.angebote_suche_<id>`, wobei `<id>` die browser_mod-Kennung des Geräts ohne das führende `browser_mod_` ist. Das braucht [browser_mod](https://github.com/thomasloven/hass-browser_mod). Nach dem Anlegen der Helfer die Integration neu laden; sie legt je Such-Helfer einen Such-Sensor an. Geräte ohne eigene Helfer teilen sich die beiden allgemeinen.
 - Eine To-do-Liste als Einkaufsliste (hier `todo.einkauf_bring` aus der Bring!-Integration)
 

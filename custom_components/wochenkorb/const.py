@@ -17,3 +17,7 @@ SEARCH_ENTITY = "input_text.angebote_suche"
 RESHUFFLE_ENTITY = "input_button.rezepte_neu_mischen"
 # Signal: der Einkaufsverlauf hat sich geändert
 PURCHASES_SIGNAL = "wochenkorb_purchases_updated"
+# Freie Listen: benannte Gruppen von Suchbegriffen (z. B. "Obst"), jede wird ein eigener Reiter der Angebotskarte
+CONF_LISTS = "lists"
+# Auswahl-Helfer der Angebotskarte; ihre Optionen (Listen und Händler) hält die Integration aktuell
+TAB_ENTITY_PREFIX = "input_select.angebote_reiter"

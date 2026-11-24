@@ -28,6 +28,13 @@
     "step": {
       "init": {
         "title": "Configure Wochenkorb",
+        "menu_options": {
+          "general": "General: postal code, search terms, retailers",
+          "lists": "Lists: own tabs such as \"Obst\""
+        }
+      },
+      "general": {
+        "title": "General",
         "description": "Changes apply at once; sensors of removed search terms are cleaned up.",
         "data": {
           "zip_code": "Postal code",
@@ -42,11 +49,37 @@
           "mealie_recipes": "Needs the Mealie integration. Shows recipes whose main ingredient is on offer.",
           "shopping_list": "Optional. Main ingredients already on this list are marked in the recipe suggestions."
         }
+      },
+      "lists": {
+        "title": "Lists",
+        "description": "Each list groups search terms and becomes its own tab in the offers card. Its offers are shown there instead of under the retailer.",
+        "data": {
+          "list": "List"
+        }
+      },
+      "list": {
+        "title": "Edit list",
+        "data": {
+          "name": "Name",
+          "icon": "Icon",
+          "terms": "Terms",
+          "exclude": "Excluded words",
+          "delete": "Delete this list"
+        },
+        "data_description": {
+          "name": "Shown on the tab, for example Obst.",
+          "terms": "These terms are searched even if they are not among the search terms.",
+          "exclude": "Offers whose name contains one of these words are hidden (for fruit, for example juice or yoghurt).",
+          "delete": "The terms of the list are no longer searched afterwards unless they are among the search terms."
+        }
       }
     },
     "error": {
       "zip_required": "Please enter a postal code.",
-      "products_required": "Please enter at least one search term."
+      "products_required": "Please enter at least one search term.",
+      "list_name_required": "Please enter a name.",
+      "list_name_exists": "A list with this name already exists.",
+      "list_terms_required": "Please enter at least one term."
     }
   }
 }
