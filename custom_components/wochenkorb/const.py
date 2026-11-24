@@ -1,4 +1,4 @@
-DOMAIN = "marktguru"
+DOMAIN = "wochenkorb"
 CONF_PRODUCTS = "products"
 CONF_ZIP = "zip_code"
 CONF_RETAILERS = "retailers"
@@ -16,4 +16,4 @@ SEARCH_ENTITY = "input_text.angebote_suche"
 # Knopf-Helfer: jeder Druck zeigt andere Rezeptvorschläge (Eingeplantes bleibt stehen)
 RESHUFFLE_ENTITY = "input_button.rezepte_neu_mischen"
 # Signal: der Einkaufsverlauf hat sich geändert
-PURCHASES_SIGNAL = "marktguru_purchases_updated"
+PURCHASES_SIGNAL = "wochenkorb_purchases_updated"

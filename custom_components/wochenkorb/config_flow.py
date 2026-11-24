@@ -70,7 +70,7 @@ def _clean(user_input):
     return data
 
 
-class MarktguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class WochenkorbConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Wochenkorb."""
 
     VERSION = 1
@@ -99,10 +99,10 @@ class MarktguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return MarktguruOptionsFlowHandler()
+        return WochenkorbOptionsFlowHandler()
 
 
-class MarktguruOptionsFlowHandler(config_entries.OptionsFlow):
+class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options for Wochenkorb."""
 
     async def async_step_init(self, user_input=None):

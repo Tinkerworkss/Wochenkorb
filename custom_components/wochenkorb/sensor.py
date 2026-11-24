@@ -46,7 +46,7 @@ MP_INTERVAL = timedelta(hours=6)
 # Rezepte aus Mealie: Rezeptliste täglich, Angebote zu den Hauptzutaten alle sechs Stunden
 RECIPE_INTERVAL = timedelta(hours=24)
 RECIPE_OFFER_INTERVAL = timedelta(hours=6)
-RECIPE_IMAGE_DIR = "marktguru_rezepte"
+RECIPE_IMAGE_DIR = "wochenkorb_rezepte"
 _NEXT_DATA_RE = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 
 
@@ -152,7 +152,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     recipes_enabled = bool(conf.get(CONF_RECIPES))
     shopping_list = (conf.get(CONF_SHOPPING_LIST) or "").strip() or None
-    coordinator = MarktguruDataCoordinator(
+    coordinator = WochenkorbDataCoordinator(
         hass, zip_code, products, retailers, recipes_enabled, shopping_list
     )
     await coordinator.async_config_entry_first_refresh()
@@ -160,7 +160,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     current_sensors = {}
 
     def get_sensor_id(query, idx):
-        return f"marktguru_{zip_code}_{query.replace(' ', '_').lower()}_{idx}"
+        return f"wochenkorb_{zip_code}_{query.replace(' ', '_').lower()}_{idx}"
 
     # Initiales Setup: Angebotssensoren
     sensors = []
@@ -171,13 +171,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
         for idx, offer in enumerate(offers):
             sensor_id = get_sensor_id(query, idx)
             if sensor_id not in current_sensors:
-                sensor = MarktguruSensor(coordinator, name, query, idx, zip_code)
+                sensor = WochenkorbSensor(coordinator, name, query, idx, zip_code)
                 sensors.append(sensor)
                 current_sensors[sensor_id] = sensor
 
     # Queries-Sensor als CoordinatorEntity (wird immer behalten)
-    queries_sensor_id = f"marktguru_queries_{zip_code}"
-    queries_sensor = MarktguruQueriesSensor(coordinator, products, zip_code)
+    queries_sensor_id = f"wochenkorb_queries_{zip_code}"
+    queries_sensor = WochenkorbQueriesSensor(coordinator, products, zip_code)
     sensors.append(queries_sensor)
     current_sensors[queries_sensor_id] = queries_sensor
 
@@ -193,14 +193,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
     )
     for search_entity in search_entities:
         suffix = search_entity[len(SEARCH_ENTITY) + 1:]
-        search_sensor = MarktguruSearchSensor(coordinator, zip_code, search_entity, suffix)
+        search_sensor = WochenkorbSearchSensor(coordinator, zip_code, search_entity, suffix)
         sensors.append(search_sensor)
         current_sensors[search_sensor.unique_id] = search_sensor
         fixed_sensor_ids.add(search_sensor.unique_id)
 
     # Rezept-Sensor: Vorschläge aus Mealie, deren Hauptzutat im Angebot ist
     if recipes_enabled:
-        recipes_sensor = MarktguruRecipesSensor(coordinator, zip_code)
+        recipes_sensor = WochenkorbRecipesSensor(coordinator, zip_code)
         sensors.append(recipes_sensor)
         current_sensors[recipes_sensor.unique_id] = recipes_sensor
         fixed_sensor_ids.add(recipes_sensor.unique_id)
@@ -234,16 +234,16 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 sensor_id = get_sensor_id(query, idx)
                 new_sensor_ids.add(sensor_id)
                 if sensor_id not in current_sensors:
-                    sensor = MarktguruSensor(coordinator, name, query, idx, zip_code)
+                    sensor = WochenkorbSensor(coordinator, name, query, idx, zip_code)
                     new_entities.append(sensor)
                     current_sensors[sensor_id] = sensor
 
         # Queries-Sensor immer behalten/ggf. neu anlegen
-        queries_sensor_id = f"marktguru_queries_{zip_code}"
+        queries_sensor_id = f"wochenkorb_queries_{zip_code}"
         new_sensor_ids.add(queries_sensor_id)
         new_sensor_ids.update(fixed_sensor_ids)
         if queries_sensor_id not in current_sensors:
-            queries_sensor = MarktguruQueriesSensor(coordinator, coordinator.products, zip_code)
+            queries_sensor = WochenkorbQueriesSensor(coordinator, coordinator.products, zip_code)
             new_entities.append(queries_sensor)
             current_sensors[queries_sensor_id] = queries_sensor
 
@@ -288,12 +288,12 @@ def _offer_summary(offer):
     }
 
 
-class MarktguruDataCoordinator(DataUpdateCoordinator):
+class WochenkorbDataCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, zip_code, products, retailers=None, recipes_enabled=False, shopping_list=None):
         super().__init__(
             hass,
             _LOGGER,
-            name=f"Marktguru Coordinator {zip_code}",
+            name=f"Wochenkorb Coordinator {zip_code}",
             update_interval=SCAN_INTERVAL,
         )
         self.zip_code = zip_code
@@ -444,7 +444,7 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         if self.recipes_enabled and (self._recipe_task is None or self._recipe_task.done()):
             # Im Hintergrund, damit die Angebots-Sensoren nicht auf die Rezepte warten
             self._recipe_task = self.hass.async_create_background_task(
-                self._update_recipes(results, covered), f"marktguru_recipes_{self.zip_code}"
+                self._update_recipes(results, covered), f"wochenkorb_recipes_{self.zip_code}"
             )
         return results
 
@@ -697,10 +697,10 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
         self._skipped |= {s["slug"] for s in self.suggestions if not s.get("planned")}
         await self.async_refresh_suggestions()
 
-class MarktguruSensor(CoordinatorEntity, SensorEntity):
+class WochenkorbSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, name, query, idx, zip_code):
         super().__init__(coordinator)
-        self._name = f"Marktguru {name} {idx+1} ({zip_code})"
+        self._name = f"Wochenkorb {name} {idx+1} ({zip_code})"
         self._query = query
         self._idx = idx
         self._zip_code = zip_code
@@ -711,7 +711,7 @@ class MarktguruSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return f"marktguru_{self._zip_code}_{self._query.replace(' ', '_').lower()}_{self._idx}"
+        return f"wochenkorb_{self._zip_code}_{self._query.replace(' ', '_').lower()}_{self._idx}"
 
     @property
     def state(self):
@@ -805,18 +805,18 @@ class MarktguruSensor(CoordinatorEntity, SensorEntity):
             }
         return {}
 
-class MarktguruQueriesSensor(CoordinatorEntity, SensorEntity):
+class WochenkorbQueriesSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, products, zip_code):
         super().__init__(coordinator)
         self._zip_code = zip_code
 
     @property
     def name(self):
-        return f"Marktguru Suchbegriffe ({self._zip_code})"
+        return f"Wochenkorb Suchbegriffe ({self._zip_code})"
 
     @property
     def unique_id(self):
-        return f"marktguru_queries_{self._zip_code}"
+        return f"wochenkorb_queries_{self._zip_code}"
 
     @property
     def state(self):
@@ -833,7 +833,7 @@ class MarktguruQueriesSensor(CoordinatorEntity, SensorEntity):
         }
 
 
-class MarktguruSearchSensor(SensorEntity):
+class WochenkorbSearchSensor(SensorEntity):
     """Sucht nach dem Text im Helfer SEARCH_ENTITY und stellt die Treffer als Attribut bereit."""
 
     _attr_should_poll = False
@@ -850,11 +850,11 @@ class MarktguruSearchSensor(SensorEntity):
 
     @property
     def name(self):
-        return f"Marktguru Suche ({self._zip_code})" + (f" {self._suffix}" if self._suffix else "")
+        return f"Wochenkorb Suche ({self._zip_code})" + (f" {self._suffix}" if self._suffix else "")
 
     @property
     def unique_id(self):
-        return f"marktguru_search_{self._zip_code}" + (f"_{self._suffix}" if self._suffix else "")
+        return f"wochenkorb_search_{self._zip_code}" + (f"_{self._suffix}" if self._suffix else "")
 
     @property
     def icon(self):
@@ -899,7 +899,7 @@ class MarktguruSearchSensor(SensorEntity):
         self.async_write_ha_state()
 
 
-class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
+class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
 
     _unrecorded_attributes = frozenset({"results", "plan"})
@@ -910,11 +910,11 @@ class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        return f"Marktguru Rezepte ({self._zip_code})"
+        return f"Wochenkorb Rezepte ({self._zip_code})"
 
     @property
     def unique_id(self):
-        return f"marktguru_recipes_{self._zip_code}"
+        return f"wochenkorb_recipes_{self._zip_code}"
 
     @property
     def icon(self):
@@ -969,7 +969,7 @@ class PurchaseHistorySensor(SensorEntity):
     _attr_should_poll = False
     _attr_icon = "mdi:receipt-text-clock"
     _attr_name = "Einkauf Verlauf"
-    _attr_unique_id = "marktguru_einkauf_verlauf"
+    _attr_unique_id = "wochenkorb_einkauf_verlauf"
     _attr_native_unit_of_measurement = "Bons"
     _unrecorded_attributes = frozenset({"monate", "grundartikel", "vorschlaege", "artikel"})
 

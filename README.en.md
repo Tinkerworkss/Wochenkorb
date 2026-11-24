@@ -12,13 +12,13 @@ The offers come from the Marktguru search and from meinprospekt.de. For any sear
 
 ## About this fork
 
-Wochenkorb grew out of a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru). All credit for the original integration goes there. Technically the integration is still called `marktguru` (folder, entities such as `sensor.marktguru_…`, service `marktguru.add_purchases`) so that existing setups keep working. The fork adds:
+Wochenkorb grew out of a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru). All credit for the original integration goes there. The fork adds:
 
 - **Editable settings.** Postal code, search terms and retailer filter can be changed under *Configure* without deleting the integration. The entry reloads itself and sensors of removed search terms are cleaned up.
 - **Retailer filter.** Optional selection (for example Marktkauf, REWE, EDEKA); only offers of these retailers become sensors.
 - **Second source: meinprospekt.de.** Covers retailers that Marktguru does not list for some regions (for example Marktkauf). It is queried every six hours with the Home Assistant home coordinates. Retailers already delivered by Marktguru are not added twice.
 - **More attributes.** `source`, `link` (offer page or brochure page), `grundpreis` and `grundpreis_einheit` (price per kg or litre).
-- **Search sensor.** `sensor.marktguru_suche_<zip>` runs a live search in both sources for the text in the helper `input_text.angebote_suche` and returns the hits in its `results` attribute.
+- **Search sensor.** `sensor.wochenkorb_suche_<zip>` runs a live search in both sources for the text in the helper `input_text.angebote_suche` and returns the hits in its `results` attribute.
 - **Optional: recipes from Mealie.** If the Mealie integration is set up, the option `mealie_recipes` adds a sensor with recipes whose main ingredient is on offer and the meal plan of the next days. Without Mealie nothing changes. See section 7.
 - **Fixes.** Unloading the entry works, new offers create sensors during the hourly refresh, and the search-term sensor reports the number of terms instead of a string that could exceed 255 characters.
 
@@ -28,6 +28,9 @@ Like the original, this is a hobby project without support.
 | --- | --- | --- |
 | <img src="docs/angebote.png" width="260" alt="Offers card with search and retailer tabs"> | <img src="docs/rezepte.png" width="260" alt="Recipe suggestions whose main ingredient is on offer"> | <img src="docs/wann-kochen.png" width="260" alt="Popup to pick the evening and the portions"> |
 
+
+# Upgrading from version 0.x (technical name `marktguru`)
+Since version 1.0 the integration is called `wochenkorb` technically as well: folder `custom_components/wochenkorb`, entities `sensor.wochenkorb_…`, service `wochenkorb.add_purchases`. If you use an older version, remove the old entry and the folder `custom_components/marktguru`, set the integration up again and replace `marktguru_` with `wochenkorb_` in cards, scripts and automations. The purchase history is taken over on the first start.
 
 # Known Issues
 - None known for the search term list in this fork (fixed, see above).
@@ -39,8 +42,8 @@ Home Assistant (Core, OS, Supervised, or Container)
 ## 2. Installation
 Manual Installation
 - Download the repository from GitHub.
-- Copy the marktguru folder into your Home Assistant directory:
-- <config>/custom_components/marktguru
+- Copy the wochenkorb folder into your Home Assistant directory:
+- <config>/custom_components/wochenkorb
 - Restart Home Assistant.
 ## 3. Configuration
 Add the integration:
@@ -63,7 +66,7 @@ You can add as many instances of the integration as you like (e.g., for differen
 ## 4. Usage
 Sensors:
 For each found offer, a sensor like
-sensor.marktguru_havana_rum_1_10115
+sensor.wochenkorb_havana_rum_1_10115
 is created, with attributes such as price, retailer, offer period, etc.
 Automatic updates:
 New offers appear automatically, expired ones are removed.
@@ -118,11 +121,11 @@ Replace before use: `MEALIE_EINTRAG` (config entry id of the Mealie integration)
 
 ### How the recipe suggestions work
 
-With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.marktguru_rezepte_<zip>` carries the dinners of the next eight days in the attribute `plan` and lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. The list is mixed: at first only one recipe per main ingredient, at least one vegetarian recipe if one fits, and recipes that were not cooked for a while (Mealie's "last made") get a small bonus. Recipes from the meal plan of the last 14 days are left out, recipes planned for the coming days always stay at the top and are marked as planned. A press on `input_button.rezepte_neu_mischen` puts the current, unplanned suggestions aside and shows the next ones; when all have been shown it starts over. With the option `shopping_list` (a to-do entity, e.g. the Bring! list) main ingredients that are already on the list are marked. The planning script still adds all ingredients to the Mealie shopping list so that quantities can be summed up. Recipe images are copied to `www/marktguru_rezepte` so the card can show them without a Mealie login.
+With the option `mealie_recipes` the integration reads all recipes from the Mealie integration once a day, looks for main ingredients (meat, fish, cheese, vegetables; spices and staples do not count) and loads offers for the most frequent ones as up to 20 extra search terms. These do not create offer sensors. `sensor.wochenkorb_rezepte_<zip>` carries the dinners of the next eight days in the attribute `plan` and lists up to five recipes whose main ingredient is on offer, best discount first, meat and fish weighted above cheese and vegetables. The list is mixed: at first only one recipe per main ingredient, at least one vegetarian recipe if one fits, and recipes that were not cooked for a while (Mealie's "last made") get a small bonus. Recipes from the meal plan of the last 14 days are left out, recipes planned for the coming days always stay at the top and are marked as planned. A press on `input_button.rezepte_neu_mischen` puts the current, unplanned suggestions aside and shows the next ones; when all have been shown it starts over. With the option `shopping_list` (a to-do entity, e.g. the Bring! list) main ingredients that are already on the list are marked. The planning script still adds all ingredients to the Mealie shopping list so that quantities can be summed up. Recipe images are copied to `www/wochenkorb_rezepte` so the card can show them without a Mealie login.
 
 ## 8. Optional: purchase history from receipts
 
-The integration can keep a history of what was actually bought. It does not read receipts itself: something else (for example a scheduled assistant task that reads the e-receipts from the mailbox) delivers the positions through the service `marktguru.add_purchases`, one call per receipt. A receipt (time and retailer) is always replaced as a whole, so sending it twice does not duplicate anything. The history is stored locally in `.storage/marktguru_einkaeufe`.
+The integration can keep a history of what was actually bought. It does not read receipts itself: something else (for example a scheduled assistant task that reads the e-receipts from the mailbox) delivers the positions through the service `wochenkorb.add_purchases`, one call per receipt. A receipt (time and retailer) is always replaced as a whole, so sending it twice does not duplicate anything. The history is stored locally in `.storage/wochenkorb_einkaeufe`.
 
 One line per position, fields separated by semicolons:
 

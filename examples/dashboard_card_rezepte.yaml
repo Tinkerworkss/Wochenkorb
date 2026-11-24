@@ -20,7 +20,7 @@ cards:
           #states > div > * { overflow: visible; }
   filter:
     template: |-
-      {%- set res = state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'results') or [] -%}
+      {%- set res = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'results') or [] -%}
       {%- set rows = namespace(l=[]) -%}
       {%- if res | count == 0 -%}
       {%- set rows.l = [{'type': 'section', 'label': 'Gerade passt kein Rezept zu den Angeboten'}] -%}
@@ -29,7 +29,7 @@ cards:
       {%- set wt = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] -%}
       {%- set ab = (now().date() + timedelta(days=(1 if now().hour >= 18 else 0))).isoformat() -%}
       {%- set tage = namespace(l=[], vor='') -%}
-      {%- for p in (state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or []) if p.date >= ab -%}
+      {%- for p in (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or []) if p.date >= ab -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set essen = p.dinner | map(attribute='name') | join(', ') -%}
       {%- if not essen and not tage.vor -%}{%- set tage.vor = p.date -%}{%- endif -%}

@@ -39,7 +39,7 @@ actions:
       {%- for p in (rt.split(';') if rt not in ['unknown', 'unavailable', ''] else []) if '=' in p -%}{%- set werte.r = dict(werte.r, **{p.split('=')[0]: p.split('=')[1] | int(0)}) -%}{%- endfor -%}
       {#- Alle aktuellen Angebote von Marktkauf, REWE und EDEKA, die Freitag/Samstag gelten -#}
       {%- set ang = namespace(l=[]) -%}
-      {%- for s in states.sensor | selectattr('entity_id', 'match', 'sensor\\.marktguru_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') -%}
+      {%- for s in states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') -%}
       {%- set a = s.attributes -%}
       {%- set h = a.retailer_name | lower -%}
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
@@ -48,7 +48,7 @@ actions:
       {%- if markt and (von is none or von <= heute + timedelta(days=1)) and (ende is none or ende >= heute + timedelta(hours=18)) -%}
       {%- set preis = s.state | float(0) -%}
       {%- set alt = a.old_price | float(0) -%}
-      {%- set ang.l = ang.l + [{'begriff': s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1'), 'markt': markt, 'schluessel': ((markt ~ '|' ~ ((a.product_name or '') | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6], 'produkt': a.product_name or '', 'text': ((a.brand_name or '') ~ ' ' ~ (a.product_name or '')) | lower, 'preis': preis, 'wert': ((a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else preis), 'gp': (a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else 0, 'gpe': a.grundpreis_einheit or '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0}] -%}
+      {%- set ang.l = ang.l + [{'begriff': s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1'), 'markt': markt, 'schluessel': ((markt ~ '|' ~ ((a.product_name or '') | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6], 'produkt': a.product_name or '', 'text': ((a.brand_name or '') ~ ' ' ~ (a.product_name or '')) | lower, 'preis': preis, 'wert': ((a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else preis), 'gp': (a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else 0, 'gpe': a.grundpreis_einheit or '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0}] -%}
       {%- endif -%}
       {%- endfor -%}
       {%- set euro = '%.2f' -%}

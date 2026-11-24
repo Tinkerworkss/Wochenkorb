@@ -55,4 +55,4 @@ einkauf_rezept_verschieben:
       recipe_id: '{{ rid }}'
   - action: homeassistant.update_entity
     target:
-      entity_id: sensor.marktguru_rezepte_DEINE_PLZ
+      entity_id: sensor.wochenkorb_rezepte_DEINE_PLZ
