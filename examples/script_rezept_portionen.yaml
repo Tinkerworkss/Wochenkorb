@@ -1,0 +1,40 @@
+# Changes the number of portions of a planned recipe: unplans it and plans it again on the same day (called by the week plan card).
+einkauf_rezept_portionen:
+  alias: 'Einkauf: Portionen eines Rezepts ändern'
+  description: 'Ändert für ein eingeplantes Rezept, für wie viele Portionen eingekauft wird: nimmt es vom Plan (samt Zutaten) und plant es am selben Tag mit der neuen Portionenzahl wieder ein. Wird von der Wochenplan-Karte aufgerufen.'
+  icon: mdi:account-multiple-plus
+  mode: queued
+  max: 10
+  fields:
+    slug:
+      name: Rezept
+      description: Slug des Rezepts in Mealie
+      required: true
+      selector:
+        text: {}
+    datum:
+      name: Datum
+      description: Tag (JJJJ-MM-TT), an dem das Rezept im Plan steht
+      required: true
+      selector:
+        text: {}
+    portionen:
+      name: Portionen
+      description: Neue Portionenzahl
+      required: true
+      selector:
+        number:
+          min: 0.5
+          max: 12
+          step: 0.5
+          mode: box
+  sequence:
+  - action: script.einkauf_rezept_ausplanen
+    data:
+      slug: '{{ slug }}'
+      datum: '{{ datum }}'
+  - action: script.einkauf_rezept_einplanen
+    data:
+      slug: '{{ slug }}'
+      datum: '{{ datum }}'
+      portionen: '{{ portionen }}'

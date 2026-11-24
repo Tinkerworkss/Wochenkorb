@@ -520,7 +520,7 @@ class MarktguruDataCoordinator(DataUpdateCoordinator):
             day = str(item.get("mealplan_date") or "")
             if day in dinners and item.get("entry_type") == "dinner":
                 name = (item.get("recipe") or {}).get("name") or item.get("title") or "Notiz"
-                dinners[day].append({"name": name, "slug": slug})
+                dinners[day].append({"name": name, "slug": slug, "id": item.get("mealplan_id")})
             if not slug:
                 continue
             if day >= today.isoformat():
