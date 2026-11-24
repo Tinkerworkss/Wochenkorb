@@ -72,7 +72,7 @@ actions:
            'petersilie kraus': ['Petersilie', ''],
            'frischer koriander': ['Koriander', ''], 'koriander, frisch': ['Koriander', ''],
            'frisches basilikum': ['Basilikum', ''], 'basilikum, frisch': ['Basilikum', ''],
-           'schlagsahne': ['Sahne', ''], 'kochsahne': ['Sahne', ''],
+           'schlagsahne': ['Sahne', ''], 'kochsahne': ['Sahne', ''], 'kochsahne leicht': ['Sahne', ''],
            'creme fraiche': ['Crème fraîche', ''], 'crème fraîche': ['Crème fraîche', ''],
            'crème fraîche légère': ['Crème fraîche', ''],
            'geriebener hartkäse': ['Hartkäse', ''], 'italienischer hartkäse': ['Hartkäse', ''],
@@ -129,7 +129,7 @@ actions:
                         'EL': 'Esslöffel', 'TL': 'Teelöffel', 'Zehen': 'Zehe', 'Prisen': 'Prise',
                         'Packungen': 'Packung', 'Dosen': 'Dose', 'Scheiben': 'Scheibe', 'Zweige': 'Zweig'} %}
       {% set ns = namespace(e=[]) %} {% for i in listen['todo.mealie_to_bring']['items'] %}
-        {% set s = i.summary | replace('¹/₂', '½') | replace('¹⁄₂', '½') | replace('¹/₄', '¼') | replace('¹⁄₄', '¼') | replace('³/₄', '¾') | replace('³⁄₄', '¾') | replace('⁄', '/') | replace('¹', '1') | replace('²', '2') | replace('³', '3') | replace('⁴', '4') | replace('⁵', '5') | replace('⁷', '7') | replace('₂', '2') | replace('₃', '3') | replace('₄', '4') | replace('₅', '5') | replace('₆', '6') | replace('₈', '8') | regex_replace('\\([^()]*\\)', '') | regex_replace('\\([^()]*\\)', '')
+        {% set s = i.summary | replace('¹/₂', '½') | replace('¹⁄₂', '½') | replace('¹/₄', '¼') | replace('¹⁄₄', '¼') | replace('³/₄', '¾') | replace('³⁄₄', '¾') | replace('⁄', '/') | replace('¹', '1') | replace('²', '2') | replace('³', '3') | replace('⁴', '4') | replace('⁵', '5') | replace('⁷', '7') | replace('₂', '2') | replace('₃', '3') | replace('₄', '4') | replace('₅', '5') | replace('₆', '6') | replace('₈', '8') | regex_replace('^(\\d+) ?½', '\\1.5') | regex_replace('^(\\d+) ?¼', '\\1.25') | regex_replace('^(\\d+) ?¾', '\\1.75') | regex_replace('\\([^()]*\\)', '') | regex_replace('\\([^()]*\\)', '')
                  | regex_replace('\\(.*$', '') | regex_replace('\\s+', ' ') | trim %}
         {% set geschmack = (s | lower).startswith('nach geschmack') %}
         {% set m = s | regex_findall('^([\d.,/½¼¾]+(?:\s*-\s*[\d.,/½¼¾]+)?)\s*(?:(' ~ units ~ ')\s+)?(.+)$') %}
@@ -184,6 +184,9 @@ actions:
             {% set tu = synonyme[key][1] or tu %}
             {% set key = tname | lower %}
           {% endif %}
+          {# Flüssiges eins zu eins von Gramm in Milliliter, Knoblauch immer in Zehen: so addieren sich die Mengen #}
+          {% if tu == 'Gramm' and key in ['sahne', 'milch', 'kokosmilch', 'buttermilch', 'brühe', 'gemüsebrühe', 'hühnerbrühe', 'rinderbrühe', 'weißwein', 'rotwein'] %}{% set tu = 'Milliliter' %}{% endif %}
+          {% if key == 'knoblauch' and tu in ['Stück', ''] and tq > 0 %}{% set tu = 'Zehe' %}{% endif %}
           {% set g = namespace(hit=false) %}
           {% for w in gewuerze %}{% if w in key %}{% set g.hit = true %}{% endif %}{% endfor %}
           {% if tname %}
