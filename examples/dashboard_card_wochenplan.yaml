@@ -61,7 +61,7 @@ cards:
         {'service': 'input_text.set_value', 'data': {'entity_id': 'input_text.essen_notiz', 'value': ''}},
         {'service': 'browser_mod.popup', 'data': {'title': tag ~ ': Was gibt es?', 'content': {'type': 'vertical-stack', 'cards': [
           {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'},
-          {'type': 'grid', 'columns': 2, 'square': 0, 'cards': schnell.l},
+          {'type': 'horizontal-stack', 'cards': schnell.l[:2]}, {'type': 'horizontal-stack', 'cards': schnell.l[2:]},
           {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}]},
           {'type': 'custom:button-card', 'name': 'Eintragen', 'icon': 'mdi:check', 'layout': 'icon_name',
            'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
