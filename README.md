@@ -19,7 +19,9 @@ This is a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-markt
 
 Both sources are unofficial and can change or stop working at any time. Like the original, this is a hobby project without support.
 
-<!-- SCREENSHOTS -->
+| Offers of the week | Recipes for the offers | Planning a recipe |
+| --- | --- | --- |
+| <img src="docs/angebote.png" width="260" alt="Offers card with search and retailer tabs"> | <img src="docs/rezepte.png" width="260" alt="Recipe suggestions whose main ingredient is on offer"> | <img src="docs/wann-kochen.png" width="260" alt="Popup to pick the evening and the portions"> |
 
 
 # Disclaimer
