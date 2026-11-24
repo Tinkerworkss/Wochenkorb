@@ -1,0 +1,25 @@
+# Removes an entry without a recipe from the Mealie meal plan; called by the week plan card.
+einkauf_essen_notiz_entfernen:
+  alias: 'Einkauf: Essens-Notiz entfernen'
+  description: Löscht einen Eintrag ohne Rezept aus dem Mealie-Essensplan. Wird von der Wochenplan-Karte aufgerufen.
+  icon: mdi:silverware-clean
+  mode: queued
+  max: 10
+  fields:
+    eintrag:
+      name: Eintrag
+      description: Nummer des Eintrags im Essensplan
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 999999999
+          mode: box
+  sequence:
+  - action: mealie.delete_mealplan
+    data:
+      config_entry_id: MEALIE_EINTRAG
+      mealplan_id: '{{ eintrag | int }}'
+  - action: homeassistant.update_entity
+    target:
+      entity_id: sensor.wochenkorb_rezepte_DEINE_PLZ

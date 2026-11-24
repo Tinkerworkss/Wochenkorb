@@ -104,9 +104,10 @@ Everything in this section is optional. Without the Mealie integration, leave th
 | File | What it does |
 | --- | --- |
 | `dashboard_card_rezepte.yaml` | Recipe card: up to five Mealie recipes whose main ingredient is on offer. A tap opens ingredients and steps in a popup, the calendar button asks for the evening and, if wanted, a larger number of portions, and plans the recipe. The button "Andere Vorschläge" shows other recipes; planned ones stay. |
-| `dashboard_card_wochenplan.yaml` | The dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move it to another evening, to change the portions or to remove it. |
+| `dashboard_card_wochenplan.yaml` | The dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move it to another evening, to change the portions or to remove it, a tap on a free evening an own entry without a recipe. |
 | `script_rezept_einplanen.yaml` | Puts a recipe into the Mealie meal plan on the chosen evening and adds its ingredients to the Mealie shopping list, converted to the household size. Called without a date and with a browser_mod id it asks for the evening itself. |
 | `script_rezept_ausplanen.yaml` | Removes a recipe from the meal plan again and takes its ingredients off the Mealie shopping list. |
+| `script_essen_notieren.yaml`, `script_essen_notiz_entfernen.yaml` | Free entry without a recipe in the week plan (for example "pizza out"): a tap on a free evening opens a popup with quick choices and a text field. Needs the helper `input_text.essen_notiz`. |
 | `script_rezept_portionen.yaml` | Changes for how many portions a planned recipe is bought: unplans it and plans it again on the same day. |
 | `script_rezept_verschieben.yaml` | Moves a planned recipe to another day. The shopping list stays as it is. |
 | `automation_mealie_einkaufsliste_abgleich.yaml` | Keeps the Mealie shopping list and the real shopping list (here Bring!) in step: merges equal articles, adds up quantities, keeps notes you typed yourself and skips pantry articles. Independent of this integration, but the scripts above rely on it. |
