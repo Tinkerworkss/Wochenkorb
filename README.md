@@ -1,8 +1,12 @@
-# ha-marktguru
+# Wochenkorb
 
 **Deutsch** · [English](README.en.md)
 
-Home-Assistant-Integration, die aktuelle Prospekt-Angebote aus der Marktguru-Suche als Sensoren bereitstellt. Für beliebige Suchbegriffe und eine Postleitzahl entstehen Sensoren mit Preis, Händler, Gültigkeit, Bild und weiteren Angaben; sie werden stündlich aktualisiert. Neue Angebote kommen von selbst dazu, abgelaufene verschwinden, ohne Neustart.
+Home-Assistant-Integration, die aus den Prospekt-Angeboten der Woche den Einkauf macht: Angebote als Sensoren und als Karte, Grundartikel automatisch auf der Einkaufsliste, auf Wunsch Rezeptvorschläge aus Mealie und ein Einkaufsverlauf aus Kassenbons.
+
+Die Angebote kommen aus der Suche von Marktguru und von meinprospekt.de. Für beliebige Suchbegriffe und eine Postleitzahl entstehen Sensoren mit Preis, Händler, Gültigkeit, Bild und weiteren Angaben; sie werden stündlich aktualisiert. Neue Angebote kommen von selbst dazu, abgelaufene verschwinden, ohne Neustart.
+
+> **Inoffizielles Hobbyprojekt.** Wochenkorb ist nicht mit Marktguru, meinprospekt oder den genannten Händlern verbunden und wird von ihnen weder unterstützt noch geprüft. Die Namen dienen nur dazu, die Datenquellen zu bezeichnen. Beide Quellen sind inoffiziell und können sich jederzeit ändern oder ausfallen.
 
 | Angebote der Woche | Rezepte zu den Angeboten | Rezept einplanen |
 | --- | --- | --- |
@@ -10,7 +14,7 @@ Home-Assistant-Integration, die aktuelle Prospekt-Angebote aus der Marktguru-Suc
 
 ## Über diesen Fork
 
-Dies ist ein Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru); die ursprüngliche Integration stammt von dort. Der Fork ergänzt:
+Wochenkorb ist aus einem Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru) entstanden; die ursprüngliche Integration stammt von dort. Technisch heißt die Integration weiter `marktguru` (Ordner, Entitäten wie `sensor.marktguru_…`, Dienst `marktguru.add_purchases`), damit bestehende Einrichtungen unverändert laufen. Der Fork ergänzt:
 
 - **Einstellungen änderbar.** Postleitzahl, Suchbegriffe und Händlerfilter lassen sich unter *Konfigurieren* ändern, ohne die Integration zu löschen. Suchbegriffe und Händler sind Listen, in denen sich einzelne Einträge hinzufügen und entfernen lassen. Der Eintrag lädt sich neu, Sensoren entfernter Suchbegriffe werden aufgeräumt.
 - **Händlerfilter.** Optionale Auswahl (zum Beispiel Marktkauf, REWE, EDEKA); nur Angebote dieser Händler werden zu Sensoren.
@@ -21,7 +25,7 @@ Dies ist ein Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-m
 - **Optional: Einkaufsverlauf aus Kassenbons.** Ein Dienst speichert Bonpositionen lokal, ein Sensor wertet sie aus. Siehe Abschnitt 7.
 - **Korrekturen.** Das Entladen des Eintrags funktioniert, neue Angebote erzeugen ihre Sensoren bei der stündlichen Aktualisierung, und der Suchbegriff-Sensor meldet die Anzahl der Begriffe statt eines Textes, der länger als 255 Zeichen werden konnte.
 
-Beide Quellen sind inoffiziell und können sich jederzeit ändern oder ausfallen. Wie das Original ist dies ein Hobbyprojekt ohne Support. Große Teile des Codes sind mit KI-Unterstützung entstanden.
+Wie das Original ist dies ein Hobbyprojekt ohne Support. Große Teile des Codes sind mit KI-Unterstützung entstanden.
 
 ## 1. Voraussetzungen
 
@@ -35,7 +39,7 @@ Home Assistant (Core, OS, Supervised oder Container).
 
 ## 3. Einrichtung
 
-Unter Einstellungen → Geräte & Dienste → Integration hinzufügen nach „Marktguru“ suchen.
+Unter Einstellungen → Geräte & Dienste → Integration hinzufügen nach „Wochenkorb“ suchen.
 
 - **Postleitzahl:** die PLZ, für die Angebote gesucht werden (zum Beispiel 10115).
 - **Suchbegriffe:** Liste der Produkte, zum Beispiel Butter, Hackfleisch, Pepsi. Begriff eintippen und mit Enter hinzufügen, mit dem Kreuz wieder entfernen.

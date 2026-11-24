@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Marktguru einrichten",
+        "title": "Wochenkorb einrichten",
         "description": "Prospekt-Angebote für eine Postleitzahl und eine Liste von Suchbegriffen.",
         "data": {
           "zip_code": "Postleitzahl",
@@ -27,7 +27,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Marktguru anpassen",
+        "title": "Wochenkorb anpassen",
         "description": "Änderungen gelten sofort; Sensoren entfernter Suchbegriffe werden aufgeräumt.",
         "data": {
           "zip_code": "Postleitzahl",

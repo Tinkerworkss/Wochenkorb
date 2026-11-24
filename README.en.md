@@ -1,18 +1,18 @@
-# ha-marktguru
+# Wochenkorb
 
 [Deutsch](README.md) · **English**
 
 The German README is the main one, this is its translation. The example cards, scripts and automations in `examples/` are in German on purpose: both sources only cover German brochures.
 
-AI generated proof of concept of an Home Assistant integration for Marktguru supermarket offer notifications
+Home Assistant integration that turns the brochure offers of the week into the weekly shopping ("Wochenkorb" is German for weekly basket): offers as sensors and as a card, staples put on the shopping list automatically, optionally recipe suggestions from Mealie and a purchase history from receipts.
 
-The Marktguru Home Assistant integration allows you to display current supermarket offers from the Marktguru search directly as sensors in Home Assistant.
-For any products and postal codes, sensors with price, retailer, offer period, image, and other details are automatically created and updated hourly.
-New offers appear automatically, expired ones are removed — no restart or manual intervention required.
+The offers come from the Marktguru search and from meinprospekt.de. For any search terms and a postal code, sensors with price, retailer, offer period, image and other details are created and updated hourly. New offers appear automatically, expired ones are removed, no restart required.
+
+> **Unofficial hobby project.** Wochenkorb is not affiliated with, endorsed by or reviewed by Marktguru, meinprospekt or the retailers mentioned. The names are only used to identify the data sources. Both sources are unofficial and can change or stop working at any time.
 
 ## About this fork
 
-This is a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru). All credit for the original integration goes there. The fork adds:
+Wochenkorb grew out of a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru). All credit for the original integration goes there. Technically the integration is still called `marktguru` (folder, entities such as `sensor.marktguru_…`, service `marktguru.add_purchases`) so that existing setups keep working. The fork adds:
 
 - **Editable settings.** Postal code, search terms and retailer filter can be changed under *Configure* without deleting the integration. The entry reloads itself and sensors of removed search terms are cleaned up.
 - **Retailer filter.** Optional selection (for example Marktkauf, REWE, EDEKA); only offers of these retailers become sensors.
@@ -22,16 +22,12 @@ This is a fork of [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-markt
 - **Optional: recipes from Mealie.** If the Mealie integration is set up, the option `mealie_recipes` adds a sensor with recipes whose main ingredient is on offer and the meal plan of the next days. Without Mealie nothing changes. See section 7.
 - **Fixes.** Unloading the entry works, new offers create sensors during the hourly refresh, and the search-term sensor reports the number of terms instead of a string that could exceed 255 characters.
 
-Both sources are unofficial and can change or stop working at any time. Like the original, this is a hobby project without support.
+Like the original, this is a hobby project without support.
 
 | Offers of the week | Recipes for the offers | Planning a recipe |
 | --- | --- | --- |
 | <img src="docs/angebote.png" width="260" alt="Offers card with search and retailer tabs"> | <img src="docs/rezepte.png" width="260" alt="Recipe suggestions whose main ingredient is on offer"> | <img src="docs/wann-kochen.png" width="260" alt="Popup to pick the evening and the portions"> |
 
-
-# Disclaimer
-This is not a robust software implementation. It's merely an AI-generated proof of concept. I provide no support and don't have the expertise to develop it into a finished implementation.
-Anyone who wants to complete the integration is welcome to join!
 
 # Known Issues
 - None known for the search term list in this fork (fixed, see above).
@@ -50,7 +46,7 @@ Manual Installation
 Add the integration:
 Go to
 Settings → Devices & Services → Add Integration
-Search for “Marktguru” and select it.
+Search for “Wochenkorb” and select it.
 
 Fill in the configuration:
 

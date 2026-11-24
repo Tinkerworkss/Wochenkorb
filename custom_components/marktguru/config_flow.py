@@ -71,7 +71,7 @@ def _clean(user_input):
 
 
 class MarktguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Marktguru."""
+    """Handle a config flow for Wochenkorb."""
 
     VERSION = 1
 
@@ -84,7 +84,7 @@ class MarktguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif not data[CONF_PRODUCTS]:
                 errors["base"] = "products_required"
             else:
-                return self.async_create_entry(title=f"Marktguru ({data[CONF_ZIP]})", data=data)
+                return self.async_create_entry(title=f"Wochenkorb ({data[CONF_ZIP]})", data=data)
 
         current = user_input or {}
         schema = _schema(
@@ -103,7 +103,7 @@ class MarktguruConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class MarktguruOptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options for Marktguru."""
+    """Handle options for Wochenkorb."""
 
     async def async_step_init(self, user_input=None):
         errors = {}

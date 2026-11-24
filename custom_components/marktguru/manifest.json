@@ -1,13 +1,15 @@
 {
   "domain": "marktguru",
-  "name": "Marktguru",
+  "name": "Wochenkorb",
   "documentation": "https://github.com/Tinkerworkss/ha-marktguru",
   "dependencies": [],
-  "after_dependencies": ["mealie"],
+  "after_dependencies": [
+    "mealie"
+  ],
   "codeowners": [
     "@thorschtn"
   ],
   "requirements": [],
-  "version": "0.4.0",
+  "version": "0.5.0",
   "config_flow": true
 }
