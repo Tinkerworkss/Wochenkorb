@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Set up Marktguru",
+        "title": "Set up Wochenkorb",
         "description": "Brochure offers for a postal code and a list of search terms.",
         "data": {
           "zip_code": "Postal code",
@@ -27,7 +27,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Configure Marktguru",
+        "title": "Configure Wochenkorb",
         "description": "Changes apply at once; sensors of removed search terms are cleaned up.",
         "data": {
           "zip_code": "Postal code",
