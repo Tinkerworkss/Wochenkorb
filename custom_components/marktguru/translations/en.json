@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Marktguru",
+        "description": "Brochure offers for a postal code and a list of search terms.",
+        "data": {
+          "zip_code": "Postal code",
+          "products": "Search terms",
+          "retailers": "Retailers",
+          "mealie_recipes": "Suggest recipes from Mealie",
+          "shopping_list": "Shopping list"
+        },
+        "data_description": {
+          "products": "Type a term and press Enter to add it, remove it with the cross. Each term creates offer sensors.",
+          "retailers": "Empty: all retailers. Otherwise only offers of the selected retailers; you can type your own names.",
+          "mealie_recipes": "Needs the Mealie integration. Shows recipes whose main ingredient is on offer.",
+          "shopping_list": "Optional. Main ingredients already on this list are marked in the recipe suggestions."
+        }
+      }
+    },
+    "error": {
+      "zip_required": "Please enter a postal code.",
+      "products_required": "Please enter at least one search term."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Marktguru",
+        "description": "Changes apply at once; sensors of removed search terms are cleaned up.",
+        "data": {
+          "zip_code": "Postal code",
+          "products": "Search terms",
+          "retailers": "Retailers",
+          "mealie_recipes": "Suggest recipes from Mealie",
+          "shopping_list": "Shopping list"
+        },
+        "data_description": {
+          "products": "Type a term and press Enter to add it, remove it with the cross. Each term creates offer sensors.",
+          "retailers": "Empty: all retailers. Otherwise only offers of the selected retailers; you can type your own names.",
+          "mealie_recipes": "Needs the Mealie integration. Shows recipes whose main ingredient is on offer.",
+          "shopping_list": "Optional. Main ingredients already on this list are marked in the recipe suggestions."
+        }
+      }
+    },
+    "error": {
+      "zip_required": "Please enter a postal code.",
+      "products_required": "Please enter at least one search term."
+    }
+  }
+}
