@@ -3,9 +3,75 @@
 type: vertical-stack
 cards:
 - type: heading
-  heading: Abendessen diese Woche
+  heading: Abendessen
   icon: mdi:calendar-week
   heading_style: title
+- type: horizontal-stack
+  cards:
+  - type: custom:button-card
+    icon: mdi:chevron-left
+    show_name: false
+    tap_action:
+      action: call-service
+      service: input_number.decrement
+      service_data:
+        entity_id: input_number.essen_woche
+    styles:
+      card:
+      - padding: 8px
+      - border-radius: 12px
+      - border: none
+      - box-shadow: none
+      - background: rgba(127,127,127,0.18)
+      icon:
+      - width: 22px
+  - type: custom:button-card
+    entity: input_number.essen_woche
+    show_icon: false
+    show_state: false
+    name: '[[[ const o = parseInt(entity.state) || 0; if (o === 0) return ''Ab heute''; const a = new Date(); a.setDate(a.getDate() + o * 7); const b = new Date(a); b.setDate(b.getDate() + 6); const f = d => d.toLocaleDateString(''de-DE'', {day: ''2-digit'', month: ''2-digit''}); return f(a) + '' – '' + f(b) + (o < 0 ? '' · Rückblick'' : ''''); ]]]'
+    label: '[[[ return (parseInt(entity.state) || 0) === 0 ? '''' : ''Tippen: zurück zu heute''; ]]]'
+    show_label: true
+    tap_action:
+      action: call-service
+      service: input_number.set_value
+      service_data:
+        entity_id: input_number.essen_woche
+        value: 0
+    styles:
+      card:
+      - padding: 6px 10px
+      - border-radius: 12px
+      - border: none
+      - box-shadow: none
+      - background: rgba(127,127,127,0.18)
+      name:
+      - font-size: 14px
+      - font-weight: '600'
+      label:
+      - font-size: 11px
+      - opacity: '0.7'
+  - type: custom:button-card
+    icon: mdi:chevron-right
+    show_name: false
+    tap_action:
+      action: call-service
+      service: input_number.increment
+      service_data:
+        entity_id: input_number.essen_woche
+    styles:
+      card:
+      - padding: 8px
+      - border-radius: 12px
+      - border: none
+      - box-shadow: none
+      - background: rgba(127,127,127,0.18)
+      icon:
+      - width: 22px
+  card_mod:
+    style: |-
+      #root { display: grid !important; grid-template-columns: 52px 1fr 52px; gap: 8px; }
+      #root > * { margin: 0 !important; min-width: 0; }
 - type: custom:auto-entities
   show_empty: true
   card:
@@ -32,19 +98,28 @@ cards:
       {%- set pm = namespace(d={}) -%}
       {%- set alt = states('input_text.einkauf_portionen_plan') -%}
       {%- for x in (alt.split(';') if alt not in ['unknown', 'unavailable', ''] else []) if '=' in x -%}{%- set pm.d = dict(pm.d, **{x.split('=')[0]: x.split('=')[1] | float(0)}) -%}{%- endfor -%}
+      {#- Blättern: 0 = die sieben Tage ab heute, -1 = die sieben davor, 1 = die sieben danach (Helfer input_number.essen_woche) -#}
+      {%- set off = states('input_number.essen_woche') | int(0) -%}
+      {%- set kal = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'kalender') or {} -%}
+      {%- set woche = namespace(l=[]) -%}
+      {%- for i in range(7) -%}
+      {%- set dd = (now().date() + timedelta(days=off * 7 + i)).isoformat() -%}
+      {%- set woche.l = woche.l + [{'date': dd, 'dinner': kal.get(dd, [])}] -%}
+      {%- endfor -%}
       {#- Die sieben Tage mit dem, was dort schon steht: Ziele zum Verschieben -#}
       {%- set tage = namespace(l=[]) -%}
-      {%- for p in state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or [] -%}
+      {%- for p in woche.l -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set diff = (d.date() - now().date()).days -%}
-      {%- if diff >= 0 and diff < 7 -%}
+      {%- if diff >= 0 -%}
       {%- set tage.l = tage.l + [{'d': p.date, 'text': 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')), 'essen': p.dinner | map(attribute='name') | join(', ')}] -%}
       {%- endif -%}
       {%- endfor -%}
-      {%- for p in state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or [] -%}
+      {%- for p in woche.l -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set diff = (d.date() - now().date()).days -%}
-      {%- if diff >= 0 and diff < 7 -%}
+      {#- Vergangene Tage sind nur zum Ansehen -#}
+      {%- if true -%}
       {%- set tag = 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')) -%}
       {%- if p.dinner | count == 0 -%}
       {#- Freier Abend: Tipp öffnet ein Fenster für eine freie Notiz (Pizza auswärts, Reste, ...), die nicht an ein Rezept gebunden ist -#}
@@ -69,7 +144,7 @@ cards:
              {'service': 'script.einkauf_essen_notieren', 'data': {'datum': p.date}}]}}},
            'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'var(--primary-color)'}, {'color': 'var(--text-primary-color, #fff)'}],
                       'icon': [{'width': '20px'}, {'color': 'var(--text-primary-color, #fff)'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}}]}}}]}}} -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag, 'label': 'noch frei', 'show_icon': 0, 'show_label': 1, 'tap_action': notiz,
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag, 'label': 'noch frei' if diff >= 0 else '–', 'show_icon': 0, 'show_label': 1, 'tap_action': notiz if diff >= 0 else {'action': 'none'},
         'styles': dict(stil, label=stil.label + [{'color': 'var(--secondary-text-color)'}])}] -%}
       {%- endif -%}
       {%- for e in p.dinner -%}
@@ -114,6 +189,7 @@ cards:
            dict(weg, tap_action={'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
              {'service': 'browser_mod.close_popup', 'data': {}},
              {'service': 'script.einkauf_essen_notiz_entfernen', 'data': {'eintrag': e.id}}]}}})]}}}} if e.id else {'action': 'none'}) -%}
+      {%- set tipp = tipp if diff >= 0 else {'action': 'none'} -%}
       {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'name': tag if loop.first else '', 'label': e.name ~ ((' · ' ~ ptext) if port > 0 and port != std else ''), 'show_icon': 0, 'show_label': 1, 'tap_action': tipp, 'styles': stil}] -%}
       {%- endfor -%}
       {%- endif -%}

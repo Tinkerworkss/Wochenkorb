@@ -29,7 +29,18 @@ cards:
       {%- set wt = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] -%}
       {%- set ab = (now().date() + timedelta(days=(1 if now().hour >= 18 else 0))).isoformat() -%}
       {%- set tage = namespace(l=[], vor='') -%}
-      {%- for p in (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or []) if p.date >= ab -%}
+      {#- Ist im Wochenplan vorgeblättert, gelten dessen sieben Tage; so lässt sich auch weiter im Voraus planen -#}
+      {%- set off = states('input_number.essen_woche') | int(0) -%}
+      {%- set kal = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'kalender') or {} -%}
+      {%- set quelle = namespace(l=state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or []) -%}
+      {%- if off > 0 -%}
+      {%- set quelle.l = [] -%}
+      {%- for i in range(7) -%}
+      {%- set dd = (now().date() + timedelta(days=off * 7 + i)).isoformat() -%}
+      {%- set quelle.l = quelle.l + [{'date': dd, 'dinner': kal.get(dd, [])}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {%- for p in quelle.l if p.date >= ab -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set essen = p.dinner | map(attribute='name') | join(', ') -%}
       {%- if not essen and not tage.vor -%}{%- set tage.vor = p.date -%}{%- endif -%}
@@ -53,7 +64,8 @@ cards:
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
       {%- set preis = '%.2f' | format(o.price | float(0)) | replace('.', ',') -%}
       {%- set info = r.ingredient ~ ' · ' ~ markt ~ ' ' ~ preis ~ ' €' -%}
-      {%- set mehr = ('auch im Angebot: ' ~ (r.also_on_offer[:3] | join(', '))) if r.also_on_offer else '' -%}
+      {%- set zl = strptime(r.last_cooked, '%Y-%m-%d') if r.last_cooked | default('') else none -%}
+      {%- set mehr = [('auch im Angebot: ' ~ (r.also_on_offer[:3] | join(', '))) if r.also_on_offer else '', ('zuletzt am ' ~ wt[zl.weekday()] ~ ', ' ~ zl.strftime('%d.%m.')) if zl else ''] | select | join(' · ') -%}
       {#- Eingeplante Rezepte bleiben stehen; Hauptzutaten, die schon auf der Einkaufsliste stehen, werden genannt -#}
       {%- set tag = strptime(r.planned, '%Y-%m-%d') if r.planned else none -%}
       {%- set geplant = ('eingeplant für ' ~ wt[tag.weekday()] ~ ', ' ~ tag.strftime('%d.%m.')) if tag else '' -%}

@@ -49,6 +49,9 @@ MP_INTERVAL = timedelta(hours=6)
 RECIPE_INTERVAL = timedelta(hours=24)
 RECIPE_OFFER_INTERVAL = timedelta(hours=6)
 RECIPE_IMAGE_DIR = "wochenkorb_rezepte"
+# Zeitraum des Essensplans, der zum Blättern im Wochenplan gelesen wird
+PLAN_DAYS_BACK = 182
+PLAN_DAYS_AHEAD = 56
 _NEXT_DATA_RE = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S)
 
 
@@ -372,6 +375,10 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self._planned = {}
         self._cooked = set()
         self.plan = []
+        # Essensplan zum Blättern: Datum -> Abendessen, ein halbes Jahr zurück und acht Wochen voraus
+        self.calendar = {}
+        # Rezept -> letzter Tag, an dem es im Essensplan stand
+        self._last_cooked = {}
         # Rezepte, die nach "andere Vorschläge" gerade nicht gezeigt werden
         self._skipped = set()
 
@@ -552,6 +559,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                 "time": recipe.get("total_time"),
                 "servings": recipe.get("recipe_servings") or 0,
                 "last_made": recipe.get("last_made"),
+                "last_made_mealie": recipe.get("last_made"),
                 "vegetarian": rc.is_vegetarian(texts),
                 "ingredients": texts,
                 "steps": steps,
@@ -562,30 +570,43 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         return {slug: recipe for slug, recipe in loaded if recipe}
 
     async def _load_planned(self, entry):
-        """Essensplan lesen: kommende Einträge (Slug -> Datum) und die der letzten 14 Tage."""
+        """Essensplan lesen: kommende Einträge (Slug -> Datum) und die der letzten 14 Tage.
+
+        Gelesen wird ein halbes Jahr zurück und acht Wochen voraus, damit sich im Wochenplan blättern lässt
+        und bekannt ist, wann ein Rezept zuletzt auf dem Plan stand.
+        """
         today = dt_util.now().date()
         plan = await self._mealie(
             entry,
             "get_mealplan",
-            start_date=(today - timedelta(days=14)).isoformat(),
-            end_date=(today + timedelta(days=14)).isoformat(),
+            start_date=(today - timedelta(days=PLAN_DAYS_BACK)).isoformat(),
+            end_date=(today + timedelta(days=PLAN_DAYS_AHEAD)).isoformat(),
         )
         planned, cooked = {}, set()
+        calendar, last_cooked = {}, {}
+        recent = (today - timedelta(days=14)).isoformat()
         # Abendessen der nächsten acht Tage für Wochenplan und Tagesauswahl
         dinners = {(today + timedelta(days=offset)).isoformat(): [] for offset in range(8)}
         for item in plan.get("mealplan") or []:
             slug = (item.get("recipe") or {}).get("slug")
             day = str(item.get("mealplan_date") or "")
-            if day in dinners and item.get("entry_type") == "dinner":
+            if item.get("entry_type") == "dinner":
                 name = (item.get("recipe") or {}).get("name") or item.get("title") or "Notiz"
-                dinners[day].append({"name": name, "slug": slug, "id": item.get("mealplan_id")})
+                dinner = {"name": name, "slug": slug, "id": item.get("mealplan_id")}
+                calendar.setdefault(day, []).append(dinner)
+                if day in dinners:
+                    dinners[day].append(dinner)
             if not slug:
                 continue
             if day >= today.isoformat():
                 planned[slug] = min(day, planned.get(slug, day))
             else:
-                cooked.add(slug)
+                last_cooked[slug] = max(day, last_cooked.get(slug, day))
+                if day >= recent:
+                    cooked.add(slug)
         self.plan = [{"date": day, "dinner": entries} for day, entries in dinners.items()]
+        self.calendar = dict(sorted(calendar.items()))
+        self._last_cooked = last_cooked
         return planned, cooked
 
     async def _load_shopping_list(self):
@@ -710,6 +731,10 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         suggestions = []
         # Kürzlich Gekochtes fällt weg; Eingeplantes steht immer oben und wird als eingeplant markiert
         pinned = sorted(self._planned, key=lambda slug: self._planned[slug])
+        # "Lange nicht gekocht" richtet sich nach dem Essensplan; Mealies eigenes Datum zählt, wenn es neuer ist
+        for slug, recipe in self._recipes.items():
+            dates = [str(d)[:10] for d in (recipe.get("last_made_mealie"), self._last_cooked.get(slug)) if d]
+            recipe["last_made"] = max(dates) if dates else None
         rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped)
         if self._skipped and len(rows) < 5:
             # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
@@ -717,6 +742,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned)
         for slug, label, offer, discount, others in rows:
             recipe = self._recipes[slug]
+            last = self._last_cooked.get(slug)
             on_list = [
                 main
                 for main in recipe["mains"]
@@ -736,6 +762,8 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                     "offer": _offer_summary(offer),
                     "also_on_offer": others,
                     "planned": self._planned.get(slug),
+                    # Letzter Tag, an dem das Rezept im Essensplan stand (leer: im letzten halben Jahr nicht)
+                    "last_cooked": last,
                     "on_list": on_list,
                     "ingredients": recipe["ingredients"],
                     # Zutaten, die noch zu kaufen sind: ohne Hauptzutaten, die schon auf der Liste stehen
@@ -971,7 +999,7 @@ class WochenkorbSearchSensor(SensorEntity):
 class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
 
-    _unrecorded_attributes = frozenset({"results", "plan"})
+    _unrecorded_attributes = frozenset({"results", "plan", "kalender"})
 
     def __init__(self, coordinator, zip_code):
         super().__init__(coordinator)
@@ -998,6 +1026,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
         return {
             "results": self.coordinator.suggestions,
             "plan": self.coordinator.plan,
+            "kalender": self.coordinator.calendar,
             "search_terms": self.coordinator.recipe_terms,
             "zip_code": self._zip_code,
         }
