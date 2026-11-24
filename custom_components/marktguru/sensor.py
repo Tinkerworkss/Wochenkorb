@@ -14,6 +14,8 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.core import callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from . import purchases as pu
 from homeassistant.util import dt as dt_util
 from . import recipes as rc
 from .const import (
@@ -27,6 +29,7 @@ from .const import (
     HEADERS,
     SEARCH_ENTITY,
     RESHUFFLE_ENTITY,
+    PURCHASES_SIGNAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -201,6 +204,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
         sensors.append(recipes_sensor)
         current_sensors[recipes_sensor.unique_id] = recipes_sensor
         fixed_sensor_ids.add(recipes_sensor.unique_id)
+
+    # Einkaufsverlauf: ein Sensor für die ganze Integration, auch bei mehreren Einträgen
+    domain_data = hass.data.get(DOMAIN, {})
+    if domain_data.get("purchases") and domain_data.setdefault("purchases_entry", entry.entry_id) == entry.entry_id:
+        history_sensor = PurchaseHistorySensor(domain_data["purchases"])
+        sensors.append(history_sensor)
+        current_sensors[history_sensor.unique_id] = history_sensor
+        fixed_sensor_ids.add(history_sensor.unique_id)
 
     async_add_entities(sensors, True)
 
@@ -950,3 +961,34 @@ class MarktguruRecipesSensor(CoordinatorEntity, SensorEntity):
     async def async_update(self):
         # homeassistant.update_entity: nur Essensplan, Einkaufsliste und Vorschläge, keine neuen Angebotsabfragen
         await self.coordinator.async_refresh_suggestions()
+
+
+class PurchaseHistorySensor(SensorEntity):
+    """Auswertung des Einkaufsverlaufs: Ausgaben je Monat, Grundartikel, Preisverlauf, Vorschläge."""
+
+    _attr_should_poll = False
+    _attr_icon = "mdi:receipt-text-clock"
+    _attr_name = "Einkauf Verlauf"
+    _attr_unique_id = "marktguru_einkauf_verlauf"
+    _attr_native_unit_of_measurement = "Bons"
+    _unrecorded_attributes = frozenset({"monate", "grundartikel", "vorschlaege", "artikel"})
+
+    def __init__(self, history):
+        self._history = history
+        self._summary = pu.summary(history.rows)
+
+    @property
+    def native_value(self):
+        return self._summary["bons"]
+
+    @property
+    def extra_state_attributes(self):
+        return {k: v for k, v in self._summary.items() if k != "bons"}
+
+    @callback
+    def _refresh(self):
+        self._summary = pu.summary(self._history.rows)
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self):
+        self.async_on_remove(async_dispatcher_connect(self.hass, PURCHASES_SIGNAL, self._refresh))

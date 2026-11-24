@@ -1,0 +1,89 @@
+# Dashboard view with the evaluation of the purchase history (sensor.einkauf_verlauf). Add it as a new view
+# in the raw configuration editor. To show it to one user only, add "visible: [{user: <user id>}]".
+title: Einkauf
+path: einkauf
+icon: mdi:receipt-text-clock
+type: sections
+max_columns: 2
+sections:
+- type: grid
+  cards:
+  - type: heading
+    heading: Ausgaben je Monat
+    icon: mdi:cash-multiple
+    heading_style: title
+  - type: markdown
+    content: |-
+      {%- set m = state_attr('sensor.einkauf_verlauf', 'monate') or [] -%}
+      {%- if not m %}Noch keine Kassenbons im Verlauf.{% else %}
+      | Monat | Summe | Bons | Märkte |
+      |:--|--:|--:|:--|
+      {% for x in m -%}
+      | {{ x.monat[5:] }}/{{ x.monat[:4] }} | {{ '%.2f' | format(x.summe) | replace('.', ',') }} € | {{ x.bons }} | {% for k, v in x.maerkte.items() %}{{ k }} {{ v | round(0) | int }} €{{ ', ' if not loop.last }}{% endfor %} |
+      {% endfor %}
+      {%- endif %}
+  - type: heading
+    heading: Warengruppen
+    icon: mdi:shape
+    heading_style: title
+  - type: markdown
+    content: |-
+      {%- set m = state_attr('sensor.einkauf_verlauf', 'monate') or [] -%}
+      {%- if m %}
+      | Gruppe | {{ m[0].monat[5:] }}/{{ m[0].monat[:4] }} | {% if m | count > 1 %}{{ m[1].monat[5:] }}/{{ m[1].monat[:4] }}{% endif %} |
+      |:--|--:|--:|
+      {% for k, v in m[0].gruppen.items() -%}
+      | {{ k }} | {{ '%.2f' | format(v) | replace('.', ',') }} € | {% if m | count > 1 and k in m[1].gruppen %}{{ '%.2f' | format(m[1].gruppen[k]) | replace('.', ',') }} €{% endif %} |
+      {% endfor %}
+      {%- endif %}
+- type: grid
+  cards:
+  - type: heading
+    heading: Grundartikel
+    icon: mdi:basket-check
+    heading_style: title
+  - type: markdown
+    content: |-
+      {%- set g = state_attr('sensor.einkauf_verlauf', 'grundartikel') or {} -%}
+      {%- if not g %}Noch keine Käufe von Grundartikeln.{% else %}
+      | Artikel | Käufe | Rhythmus | üblich | zuletzt |
+      |:--|--:|--:|--:|:--|
+      {% for k, v in g.items() | sort -%}
+      | {{ k }} | {{ v.kaeufe }} | {{ (v.wochen ~ ' Wo.') if v.wochen is defined else '–' }} | {{ ('%.2f' | format(v.preis) | replace('.', ',') ~ ' €') if v.preis is defined else '–' }} | {{ v.letzter[8:] }}.{{ v.letzter[5:7] }}. |
+      {% endfor %}
+      Üblich ist der Grundpreis je Liter oder Kilogramm.
+      {%- endif %}
+  - type: heading
+    heading: Kauft ihr regelmäßig
+    icon: mdi:lightbulb-on-outline
+    heading_style: title
+  - type: markdown
+    content: |-
+      {%- set v = state_attr('sensor.einkauf_verlauf', 'vorschlaege') or [] -%}
+      {%- if not v %}Keine Vorschläge für neue Grundartikel.{% else %}
+      Steht nicht bei den Grundartikeln, kommt aber regelmäßig in den Wagen:
+
+      | Artikel | Käufe (6 Mon.) | alle | üblich |
+      |:--|--:|--:|--:|
+      {% for x in v -%}
+      | {{ x.artikel }} | {{ x.kaeufe }} | {{ x.wochen }} Wo. | {{ ('%.2f' | format(x.ueblich) | replace('.', ',') ~ ' €') if x.ueblich else '–' }} |
+      {% endfor %}
+      {%- endif %}
+- type: grid
+  column_span: 2
+  cards:
+  - type: heading
+    heading: Preisverlauf
+    icon: mdi:chart-line
+    heading_style: title
+  - type: markdown
+    content: |-
+      {%- set a = state_attr('sensor.einkauf_verlauf', 'artikel') or [] -%}
+      {%- if a %}
+      | Artikel | Käufe | zuletzt | üblich | günstigst | letzte Preise |
+      |:--|--:|--:|--:|--:|:--|
+      {% for x in a[:40] if x.zuletzt is defined -%}
+      | {{ x.artikel }} | {{ x.kaeufe }} | {{ '%.2f' | format(x.zuletzt) | replace('.', ',') }} € | {{ '%.2f' | format(x.ueblich) | replace('.', ',') }} € | {{ '%.2f' | format(x.guenstig) | replace('.', ',') }} € | {% for p in x.verlauf[-4:] %}{{ '%.2f' | format(p[2]) | replace('.', ',') }}{{ ' · ' if not loop.last }}{% endfor %} |
+      {% endfor %}
+      Preise je Stück oder Packung, die 40 am häufigsten gekauften Artikel.
+      {%- endif %}

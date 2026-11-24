@@ -1,0 +1,18 @@
+add_purchases:
+  name: Kassenbon speichern
+  description: >-
+    Speichert die Positionen eines Kassenbons im Einkaufsverlauf. Ein Bon (Zeitpunkt und Markt) wird immer als Ganzes ersetzt,
+    ein zweiter Aufruf mit demselben Bon legt also nichts doppelt an.
+  fields:
+    rows:
+      name: Zeilen
+      description: >-
+        Eine Zeile je Position, Felder mit Semikolon getrennt:
+        bon;markt;bontext;artikel;gruppe;anzahl;menge;einheit;preis;grundartikel.
+        bon ist Datum und Uhrzeit des Bons (JJJJ-MM-TT HH:MM), menge die gekaufte Gesamtmenge in der Einheit l, kg oder stk
+        (leer, wenn unbekannt), preis der bezahlte Betrag der Zeile ohne Pfand.
+      required: true
+      example: "2026-11-20 17:42;REWE;BIO E.WEIDEMILCH;Bio-H-Weidemilch;Molkerei;2;2;l;2,98;Milch"
+      selector:
+        text:
+          multiline: true
