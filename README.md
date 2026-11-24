@@ -87,9 +87,10 @@ Alles in diesem Abschnitt ist optional. Ohne die Mealie-Integration bleibt die O
 | Datei | Zweck |
 | --- | --- |
 | `dashboard_card_rezepte.yaml` | Rezeptkarte: bis zu fünf Mealie-Rezepte, deren Hauptzutat im Angebot ist. Ein Tipp öffnet Zutaten und Zubereitung, der Kalender-Knopf fragt nach dem Abend und auf Wunsch nach einer größeren Portionenzahl und plant das Rezept ein. Der Knopf „Andere Vorschläge“ zeigt andere Rezepte; Eingeplantes bleibt stehen. |
-| `dashboard_card_wochenplan.yaml` | Die Abendessen der nächsten sieben Tage aus dem Mealie-Essensplan; ein Tipp auf ein Gericht bietet an, es zu verschieben, die Portionen zu ändern oder es vom Plan zu nehmen. |
+| `dashboard_card_wochenplan.yaml` | Die Abendessen der nächsten sieben Tage aus dem Mealie-Essensplan; ein Tipp auf ein Gericht bietet an, es zu verschieben, die Portionen zu ändern oder es vom Plan zu nehmen, ein Tipp auf einen freien Abend einen eigenen Eintrag ohne Rezept. |
 | `script_rezept_einplanen.yaml` | Trägt ein Rezept am gewählten Abend in den Essensplan ein und legt seine Zutaten, umgerechnet auf die Portionenzahl, auf die Mealie-Einkaufsliste. Ohne Datum und mit browser_mod-Kennung fragt es selbst nach dem Abend. |
 | `script_rezept_ausplanen.yaml` | Nimmt ein Rezept wieder vom Plan und seine Zutaten von der Mealie-Einkaufsliste. |
+| `script_essen_notieren.yaml`, `script_essen_notiz_entfernen.yaml` | Freier Eintrag ohne Rezept im Wochenplan (zum Beispiel „Pizza auswärts“): ein Tipp auf einen freien Abend öffnet ein Fenster mit Schnellauswahl und Textfeld. Braucht den Helfer `input_text.essen_notiz`. |
 | `script_rezept_portionen.yaml` | Ändert, für wie viele Portionen eines eingeplanten Rezepts eingekauft wird: nimmt es vom Plan und plant es am selben Tag neu ein. |
 | `script_rezept_verschieben.yaml` | Legt ein eingeplantes Rezept auf einen anderen Tag. Die Einkaufsliste bleibt unverändert. |
 | `automation_mealie_einkaufsliste_abgleich.yaml` | Hält die Mealie-Einkaufsliste und die eigentliche Einkaufsliste (hier Bring!) im Gleichschritt: legt gleiche Artikel zusammen, summiert Mengen, behält selbst getippte Notizen und überspringt Vorratsartikel. Unabhängig von dieser Integration, aber die Skripte oben bauen darauf auf. |

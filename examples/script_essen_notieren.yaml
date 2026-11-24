@@ -1,0 +1,44 @@
+# Puts a free text (no recipe) on an evening of the Mealie meal plan; called by the week plan card.
+# Needs the helper input_text.essen_notiz. Replace MEALIE_EINTRAG and DEINE_PLZ.
+einkauf_essen_notieren:
+  alias: 'Einkauf: Essen ohne Rezept notieren'
+  description: Trägt für einen Abend einen freien Text in den Mealie-Essensplan ein (zum Beispiel „Pizza auswärts“), ohne Rezept und ohne Einkaufsliste. Ohne Text wird der Inhalt von input_text.essen_notiz genommen. Wird von der Wochenplan-Karte aufgerufen.
+  icon: mdi:silverware-variant
+  mode: queued
+  max: 10
+  fields:
+    datum:
+      name: Datum
+      description: Tag (JJJJ-MM-TT)
+      required: true
+      selector:
+        text: {}
+    text:
+      name: Text
+      description: 'Was es gibt. Leer: der Text aus input_text.essen_notiz.'
+      selector:
+        text: {}
+  sequence:
+  - variables:
+      mealie: MEALIE_EINTRAG
+      titel: '{{ (text | default('''') | trim) or (states(''input_text.essen_notiz'') | trim) }}'
+  - if:
+    - condition: template
+      value_template: '{{ titel in ['''', ''unknown'', ''unavailable''] }}'
+    then:
+    - stop: Kein Text angegeben
+  - action: mealie.set_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      date: '{{ datum }}'
+      entry_type: dinner
+      note_title: '{{ titel }}'
+  - continue_on_error: true
+    action: input_text.set_value
+    target:
+      entity_id: input_text.essen_notiz
+    data:
+      value: ''
+  - action: homeassistant.update_entity
+    target:
+      entity_id: sensor.wochenkorb_rezepte_DEINE_PLZ
