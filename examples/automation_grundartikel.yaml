@@ -23,8 +23,6 @@ actions:
       {%- set heute = now() -%}
       {%- set woche = (heute.date() - strptime(start, '%Y-%m-%d').date()).days // 7 -%}
       {%- set saison = obst_saison[heute.month - 1] -%}
-      {%- set fruit = ['apfel', 'birnen', 'bananen', 'clementinen', 'orangen', 'kaki', 'trauben', 'heidelbeeren', 'himbeeren', 'mango', 'avocado'] -%}
-      {%- set kein_obst = 'saft|aufstrich|schokol|gefroren|kohl|konfit|joghurt|schorle|nektar|sirup|likör|mus|getrocknet|tee|bonbon|riegel|kuchen|duft|spül|shampoo|essig|quark|chips|froop|havana|club|wein|sekt|vodka|whisk|bier' -%}
       {#- Vorrat-Merker: "Name=Datum;Name=Datum", bis zu diesem Datum wird der Artikel nicht erneut eingetragen -#}
       {%- set vt = states('input_text.einkauf_vorrat') -%}
       {%- set vorrat = namespace(m={}) -%}
@@ -48,7 +46,7 @@ actions:
       {%- if markt and (von is none or von <= heute + timedelta(days=1)) and (ende is none or ende >= heute + timedelta(hours=18)) -%}
       {%- set preis = s.state | float(0) -%}
       {%- set alt = a.old_price | float(0) -%}
-      {%- set ang.l = ang.l + [{'begriff': s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1'), 'markt': markt, 'schluessel': ((markt ~ '|' ~ ((a.product_name or '') | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6], 'produkt': a.product_name or '', 'text': ((a.brand_name or '') ~ ' ' ~ (a.product_name or '')) | lower, 'preis': preis, 'wert': ((a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else preis), 'gp': (a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else 0, 'gpe': a.grundpreis_einheit or '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0}] -%}
+      {%- set ang.l = ang.l + [{'begriff': s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1'), 'liste': a.liste | default(''), 'ohne': a.liste_ohne | default(''), 'sorte': a.suchbegriff | default(''), 'markt': markt, 'schluessel': ((markt ~ '|' ~ ((a.product_name or '') | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6], 'produkt': a.product_name or '', 'text': ((a.brand_name or '') ~ ' ' ~ (a.product_name or '')) | lower, 'preis': preis, 'wert': ((a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else preis), 'gp': (a.grundpreis | float(0)) if a.grundpreis and a.grundpreis_einheit in ['kg', 'l'] else 0, 'gpe': a.grundpreis_einheit or '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0}] -%}
       {%- endif -%}
       {%- endfor -%}
       {%- set euro = '%.2f' -%}
@@ -70,14 +68,14 @@ actions:
       {%- if art.obst is defined -%}
       {%- if faellig -%}
       {#- Höchstens 5 Obstsorten: je Sorte das beste Angebot, rabattierte zuerst, dann nach Grundpreis -#}
-      {%- set sorten_namen = {'apfel': 'Äpfel', 'birnen': 'Birnen', 'bananen': 'Bananen', 'clementinen': 'Clementinen', 'orangen': 'Orangen', 'kaki': 'Kaki', 'trauben': 'Trauben', 'heidelbeeren': 'Heidelbeeren', 'himbeeren': 'Himbeeren', 'mango': 'Mango', 'avocado': 'Avocado'} -%}
       {%- set tipps = namespace(l=[], sorten=[], schluessel=[]) -%}
-      {%- set obst = ang.l | selectattr('begriff', 'in', fruit) | list -%}
+      {#- Die Sorten kommen aus der freien Liste der Integration (Standard: Liste "Obst", sonst art.liste) -#}
+      {%- set obst = ang.l | selectattr('liste', 'eq', art.liste | default('Obst')) | list -%}
       {%- for o in (obst | selectattr('rabatt', 'gt', 0) | sort(attribute='rabatt', reverse=true) | list) + (obst | selectattr('rabatt', 'eq', 0) | sort(attribute='wert') | list) -%}
-      {%- if o.begriff not in tipps.sorten and tipps.l | count < 5 and not o.text is search(kein_obst) -%}
+      {%- if o.begriff not in tipps.sorten and tipps.l | count < 5 and not (o.ohne and o.text is search(o.ohne)) -%}
       {%- set tipps.sorten = tipps.sorten + [o.begriff] -%}
       {%- set tipps.schluessel = tipps.schluessel + [o.schluessel] -%}
-      {%- set tipps.l = tipps.l + [sorten_namen[o.begriff] ~ ' ' ~ (euro | format(o.preis) | replace('.', ',')) ~ ' € (' ~ (('−' ~ o.rabatt ~ ' %, ') if o.rabatt > 0 else '') ~ o.markt ~ ')'] -%}
+      {%- set tipps.l = tipps.l + [(o.sorte or o.begriff) ~ ' ' ~ (euro | format(o.preis) | replace('.', ',')) ~ ' € (' ~ (('−' ~ o.rabatt ~ ' %, ') if o.rabatt > 0 else '') ~ o.markt ~ ')'] -%}
       {%- endif -%}
       {%- endfor -%}
       {%- set out.l = out.l + [{'name': art.name, 'text': (tipps.l | join('; ')) if tipps.l else ('Saison: ' ~ saison), 'angebot': (1 if tipps.l else 0), 'vorrat': '', 'schluessel': tipps.schluessel}] -%}

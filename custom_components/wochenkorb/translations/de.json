@@ -28,6 +28,13 @@
     "step": {
       "init": {
         "title": "Wochenkorb anpassen",
+        "menu_options": {
+          "general": "Allgemein: Postleitzahl, Suchbegriffe, Händler",
+          "lists": "Listen: eigene Reiter wie „Obst“"
+        }
+      },
+      "general": {
+        "title": "Allgemein",
         "description": "Änderungen gelten sofort; Sensoren entfernter Suchbegriffe werden aufgeräumt.",
         "data": {
           "zip_code": "Postleitzahl",
@@ -42,11 +49,37 @@
           "mealie_recipes": "Braucht die Mealie-Integration. Zeigt Rezepte, deren Hauptzutat im Angebot ist.",
           "shopping_list": "Optional. Hauptzutaten, die schon auf dieser Liste stehen, werden in den Rezeptvorschlägen markiert."
         }
+      },
+      "lists": {
+        "title": "Listen",
+        "description": "Jede Liste fasst Suchbegriffe zusammen und wird ein eigener Reiter in der Angebotskarte. Ihre Angebote stehen dann dort und nicht mehr beim Händler.",
+        "data": {
+          "list": "Liste"
+        }
+      },
+      "list": {
+        "title": "Liste bearbeiten",
+        "data": {
+          "name": "Name",
+          "icon": "Symbol",
+          "terms": "Begriffe",
+          "exclude": "Ausschlusswörter",
+          "delete": "Diese Liste löschen"
+        },
+        "data_description": {
+          "name": "Steht auf dem Reiter, zum Beispiel Obst.",
+          "terms": "Diese Begriffe werden gesucht, auch wenn sie nicht bei den Suchbegriffen stehen.",
+          "exclude": "Angebote, deren Name eines dieser Wörter enthält, werden ausgeblendet (bei Obst etwa Saft oder Joghurt).",
+          "delete": "Die Begriffe der Liste werden danach nicht mehr gesucht, außer sie stehen bei den Suchbegriffen."
+        }
       }
     },
     "error": {
       "zip_required": "Bitte eine Postleitzahl angeben.",
-      "products_required": "Bitte mindestens einen Suchbegriff angeben."
+      "products_required": "Bitte mindestens einen Suchbegriff angeben.",
+      "list_name_required": "Bitte einen Namen angeben.",
+      "list_name_exists": "Eine Liste mit diesem Namen gibt es schon.",
+      "list_terms_required": "Bitte mindestens einen Begriff angeben."
     }
   }
 }

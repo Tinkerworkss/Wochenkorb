@@ -30,6 +30,8 @@ from .const import (
     SEARCH_ENTITY,
     RESHUFFLE_ENTITY,
     PURCHASES_SIGNAL,
+    CONF_LISTS,
+    TAB_ENTITY_PREFIX,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -139,11 +141,61 @@ def _normalize_mp(item, validity=None):
         "_image_url": _first_url(item.get("offerImages")),
     }
 
+def clean_lists(raw):
+    """Freie Listen in eine feste Form bringen: Name, Symbol, Begriffe, Ausschlusswörter."""
+    result, names = [], set()
+    for item in raw or []:
+        name = str((item or {}).get("name") or "").strip()
+        if not name or name.lower() in names:
+            continue
+        names.add(name.lower())
+        terms, seen = [], set()
+        for term in item.get("terms") or []:
+            term = str(term).strip()
+            if term and term.lower() not in seen:
+                seen.add(term.lower())
+                terms.append(term)
+        exclude = [str(w).strip().lower() for w in item.get("exclude") or [] if str(w).strip()]
+        result.append({"name": name, "icon": item.get("icon") or "", "terms": terms, "exclude": exclude})
+    return result
+
+
+def with_list_terms(products, lists):
+    """Suchbegriffe um die Begriffe der Listen ergänzen; was in einer Liste steht, wird immer gesucht."""
+    result = list(products)
+    known = {p["query"].lower() for p in result}
+    for entry in lists:
+        for term in entry["terms"]:
+            if term.lower() not in known:
+                known.add(term.lower())
+                result.append({"name": term, "query": term})
+    return result
+
+
+async def _sync_tab_helpers(hass, lists, retailer_names):
+    """Die Reiter-Helfer der Angebotskarte kennen immer alle Listen und Händler als Optionen."""
+    wanted = [entry["name"] for entry in lists] + [r for r in retailer_names if r]
+    if not wanted:
+        return
+    for state in hass.states.async_all("input_select"):
+        if not state.entity_id.startswith(TAB_ENTITY_PREFIX):
+            continue
+        current = list(state.attributes.get("options") or [])
+        # Ohne Händlerfilter bleiben die bisherigen Optionen hinter den Listen stehen
+        options = wanted if retailer_names else wanted + [o for o in current if o not in wanted]
+        if options != current:
+            await hass.services.async_call(
+                "input_select", "set_options", {"entity_id": state.entity_id, "options": options}, blocking=False
+            )
+
+
 async def async_setup_entry(hass, entry, async_add_entities):
     # Optionen (nachträglich geändert) haben Vorrang vor den Daten der Ersteinrichtung
     conf = {**entry.data, **entry.options}
     zip_code = conf[CONF_ZIP]
-    products = conf[CONF_PRODUCTS]
+    lists = clean_lists(conf.get(CONF_LISTS))
+    products = with_list_terms(conf[CONF_PRODUCTS], lists)
+    retailer_names = [r.strip() for r in (conf.get(CONF_RETAILERS) or "").split(",") if r.strip()]
     retailers = [
         r.strip().lower()
         for r in (conf.get(CONF_RETAILERS) or "").split(",")
@@ -155,7 +207,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = WochenkorbDataCoordinator(
         hass, zip_code, products, retailers, recipes_enabled, shopping_list
     )
+    coordinator.lists = lists
+    # Suchbegriff (klein) -> Liste, zu der er gehört
+    coordinator.list_of = {term.lower(): entry for entry in lists for term in entry["terms"]}
     await coordinator.async_config_entry_first_refresh()
+    await _sync_tab_helpers(hass, lists, retailer_names)
 
     current_sensors = {}
 
@@ -298,6 +354,8 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         )
         self.zip_code = zip_code
         self.products = products
+        self.lists = []
+        self.list_of = {}
         self.retailers = retailers or []
         self._mp_cache = {}
         self._mp_time = None
@@ -797,6 +855,12 @@ class WochenkorbSensor(CoordinatorEntity, SensorEntity):
                 "result_id": result_id,
                 "result_image_url": result_image_url,
                 "zip_code": self._zip_code,
+                # Suchbegriff und freie Liste, zu der er gehört (leer: Angebot steht beim Händler)
+                "suchbegriff": self._query,
+                "liste": (self.coordinator.list_of.get(self._query.lower()) or {}).get("name", ""),
+                "liste_ohne": "|".join(
+                    re.escape(w) for w in (self.coordinator.list_of.get(self._query.lower()) or {}).get("exclude", [])
+                ),
                 "source": offer.get("_source", "marktguru"),
                 "link": offer.get("_link")
                 or (f"https://www.marktguru.de/offers/{result_id}" if result_id else None),
@@ -829,6 +893,11 @@ class WochenkorbQueriesSensor(CoordinatorEntity, SensorEntity):
         # Auch als Liste verfügbar
         return {
             "queries": [product["query"] for product in self.coordinator.products],
+            # Freie Listen in der Reihenfolge der Einstellungen: je Liste ein Reiter der Angebotskarte
+            "listen": [
+                {"name": entry["name"], "icon": entry["icon"], "begriffe": entry["terms"], "ohne": entry["exclude"]}
+                for entry in self.coordinator.lists
+            ],
             "zip_code": self._zip_code,
         }
 

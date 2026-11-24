@@ -18,6 +18,7 @@ Wochenkorb grew out of a fork of [thorschtn/ha-marktguru](https://github.com/tho
 - **Retailer filter.** Optional selection (for example Marktkauf, REWE, EDEKA); only offers of these retailers become sensors.
 - **Second source: meinprospekt.de.** Covers retailers that Marktguru does not list for some regions (for example Marktkauf). It is queried every six hours with the Home Assistant home coordinates. Retailers already delivered by Marktguru are not added twice.
 - **More attributes.** `source`, `link` (offer page or brochure page), `grundpreis` and `grundpreis_einheit` (price per kg or litre).
+- **Free lists.** Under *Configure → Lists* search terms can be grouped into named lists (for example "Obst" or "Getränke"), each with its own icon and optional excluded words. Each list becomes its own tab of the offers card; its offers are shown there instead of under the retailer. The offer sensors carry the attributes `suchbegriff`, `liste` and `liste_ohne`, the sensor `sensor.wochenkorb_suchbegriffe_<zip>` the attribute `listen`.
 - **Search sensor.** `sensor.wochenkorb_suche_<zip>` runs a live search in both sources for the text in the helper `input_text.angebote_suche` and returns the hits in its `results` attribute.
 - **Optional: recipes from Mealie.** If the Mealie integration is set up, the option `mealie_recipes` adds a sensor with recipes whose main ingredient is on offer and the meal plan of the next days. Without Mealie nothing changes. See section 7.
 - **Fixes.** Unloading the entry works, new offers create sensors during the hourly refresh, and the search-term sensor reports the number of terms instead of a string that could exceed 255 characters.
@@ -82,15 +83,15 @@ The folder [`examples/`](examples/) contains the setup this fork was built for. 
 | File | What it does |
 | --- | --- |
 | `dashboard_template.yaml` | `button_card_templates` entries. `angebot_zeile` is one offer row (image, name, base price, discount badge, link to the offer, add-to-list button). `rezept_zeile` is only needed for the Mealie recipe card below and can be left out. Goes to the top level of the dashboard's raw configuration. |
-| `dashboard_card.yaml` | The card: search field, tabs (fruit, Marktkauf, REWE, EDEKA), scrolling offer lists sorted by discount, live search results. Tab and search text are kept per device. |
-| `automation_grundartikel.yaml` | Every Thursday puts staples on the list in a per-article rhythm. If an offer is at least 15 % below the usual base price, the quantity is raised (stock-up) and the article is skipped until the stock is used up. "Fruit of the week" lists up to five fruit offers. Offers it took over disappear from the card until the next run, and a push summary is sent if something new was added. |
+| `dashboard_card.yaml` | The card: search field, one row of tabs for up to six free lists from the settings, one for the retailers (Marktkauf, REWE, EDEKA), scrolling offer lists sorted by discount, live search results. Tab and search text are kept per device. |
+| `automation_grundartikel.yaml` | Every Thursday puts staples on the list in a per-article rhythm. If an offer is at least 15 % below the usual base price, the quantity is raised (stock-up) and the article is skipped until the stock is used up. "Fruit of the week" lists up to five offers from the free list "Obst". Offers it took over disappear from the card until the next run, and a push summary is sent if something new was added. |
 | `automation_quellen_ueberwachen.yaml` | Daily notification if marktguru or meinprospekt delivers no offers. |
 | `script_abgleich_wert_setzen.yaml` | Script to set usual price, rhythm and stock date per article, e.g. from receipts. |
 
 Requirements:
 
 - Frontend (HACS): [auto-entities](https://github.com/thomasloven/lovelace-auto-entities), [button-card](https://github.com/custom-cards/button-card), [card-mod](https://github.com/thomasloven/lovelace-card-mod)
-- Helpers: `input_select.angebote_reiter` (options `Obst`, `Marktkauf`, `REWE`, `EDEKA`), `input_text.angebote_suche`, and, each with the maximum length of 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
+- Helpers: `input_select.angebote_reiter` (options: the names of the lists and the retailers; the integration keeps them up to date on every start), `input_text.angebote_suche`, and, each with the maximum length of 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
 - Per device (optional): `input_select.angebote_reiter_<id>` and `input_text.angebote_suche_<id>`, where `<id>` is the device's browser_mod id without the leading `browser_mod_`. This needs [browser_mod](https://github.com/thomasloven/hass-browser_mod). Reload the integration after creating the helpers, it adds one search sensor per search helper. Devices without their own helpers share the two general ones.
 - A to-do list entity for the shopping list (here `todo.einkauf_bring` from the Bring! integration)
 

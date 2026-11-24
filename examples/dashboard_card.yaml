@@ -32,8 +32,8 @@ cards:
 - type: horizontal-stack
   cards:
   - type: custom:button-card
-    name: Obst
-    icon: mdi:fruit-cherries
+    name: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return L ? L.name : ''''; ]]]'
+    icon: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return (L && L.icon) || ''mdi:format-list-bulleted''; ]]]'
     show_icon: true
     show_state: false
     layout: icon_name
@@ -42,10 +42,10 @@ cards:
       service: input_select.select_option
       service_data:
         entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
-        option: Obst
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return L ? L.name : ''''; ]]]'
       data:
         entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
-        option: Obst
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return L ? L.name : ''''; ]]]'
     styles:
       card:
       - padding: 8px 6px
@@ -54,11 +54,11 @@ cards:
       - font-weight: '500'
       - border: none
       - box-shadow: none
-      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return states[re] && states[re].state === ''Obst'' ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
-      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return states[re] && states[re].state === ''Obst'' ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return (L && states[re] && states[re].state === L.name) ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
       icon:
       - width: 18px
-      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return states[re] && states[re].state === ''Obst'' ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[0]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
       img_cell:
       - width: 22px
       grid:
@@ -70,8 +70,242 @@ cards:
     triggers_update:
     - input_select.angebote_reiter
     - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
     - input_select.angebote_reiter_GERAET_1
     - input_text.angebote_suche_GERAET_1
+  - type: custom:button-card
+    name: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return L ? L.name : ''''; ]]]'
+    icon: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return (L && L.icon) || ''mdi:format-list-bulleted''; ]]]'
+    show_icon: true
+    show_state: false
+    layout: icon_name
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return L ? L.name : ''''; ]]]'
+      data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return L ? L.name : ''''; ]]]'
+    styles:
+      card:
+      - padding: 8px 6px
+      - border-radius: 999px
+      - font-size: 13px
+      - font-weight: '500'
+      - border: none
+      - box-shadow: none
+      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return (L && states[re] && states[re].state === L.name) ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      icon:
+      - width: 18px
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[1]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      img_cell:
+      - width: 22px
+      grid:
+      - grid-template-columns: min-content min-content
+      - justify-content: center
+      - column-gap: 4px
+      name:
+      - justify-self: start
+    triggers_update:
+    - input_select.angebote_reiter
+    - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
+    - input_select.angebote_reiter_GERAET_1
+    - input_text.angebote_suche_GERAET_1
+  - type: custom:button-card
+    name: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return L ? L.name : ''''; ]]]'
+    icon: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return (L && L.icon) || ''mdi:format-list-bulleted''; ]]]'
+    show_icon: true
+    show_state: false
+    layout: icon_name
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return L ? L.name : ''''; ]]]'
+      data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return L ? L.name : ''''; ]]]'
+    styles:
+      card:
+      - padding: 8px 6px
+      - border-radius: 999px
+      - font-size: 13px
+      - font-weight: '500'
+      - border: none
+      - box-shadow: none
+      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return (L && states[re] && states[re].state === L.name) ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      icon:
+      - width: 18px
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[2]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      img_cell:
+      - width: 22px
+      grid:
+      - grid-template-columns: min-content min-content
+      - justify-content: center
+      - column-gap: 4px
+      name:
+      - justify-self: start
+    triggers_update:
+    - input_select.angebote_reiter
+    - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
+    - input_select.angebote_reiter_GERAET_1
+    - input_text.angebote_suche_GERAET_1
+  - type: custom:button-card
+    name: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return L ? L.name : ''''; ]]]'
+    icon: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return (L && L.icon) || ''mdi:format-list-bulleted''; ]]]'
+    show_icon: true
+    show_state: false
+    layout: icon_name
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return L ? L.name : ''''; ]]]'
+      data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return L ? L.name : ''''; ]]]'
+    styles:
+      card:
+      - padding: 8px 6px
+      - border-radius: 999px
+      - font-size: 13px
+      - font-weight: '500'
+      - border: none
+      - box-shadow: none
+      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return (L && states[re] && states[re].state === L.name) ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      icon:
+      - width: 18px
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[3]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      img_cell:
+      - width: 22px
+      grid:
+      - grid-template-columns: min-content min-content
+      - justify-content: center
+      - column-gap: 4px
+      name:
+      - justify-self: start
+    triggers_update:
+    - input_select.angebote_reiter
+    - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
+    - input_select.angebote_reiter_GERAET_1
+    - input_text.angebote_suche_GERAET_1
+  - type: custom:button-card
+    name: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return L ? L.name : ''''; ]]]'
+    icon: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return (L && L.icon) || ''mdi:format-list-bulleted''; ]]]'
+    show_icon: true
+    show_state: false
+    layout: icon_name
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return L ? L.name : ''''; ]]]'
+      data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return L ? L.name : ''''; ]]]'
+    styles:
+      card:
+      - padding: 8px 6px
+      - border-radius: 999px
+      - font-size: 13px
+      - font-weight: '500'
+      - border: none
+      - box-shadow: none
+      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return (L && states[re] && states[re].state === L.name) ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      icon:
+      - width: 18px
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[4]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      img_cell:
+      - width: 22px
+      grid:
+      - grid-template-columns: min-content min-content
+      - justify-content: center
+      - column-gap: 4px
+      name:
+      - justify-self: start
+    triggers_update:
+    - input_select.angebote_reiter
+    - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
+    - input_select.angebote_reiter_GERAET_1
+    - input_text.angebote_suche_GERAET_1
+  - type: custom:button-card
+    name: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return L ? L.name : ''''; ]]]'
+    icon: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return (L && L.icon) || ''mdi:format-list-bulleted''; ]]]'
+    show_icon: true
+    show_state: false
+    layout: icon_name
+    tap_action:
+      action: call-service
+      service: input_select.select_option
+      service_data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return L ? L.name : ''''; ]]]'
+      data:
+        entity_id: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); return re; ]]]'
+        option: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return L ? L.name : ''''; ]]]'
+    styles:
+      card:
+      - padding: 8px 6px
+      - border-radius: 999px
+      - font-size: 13px
+      - font-weight: '500'
+      - border: none
+      - box-shadow: none
+      - background: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return (L && states[re] && states[re].state === L.name) ? ''var(--primary-color)'' : ''var(--ha-card-background, var(--card-background-color))''; ]]]'
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      icon:
+      - width: 18px
+      - color: '[[[ const gid = (localStorage.getItem(''browser_mod-browser-id'') || '''').replace(''browser_mod_'', ''''); const re = states[''input_select.angebote_reiter_'' + gid] ? ''input_select.angebote_reiter_'' + gid : ''input_select.angebote_reiter''; const se = states[''input_text.angebote_suche_'' + gid] ? ''input_text.angebote_suche_'' + gid : ''input_text.angebote_suche''; const sucht = states[se] && !['''', ''unknown'', ''unavailable''].includes(states[se].state); const L = ((states[''sensor.wochenkorb_suchbegriffe_DEINE_PLZ''] || {attributes: {}}).attributes.listen || [])[5]; return (L && states[re] && states[re].state === L.name) ? ''var(--text-primary-color, #fff)'' : ''var(--primary-text-color)''; ]]]'
+      img_cell:
+      - width: 22px
+      grid:
+      - grid-template-columns: min-content min-content
+      - justify-content: center
+      - column-gap: 4px
+      name:
+      - justify-self: start
+    triggers_update:
+    - input_select.angebote_reiter
+    - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
+    - input_select.angebote_reiter_GERAET_1
+    - input_text.angebote_suche_GERAET_1
+  card_mod:
+    style: |-
+      {%- set nl = (state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or []) | count -%}
+      {%- if nl <= 0 %}
+      #root > :nth-child(1) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 1 %}
+      #root > :nth-child(2) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 2 %}
+      #root > :nth-child(3) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 3 %}
+      #root > :nth-child(4) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 4 %}
+      #root > :nth-child(5) { display: none !important; }
+      {%- endif %}
+      {%- if nl <= 5 %}
+      #root > :nth-child(6) { display: none !important; }
+      {%- endif %}
+- type: horizontal-stack
+  cards:
   - type: custom:button-card
     name: Marktkauf
     icon: mdi:cart
@@ -111,6 +345,7 @@ cards:
     triggers_update:
     - input_select.angebote_reiter
     - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
     - input_select.angebote_reiter_GERAET_1
     - input_text.angebote_suche_GERAET_1
   - type: custom:button-card
@@ -152,6 +387,7 @@ cards:
     triggers_update:
     - input_select.angebote_reiter
     - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
     - input_select.angebote_reiter_GERAET_1
     - input_text.angebote_suche_GERAET_1
   - type: custom:button-card
@@ -193,6 +429,7 @@ cards:
     triggers_update:
     - input_select.angebote_reiter
     - input_text.angebote_suche
+    - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
     - input_select.angebote_reiter_GERAET_1
     - input_text.angebote_suche_GERAET_1
 - type: custom:button-card
@@ -232,6 +469,7 @@ cards:
   triggers_update:
   - input_select.angebote_reiter
   - input_text.angebote_suche
+  - sensor.wochenkorb_suchbegriffe_DEINE_PLZ
   - input_select.angebote_reiter_GERAET_1
   - input_text.angebote_suche_GERAET_1
 - type: custom:auto-entities
@@ -247,11 +485,11 @@ cards:
           #states > div > * { overflow: visible; }
   filter:
     template: |-
-      {%- set reiter = 'Obst' -%}
+      {#- Reiter der 1. freien Liste aus den Einstellungen der Integration -#}
+      {%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}
+      {%- set reiter = listen[0].name if listen | count > 0 else '' -%}
       {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
       {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
-      {%- set fruit = ['apfel', 'birnen', 'bananen', 'clementinen', 'orangen', 'kaki', 'trauben', 'heidelbeeren', 'himbeeren', 'mango', 'avocado'] -%}
-      {%- set kein_obst = 'saft|aufstrich|schokol|gefroren|kohl|konfit|joghurt|schorle|nektar|sirup|likör|mus|getrocknet|tee|bonbon|riegel|kuchen|duft|spül|shampoo|essig|quark|chips|froop|havana|club|wein|sekt|vodka|whisk|bier' -%}
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
@@ -264,16 +502,18 @@ cards:
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
       {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
-      {%- set ist_obst = begriff in fruit -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
       {%- if ist_obst -%}
-      {%- set passt = not text is search(kein_obst) -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
       {%- else -%}
       {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
       {%- endif -%}
       {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
-      {%- set hier = passt and ((reiter == 'Obst' and ist_obst) or (reiter == markt and not ist_obst)) -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
       {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
       {%- if hier and sk not in ueb -%}
       {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
@@ -289,7 +529,407 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if reiter == 'Obst' else '', einheit, gp] | select | join(' · ') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if ns.zeilen | count == 0 -%}
+      {%- set rows.l = [{'type': 'section', 'label': 'Keine weiteren Angebote, ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste' if ns.weg else 'Keine Angebote zu euren Suchbegriffen'}] -%}
+      {%- else -%}
+      {%- set zeiten = ns.zeilen | map(attribute='zeit') | list -%}
+      {%- set haupt = namespace(zeit='', n=0) -%}
+      {%- for u in zeiten | unique -%}
+      {%- set c = zeiten | select('eq', u) | list | count -%}
+      {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
+      {%- endfor -%}
+      {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
+      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {{ rows.l | tojson }}
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { max-height: 540px; overflow-y: auto; overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {#- Reiter der 2. freien Liste aus den Einstellungen der Integration -#}
+      {%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}
+      {%- set reiter = listen[1].name if listen | count > 1 else '' -%}
+      {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
+      {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
+      {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
+      {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
+      {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
+      {%- for s in all -%}
+      {%- set a = s.attributes -%}
+      {%- set h = a.retailer_name | lower -%}
+      {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
+      {%- if markt -%}
+      {%- set produkt = a.product_name or '' -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
+      {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
+      {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
+      {%- if ist_obst -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
+      {%- else -%}
+      {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
+      {%- endif -%}
+      {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
+      {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
+      {%- if hier and sk not in ueb -%}
+      {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
+      {%- set einheit = ((a.description or '') | regex_findall('je (.+?)(?= zzgl| oder |, |$)') | first | default('')) | trim | regex_replace('\\.$', '') -%}
+      {%- set key = markt ~ wort ~ s.state ~ einheit -%}
+      {%- if key not in ns.seen -%}
+      {%- set ns.seen = ns.seen + [key] -%}
+      {%- set marke = a.brand_name if a.brand_name and 'nobrand' not in a.brand_name and not (produkt | lower).startswith(a.brand_name | lower) else '' -%}
+      {%- set preis = s.state | float(0) -%}
+      {%- set alt = a.old_price | float(0) -%}
+      {%- set gp = ('%.2f' | format(a.grundpreis | float(0)) | replace('.', ',') ~ '&nbsp;€/' ~ a.grundpreis_einheit) if a.grundpreis and a.grundpreis_einheit else '' -%}
+      {%- set von = (a.valid_from | as_datetime) if a.valid_from else none -%}
+      {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
+      {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
+      {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if ns.zeilen | count == 0 -%}
+      {%- set rows.l = [{'type': 'section', 'label': 'Keine weiteren Angebote, ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste' if ns.weg else 'Keine Angebote zu euren Suchbegriffen'}] -%}
+      {%- else -%}
+      {%- set zeiten = ns.zeilen | map(attribute='zeit') | list -%}
+      {%- set haupt = namespace(zeit='', n=0) -%}
+      {%- for u in zeiten | unique -%}
+      {%- set c = zeiten | select('eq', u) | list | count -%}
+      {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
+      {%- endfor -%}
+      {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
+      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {{ rows.l | tojson }}
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { max-height: 540px; overflow-y: auto; overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {#- Reiter der 3. freien Liste aus den Einstellungen der Integration -#}
+      {%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}
+      {%- set reiter = listen[2].name if listen | count > 2 else '' -%}
+      {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
+      {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
+      {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
+      {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
+      {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
+      {%- for s in all -%}
+      {%- set a = s.attributes -%}
+      {%- set h = a.retailer_name | lower -%}
+      {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
+      {%- if markt -%}
+      {%- set produkt = a.product_name or '' -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
+      {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
+      {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
+      {%- if ist_obst -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
+      {%- else -%}
+      {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
+      {%- endif -%}
+      {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
+      {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
+      {%- if hier and sk not in ueb -%}
+      {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
+      {%- set einheit = ((a.description or '') | regex_findall('je (.+?)(?= zzgl| oder |, |$)') | first | default('')) | trim | regex_replace('\\.$', '') -%}
+      {%- set key = markt ~ wort ~ s.state ~ einheit -%}
+      {%- if key not in ns.seen -%}
+      {%- set ns.seen = ns.seen + [key] -%}
+      {%- set marke = a.brand_name if a.brand_name and 'nobrand' not in a.brand_name and not (produkt | lower).startswith(a.brand_name | lower) else '' -%}
+      {%- set preis = s.state | float(0) -%}
+      {%- set alt = a.old_price | float(0) -%}
+      {%- set gp = ('%.2f' | format(a.grundpreis | float(0)) | replace('.', ',') ~ '&nbsp;€/' ~ a.grundpreis_einheit) if a.grundpreis and a.grundpreis_einheit else '' -%}
+      {%- set von = (a.valid_from | as_datetime) if a.valid_from else none -%}
+      {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
+      {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
+      {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if ns.zeilen | count == 0 -%}
+      {%- set rows.l = [{'type': 'section', 'label': 'Keine weiteren Angebote, ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste' if ns.weg else 'Keine Angebote zu euren Suchbegriffen'}] -%}
+      {%- else -%}
+      {%- set zeiten = ns.zeilen | map(attribute='zeit') | list -%}
+      {%- set haupt = namespace(zeit='', n=0) -%}
+      {%- for u in zeiten | unique -%}
+      {%- set c = zeiten | select('eq', u) | list | count -%}
+      {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
+      {%- endfor -%}
+      {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
+      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {{ rows.l | tojson }}
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { max-height: 540px; overflow-y: auto; overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {#- Reiter der 4. freien Liste aus den Einstellungen der Integration -#}
+      {%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}
+      {%- set reiter = listen[3].name if listen | count > 3 else '' -%}
+      {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
+      {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
+      {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
+      {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
+      {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
+      {%- for s in all -%}
+      {%- set a = s.attributes -%}
+      {%- set h = a.retailer_name | lower -%}
+      {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
+      {%- if markt -%}
+      {%- set produkt = a.product_name or '' -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
+      {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
+      {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
+      {%- if ist_obst -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
+      {%- else -%}
+      {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
+      {%- endif -%}
+      {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
+      {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
+      {%- if hier and sk not in ueb -%}
+      {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
+      {%- set einheit = ((a.description or '') | regex_findall('je (.+?)(?= zzgl| oder |, |$)') | first | default('')) | trim | regex_replace('\\.$', '') -%}
+      {%- set key = markt ~ wort ~ s.state ~ einheit -%}
+      {%- if key not in ns.seen -%}
+      {%- set ns.seen = ns.seen + [key] -%}
+      {%- set marke = a.brand_name if a.brand_name and 'nobrand' not in a.brand_name and not (produkt | lower).startswith(a.brand_name | lower) else '' -%}
+      {%- set preis = s.state | float(0) -%}
+      {%- set alt = a.old_price | float(0) -%}
+      {%- set gp = ('%.2f' | format(a.grundpreis | float(0)) | replace('.', ',') ~ '&nbsp;€/' ~ a.grundpreis_einheit) if a.grundpreis and a.grundpreis_einheit else '' -%}
+      {%- set von = (a.valid_from | as_datetime) if a.valid_from else none -%}
+      {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
+      {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
+      {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if ns.zeilen | count == 0 -%}
+      {%- set rows.l = [{'type': 'section', 'label': 'Keine weiteren Angebote, ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste' if ns.weg else 'Keine Angebote zu euren Suchbegriffen'}] -%}
+      {%- else -%}
+      {%- set zeiten = ns.zeilen | map(attribute='zeit') | list -%}
+      {%- set haupt = namespace(zeit='', n=0) -%}
+      {%- for u in zeiten | unique -%}
+      {%- set c = zeiten | select('eq', u) | list | count -%}
+      {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
+      {%- endfor -%}
+      {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
+      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {{ rows.l | tojson }}
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { max-height: 540px; overflow-y: auto; overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {#- Reiter der 5. freien Liste aus den Einstellungen der Integration -#}
+      {%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}
+      {%- set reiter = listen[4].name if listen | count > 4 else '' -%}
+      {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
+      {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
+      {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
+      {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
+      {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
+      {%- for s in all -%}
+      {%- set a = s.attributes -%}
+      {%- set h = a.retailer_name | lower -%}
+      {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
+      {%- if markt -%}
+      {%- set produkt = a.product_name or '' -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
+      {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
+      {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
+      {%- if ist_obst -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
+      {%- else -%}
+      {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
+      {%- endif -%}
+      {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
+      {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
+      {%- if hier and sk not in ueb -%}
+      {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
+      {%- set einheit = ((a.description or '') | regex_findall('je (.+?)(?= zzgl| oder |, |$)') | first | default('')) | trim | regex_replace('\\.$', '') -%}
+      {%- set key = markt ~ wort ~ s.state ~ einheit -%}
+      {%- if key not in ns.seen -%}
+      {%- set ns.seen = ns.seen + [key] -%}
+      {%- set marke = a.brand_name if a.brand_name and 'nobrand' not in a.brand_name and not (produkt | lower).startswith(a.brand_name | lower) else '' -%}
+      {%- set preis = s.state | float(0) -%}
+      {%- set alt = a.old_price | float(0) -%}
+      {%- set gp = ('%.2f' | format(a.grundpreis | float(0)) | replace('.', ',') ~ '&nbsp;€/' ~ a.grundpreis_einheit) if a.grundpreis and a.grundpreis_einheit else '' -%}
+      {%- set von = (a.valid_from | as_datetime) if a.valid_from else none -%}
+      {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
+      {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
+      {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if ns.zeilen | count == 0 -%}
+      {%- set rows.l = [{'type': 'section', 'label': 'Keine weiteren Angebote, ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste' if ns.weg else 'Keine Angebote zu euren Suchbegriffen'}] -%}
+      {%- else -%}
+      {%- set zeiten = ns.zeilen | map(attribute='zeit') | list -%}
+      {%- set haupt = namespace(zeit='', n=0) -%}
+      {%- for u in zeiten | unique -%}
+      {%- set c = zeiten | select('eq', u) | list | count -%}
+      {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
+      {%- endfor -%}
+      {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
+      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {{ rows.l | tojson }}
+- type: custom:auto-entities
+  show_empty: true
+  card:
+    type: entities
+    card_mod:
+      style:
+        .: |-
+          ha-card { max-height: 540px; overflow-y: auto; overflow-x: hidden; border-radius: 16px; }
+          #states { padding: 0 0 4px; }
+          #states > * { margin: 0 !important; }
+          #states > div > * { overflow: visible; }
+  filter:
+    template: |-
+      {#- Reiter der 6. freien Liste aus den Einstellungen der Integration -#}
+      {%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}
+      {%- set reiter = listen[5].name if listen | count > 5 else '' -%}
+      {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
+      {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
+      {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
+      {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
+      {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
+      {%- for s in all -%}
+      {%- set a = s.attributes -%}
+      {%- set h = a.retailer_name | lower -%}
+      {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
+      {%- if markt -%}
+      {%- set produkt = a.product_name or '' -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
+      {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
+      {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
+      {%- if ist_obst -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
+      {%- else -%}
+      {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
+      {%- endif -%}
+      {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
+      {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
+      {%- if hier and sk not in ueb -%}
+      {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
+      {%- set einheit = ((a.description or '') | regex_findall('je (.+?)(?= zzgl| oder |, |$)') | first | default('')) | trim | regex_replace('\\.$', '') -%}
+      {%- set key = markt ~ wort ~ s.state ~ einheit -%}
+      {%- if key not in ns.seen -%}
+      {%- set ns.seen = ns.seen + [key] -%}
+      {%- set marke = a.brand_name if a.brand_name and 'nobrand' not in a.brand_name and not (produkt | lower).startswith(a.brand_name | lower) else '' -%}
+      {%- set preis = s.state | float(0) -%}
+      {%- set alt = a.old_price | float(0) -%}
+      {%- set gp = ('%.2f' | format(a.grundpreis | float(0)) | replace('.', ',') ~ '&nbsp;€/' ~ a.grundpreis_einheit) if a.grundpreis and a.grundpreis_einheit else '' -%}
+      {%- set von = (a.valid_from | as_datetime) if a.valid_from else none -%}
+      {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
+      {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
+      {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
       {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
@@ -328,8 +968,6 @@ cards:
       {%- set reiter = 'Marktkauf' -%}
       {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
       {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
-      {%- set fruit = ['apfel', 'birnen', 'bananen', 'clementinen', 'orangen', 'kaki', 'trauben', 'heidelbeeren', 'himbeeren', 'mango', 'avocado'] -%}
-      {%- set kein_obst = 'saft|aufstrich|schokol|gefroren|kohl|konfit|joghurt|schorle|nektar|sirup|likör|mus|getrocknet|tee|bonbon|riegel|kuchen|duft|spül|shampoo|essig|quark|chips|froop|havana|club|wein|sekt|vodka|whisk|bier' -%}
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
@@ -342,16 +980,18 @@ cards:
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
       {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
-      {%- set ist_obst = begriff in fruit -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
       {%- if ist_obst -%}
-      {%- set passt = not text is search(kein_obst) -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
       {%- else -%}
       {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
       {%- endif -%}
       {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
-      {%- set hier = passt and ((reiter == 'Obst' and ist_obst) or (reiter == markt and not ist_obst)) -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
       {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
       {%- if hier and sk not in ueb -%}
       {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
@@ -367,7 +1007,7 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if reiter == 'Obst' else '', einheit, gp] | select | join(' · ') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
       {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
@@ -406,8 +1046,6 @@ cards:
       {%- set reiter = 'REWE' -%}
       {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
       {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
-      {%- set fruit = ['apfel', 'birnen', 'bananen', 'clementinen', 'orangen', 'kaki', 'trauben', 'heidelbeeren', 'himbeeren', 'mango', 'avocado'] -%}
-      {%- set kein_obst = 'saft|aufstrich|schokol|gefroren|kohl|konfit|joghurt|schorle|nektar|sirup|likör|mus|getrocknet|tee|bonbon|riegel|kuchen|duft|spül|shampoo|essig|quark|chips|froop|havana|club|wein|sekt|vodka|whisk|bier' -%}
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
@@ -420,16 +1058,18 @@ cards:
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
       {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
-      {%- set ist_obst = begriff in fruit -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
       {%- if ist_obst -%}
-      {%- set passt = not text is search(kein_obst) -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
       {%- else -%}
       {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
       {%- endif -%}
       {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
-      {%- set hier = passt and ((reiter == 'Obst' and ist_obst) or (reiter == markt and not ist_obst)) -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
       {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
       {%- if hier and sk not in ueb -%}
       {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
@@ -445,7 +1085,7 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if reiter == 'Obst' else '', einheit, gp] | select | join(' · ') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
       {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
@@ -484,8 +1124,6 @@ cards:
       {%- set reiter = 'EDEKA' -%}
       {#- Angebote, die die Donnerstags-Automation schon auf die Liste gesetzt hat, nicht noch einmal anbieten -#}
       {%- set ueb = states('input_text.einkauf_uebernommen').split(',') -%}
-      {%- set fruit = ['apfel', 'birnen', 'bananen', 'clementinen', 'orangen', 'kaki', 'trauben', 'heidelbeeren', 'himbeeren', 'mango', 'avocado'] -%}
-      {%- set kein_obst = 'saft|aufstrich|schokol|gefroren|kohl|konfit|joghurt|schorle|nektar|sirup|likör|mus|getrocknet|tee|bonbon|riegel|kuchen|duft|spül|shampoo|essig|quark|chips|froop|havana|club|wein|sekt|vodka|whisk|bier' -%}
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
@@ -498,16 +1136,18 @@ cards:
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
       {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
-      {%- set ist_obst = begriff in fruit -%}
+      {#- Angebote einer freien Liste stehen in deren Reiter, alle anderen beim Händler -#}
+      {%- set liste = a.liste | default('') -%}
+      {%- set ist_obst = liste != '' -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
       {%- if ist_obst -%}
-      {%- set passt = not text is search(kein_obst) -%}
+      {%- set passt = not (a.liste_ohne | default('') and text is search(a.liste_ohne)) -%}
       {%- else -%}
       {%- set passt = ((text is search(regeln[begriff])) if begriff in regeln else ((begriff | replace('_', '')) in norm)) and not (begriff in raus and text is search(raus[begriff])) -%}
       {%- endif -%}
       {%- set sk = ((markt ~ '|' ~ (produkt | lower) ~ '|' ~ ('%.2f' | format(s.state | float(0)))) | md5)[:6] -%}
-      {%- set hier = passt and ((reiter == 'Obst' and ist_obst) or (reiter == markt and not ist_obst)) -%}
+      {%- set hier = reiter != '' and passt and ((ist_obst and reiter == liste) or (reiter == markt and not ist_obst)) -%}
       {%- if hier and sk in ueb -%}{%- set ns.weg = ns.weg + [sk] -%}{%- endif -%}
       {%- if hier and sk not in ueb -%}
       {%- set wort = (produkt | lower | regex_replace('[^a-zäöüß0-9 -]', '')).split(' ')[0] -%}
@@ -523,7 +1163,7 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if reiter == 'Obst' else '', einheit, gp] | select | join(' · ') -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
       {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
@@ -646,34 +1286,52 @@ cards:
       {{ rows.l | tojson }}
 card_mod:
   style: |-
-    {%- set gid = (browser or '') | replace('browser_mod_', '') -%}{%- set rs = states['input_select.angebote_reiter_' ~ gid] if gid else none -%}{%- set qs = states['input_text.angebote_suche_' ~ gid] if gid else none -%}{%- set reiter = rs.state if rs else states('input_select.angebote_reiter') -%}{%- set q = qs.state if qs else states('input_text.angebote_suche') -%}{%- set sucht = q not in ['', 'unknown', 'unavailable'] -%}
+    {%- set gid = (browser or '') | replace('browser_mod_', '') -%}{%- set rs = states['input_select.angebote_reiter_' ~ gid] if gid else none -%}{%- set qs = states['input_text.angebote_suche_' ~ gid] if gid else none -%}{%- set reiter = rs.state if rs else states('input_select.angebote_reiter') -%}{%- set q = qs.state if qs else states('input_text.angebote_suche') -%}{%- set sucht = q not in ['', 'unknown', 'unavailable'] -%}{%- set listen = state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or [] -%}{%- set nl = listen | count -%}
     {%- if qs %}
     #root > :nth-child(2) { display: none !important; }
     {%- endif %}
     {%- if gid != 'GERAET_1' %}
     #root > :nth-child(3) { display: none !important; }
     {%- endif %}
-    {%- if sucht %}
+    {%- if sucht or nl == 0 %}
     #root > :nth-child(4) { display: none !important; }
     {%- endif %}
-    {%- if not sucht %}
+    {%- if sucht %}
     #root > :nth-child(5) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'Obst' %}
+    {%- if not sucht %}
     #root > :nth-child(6) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'Marktkauf' %}
+    {%- if sucht or nl <= 0 or reiter != listen[0].name %}
     #root > :nth-child(7) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'REWE' %}
+    {%- if sucht or nl <= 1 or reiter != listen[1].name %}
     #root > :nth-child(8) { display: none !important; }
     {%- endif %}
-    {%- if sucht or reiter != 'EDEKA' %}
+    {%- if sucht or nl <= 2 or reiter != listen[2].name %}
     #root > :nth-child(9) { display: none !important; }
     {%- endif %}
-    {%- if not sucht or qs %}
+    {%- if sucht or nl <= 3 or reiter != listen[3].name %}
     #root > :nth-child(10) { display: none !important; }
     {%- endif %}
-    {%- if not sucht or gid != 'GERAET_1' %}
+    {%- if sucht or nl <= 4 or reiter != listen[4].name %}
     #root > :nth-child(11) { display: none !important; }
+    {%- endif %}
+    {%- if sucht or nl <= 5 or reiter != listen[5].name %}
+    #root > :nth-child(12) { display: none !important; }
+    {%- endif %}
+    {%- if sucht or reiter != 'Marktkauf' %}
+    #root > :nth-child(13) { display: none !important; }
+    {%- endif %}
+    {%- if sucht or reiter != 'REWE' %}
+    #root > :nth-child(14) { display: none !important; }
+    {%- endif %}
+    {%- if sucht or reiter != 'EDEKA' %}
+    #root > :nth-child(15) { display: none !important; }
+    {%- endif %}
+    {%- if not sucht or qs %}
+    #root > :nth-child(16) { display: none !important; }
+    {%- endif %}
+    {%- if not sucht or gid != 'GERAET_1' %}
+    #root > :nth-child(17) { display: none !important; }
     {%- endif %}
