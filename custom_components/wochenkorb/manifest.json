@@ -1,5 +1,5 @@
 {
-  "domain": "marktguru",
+  "domain": "wochenkorb",
   "name": "Wochenkorb",
   "documentation": "https://github.com/Tinkerworkss/ha-marktguru",
   "dependencies": [],
@@ -10,6 +10,6 @@
     "@thorschtn"
   ],
   "requirements": [],
-  "version": "0.5.0",
+  "version": "1.0.0",
   "config_flow": true
 }

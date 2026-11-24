@@ -14,18 +14,22 @@ Die Angebote kommen aus der Suche von Marktguru und von meinprospekt.de. Für be
 
 ## Über diesen Fork
 
-Wochenkorb ist aus einem Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru) entstanden; die ursprüngliche Integration stammt von dort. Technisch heißt die Integration weiter `marktguru` (Ordner, Entitäten wie `sensor.marktguru_…`, Dienst `marktguru.add_purchases`), damit bestehende Einrichtungen unverändert laufen. Der Fork ergänzt:
+Wochenkorb ist aus einem Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru) entstanden; die ursprüngliche Integration stammt von dort. Der Fork ergänzt:
 
 - **Einstellungen änderbar.** Postleitzahl, Suchbegriffe und Händlerfilter lassen sich unter *Konfigurieren* ändern, ohne die Integration zu löschen. Suchbegriffe und Händler sind Listen, in denen sich einzelne Einträge hinzufügen und entfernen lassen. Der Eintrag lädt sich neu, Sensoren entfernter Suchbegriffe werden aufgeräumt.
 - **Händlerfilter.** Optionale Auswahl (zum Beispiel Marktkauf, REWE, EDEKA); nur Angebote dieser Händler werden zu Sensoren.
 - **Zweite Quelle: meinprospekt.de.** Deckt Händler ab, die Marktguru in manchen Regionen nicht führt (zum Beispiel Marktkauf). Sie wird alle sechs Stunden mit den Heimkoordinaten von Home Assistant abgefragt. Händler, die Marktguru schon liefert, kommen nicht doppelt.
 - **Mehr Attribute.** `source`, `link` (Angebots- oder Prospektseite), `grundpreis` und `grundpreis_einheit` (Preis je Kilogramm oder Liter).
-- **Such-Sensor.** `sensor.marktguru_suche_<plz>` sucht live in beiden Quellen nach dem Text im Helfer `input_text.angebote_suche` und liefert die Treffer im Attribut `results`.
+- **Such-Sensor.** `sensor.wochenkorb_suche_<plz>` sucht live in beiden Quellen nach dem Text im Helfer `input_text.angebote_suche` und liefert die Treffer im Attribut `results`.
 - **Optional: Rezepte aus Mealie.** Ist die Mealie-Integration eingerichtet, liefert die Option `mealie_recipes` einen Sensor mit Rezepten, deren Hauptzutat im Angebot ist, und dem Essensplan der nächsten Tage. Ohne Mealie ändert sich nichts. Siehe Abschnitt 6.
 - **Optional: Einkaufsverlauf aus Kassenbons.** Ein Dienst speichert Bonpositionen lokal, ein Sensor wertet sie aus. Siehe Abschnitt 7.
 - **Korrekturen.** Das Entladen des Eintrags funktioniert, neue Angebote erzeugen ihre Sensoren bei der stündlichen Aktualisierung, und der Suchbegriff-Sensor meldet die Anzahl der Begriffe statt eines Textes, der länger als 255 Zeichen werden konnte.
 
 Wie das Original ist dies ein Hobbyprojekt ohne Support. Große Teile des Codes sind mit KI-Unterstützung entstanden.
+
+### Umstieg von Version 0.x (technischer Name `marktguru`)
+
+Seit Version 1.0 heißt die Integration auch technisch `wochenkorb`: Ordner `custom_components/wochenkorb`, Entitäten `sensor.wochenkorb_…`, Dienst `wochenkorb.add_purchases`. Wer eine ältere Fassung nutzt, löscht den alten Eintrag und den Ordner `custom_components/marktguru`, richtet die Integration neu ein und ersetzt in Karten, Skripten und Automationen `marktguru_` durch `wochenkorb_`. Der Einkaufsverlauf wird beim ersten Start übernommen.
 
 ## 1. Voraussetzungen
 
@@ -34,7 +38,7 @@ Home Assistant (Core, OS, Supervised oder Container).
 ## 2. Installation
 
 - Repository von GitHub herunterladen.
-- Den Ordner `custom_components/marktguru` nach `<config>/custom_components/marktguru` kopieren.
+- Den Ordner `custom_components/wochenkorb` nach `<config>/custom_components/wochenkorb` kopieren.
 - Home Assistant neu starten.
 
 ## 3. Einrichtung
@@ -52,7 +56,7 @@ Für den Such-Sensor muss der Helfer `input_text.angebote_suche` von Hand angele
 
 ## 4. Verwendung
 
-Für jedes gefundene Angebot entsteht ein Sensor wie `sensor.marktguru_butter_1_10115` mit Attributen wie Preis, Händler und Gültigkeit. Neue Angebote erscheinen von selbst, abgelaufene werden entfernt.
+Für jedes gefundene Angebot entsteht ein Sensor wie `sensor.wochenkorb_butter_1_10115` mit Attributen wie Preis, Händler und Gültigkeit. Neue Angebote erscheinen von selbst, abgelaufene werden entfernt.
 
 ## 5. Beispiel-Einrichtung: Angebote und wöchentliche Grundartikel
 
@@ -106,13 +110,13 @@ Vor dem Einsatz ersetzen: `MEALIE_EINTRAG` (ID des Konfigurationseintrags der Me
 
 Mit der Option `mealie_recipes` liest die Integration einmal täglich alle Rezepte aus der Mealie-Integration, sucht darin Hauptzutaten (Fleisch, Fisch, Käse, Gemüse; Gewürze und Grundvorräte zählen nicht) und lädt für die häufigsten Angebote, als bis zu 20 zusätzliche Suchbegriffe. Diese erzeugen keine Angebotssensoren.
 
-`sensor.marktguru_rezepte_<plz>` führt im Attribut `plan` die Abendessen der nächsten acht Tage und nennt bis zu fünf Rezepte, deren Hauptzutat im Angebot ist: bester Rabatt zuerst, Fleisch und Fisch höher gewichtet als Käse und Gemüse. Die Liste ist gemischt: zunächst nur ein Rezept je Hauptzutat, mindestens ein vegetarisches, wenn eines passt, und Rezepte, die länger nicht gekocht wurden (Mealies „zuletzt gekocht“), bekommen einen kleinen Bonus. Rezepte aus dem Essensplan der letzten 14 Tage bleiben außen vor; für die nächsten Tage Eingeplantes steht immer oben und ist markiert. Ein Druck auf `input_button.rezepte_neu_mischen` stellt die aktuellen, nicht eingeplanten Vorschläge zurück und zeigt die nächsten; sind alle gezeigt, beginnt es von vorn.
+`sensor.wochenkorb_rezepte_<plz>` führt im Attribut `plan` die Abendessen der nächsten acht Tage und nennt bis zu fünf Rezepte, deren Hauptzutat im Angebot ist: bester Rabatt zuerst, Fleisch und Fisch höher gewichtet als Käse und Gemüse. Die Liste ist gemischt: zunächst nur ein Rezept je Hauptzutat, mindestens ein vegetarisches, wenn eines passt, und Rezepte, die länger nicht gekocht wurden (Mealies „zuletzt gekocht“), bekommen einen kleinen Bonus. Rezepte aus dem Essensplan der letzten 14 Tage bleiben außen vor; für die nächsten Tage Eingeplantes steht immer oben und ist markiert. Ein Druck auf `input_button.rezepte_neu_mischen` stellt die aktuellen, nicht eingeplanten Vorschläge zurück und zeigt die nächsten; sind alle gezeigt, beginnt es von vorn.
 
-Mit der Option `shopping_list` (eine To-do-Entität, etwa die Bring!-Liste) werden Hauptzutaten markiert, die schon auf der Liste stehen. Das Einplan-Skript legt trotzdem alle Zutaten auf die Mealie-Einkaufsliste, damit sich die Mengen addieren lassen. Rezeptbilder werden nach `www/marktguru_rezepte` kopiert, damit die Karte sie ohne Mealie-Anmeldung zeigen kann.
+Mit der Option `shopping_list` (eine To-do-Entität, etwa die Bring!-Liste) werden Hauptzutaten markiert, die schon auf der Liste stehen. Das Einplan-Skript legt trotzdem alle Zutaten auf die Mealie-Einkaufsliste, damit sich die Mengen addieren lassen. Rezeptbilder werden nach `www/wochenkorb_rezepte` kopiert, damit die Karte sie ohne Mealie-Anmeldung zeigen kann.
 
 ## 7. Optional: Einkaufsverlauf aus Kassenbons
 
-Die Integration kann festhalten, was tatsächlich gekauft wurde. Sie liest keine Bons selbst: Etwas anderes (zum Beispiel eine geplante Assistenten-Aufgabe, die die eBons aus dem Postfach liest) liefert die Positionen über den Dienst `marktguru.add_purchases`, ein Aufruf je Bon. Ein Bon (Zeitpunkt und Markt) wird immer als Ganzes ersetzt; ihn zweimal zu senden legt nichts doppelt an. Der Verlauf liegt lokal in `.storage/marktguru_einkaeufe`.
+Die Integration kann festhalten, was tatsächlich gekauft wurde. Sie liest keine Bons selbst: Etwas anderes (zum Beispiel eine geplante Assistenten-Aufgabe, die die eBons aus dem Postfach liest) liefert die Positionen über den Dienst `wochenkorb.add_purchases`, ein Aufruf je Bon. Ein Bon (Zeitpunkt und Markt) wird immer als Ganzes ersetzt; ihn zweimal zu senden legt nichts doppelt an. Der Verlauf liegt lokal in `.storage/wochenkorb_einkaeufe`.
 
 Eine Zeile je Position, Felder mit Semikolon getrennt:
 

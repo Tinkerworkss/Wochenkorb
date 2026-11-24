@@ -15,5 +15,5 @@ actions:
     message: '{{ [''Marktguru (REWE)'' if marktguru | int(0) == 0 else '''', ''meinprospekt (Marktkauf, EDEKA)'' if meinprospekt | int(0) == 0 else ''''] | select | join('' und '') }} liefert aktuell keine Angebote. Karte und Einkaufs-Automation arbeiten solange ohne diese Quelle.'
 mode: single
 variables:
-  marktguru: '{{ states.sensor | selectattr(''entity_id'', ''match'', ''sensor\\.marktguru_'') | selectattr(''attributes.source'', ''defined'') | selectattr(''attributes.source'', ''eq'', ''marktguru'') | rejectattr(''state'', ''in'', [''unavailable'', ''unknown'']) | list | count }}'
-  meinprospekt: '{{ states.sensor | selectattr(''entity_id'', ''match'', ''sensor\\.marktguru_'') | selectattr(''attributes.source'', ''defined'') | selectattr(''attributes.source'', ''eq'', ''meinprospekt'') | rejectattr(''state'', ''in'', [''unavailable'', ''unknown'']) | list | count }}'
+  marktguru: '{{ states.sensor | selectattr(''entity_id'', ''match'', ''sensor\\.wochenkorb_'') | selectattr(''attributes.source'', ''defined'') | selectattr(''attributes.source'', ''eq'', ''marktguru'') | rejectattr(''state'', ''in'', [''unavailable'', ''unknown'']) | list | count }}'
+  meinprospekt: '{{ states.sensor | selectattr(''entity_id'', ''match'', ''sensor\\.wochenkorb_'') | selectattr(''attributes.source'', ''defined'') | selectattr(''attributes.source'', ''eq'', ''meinprospekt'') | rejectattr(''state'', ''in'', [''unavailable'', ''unknown'']) | list | count }}'

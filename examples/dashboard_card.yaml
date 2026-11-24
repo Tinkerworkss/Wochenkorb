@@ -255,7 +255,7 @@ cards:
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
-      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.marktguru_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
       {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
       {%- for s in all -%}
       {%- set a = s.attributes -%}
@@ -263,7 +263,7 @@ cards:
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
-      {%- set begriff = s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1') -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
       {%- set ist_obst = begriff in fruit -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
@@ -333,7 +333,7 @@ cards:
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
-      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.marktguru_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
       {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
       {%- for s in all -%}
       {%- set a = s.attributes -%}
@@ -341,7 +341,7 @@ cards:
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
-      {%- set begriff = s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1') -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
       {%- set ist_obst = begriff in fruit -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
@@ -411,7 +411,7 @@ cards:
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
-      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.marktguru_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
       {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
       {%- for s in all -%}
       {%- set a = s.attributes -%}
@@ -419,7 +419,7 @@ cards:
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
-      {%- set begriff = s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1') -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
       {%- set ist_obst = begriff in fruit -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
@@ -489,7 +489,7 @@ cards:
       {#- Beifang-Filter: eigene Regel je Suchbegriff, sonst muss der Begriff in Marke oder Name vorkommen -#}
       {%- set regeln = {'butter': 'butter(?![a-zäöüß-])|kærgården', 'hackfleisch': 'hackfleisch|gehackt', 'hahnchen': 'hähnchen'} -%}
       {%- set raus = {'hahnchen': 'wurst|fryer|würz'} -%}
-      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.marktguru_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
+      {%- set all = states.sensor | selectattr('entity_id', 'match', 'sensor\\.wochenkorb_') | selectattr('attributes.retailer_name', 'defined') | rejectattr('attributes.retailer_name', 'none') | sort(attribute='entity_id') | list -%}
       {%- set ns = namespace(seen=[], zeilen=[], weg=[]) -%}
       {%- for s in all -%}
       {%- set a = s.attributes -%}
@@ -497,7 +497,7 @@ cards:
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else '')) -%}
       {%- if markt -%}
       {%- set produkt = a.product_name or '' -%}
-      {%- set begriff = s.entity_id | regex_replace('^sensor\\.marktguru_(.*)_\\d+_\\d+$', '\\1') -%}
+      {%- set begriff = s.entity_id | regex_replace('^sensor\\.wochenkorb_(.*)_\\d+_\\d+$', '\\1') -%}
       {%- set ist_obst = begriff in fruit -%}
       {%- set text = ((a.brand_name or '') ~ ' ' ~ produkt) | lower -%}
       {%- set norm = text | replace('ä', 'a') | replace('ö', 'o') | replace('ü', 'u') | replace('ß', 'ss') | regex_replace('[^a-z0-9]', '') -%}
@@ -560,9 +560,9 @@ cards:
   filter:
     template: |-
       {%- set q = states('input_text.angebote_suche') | trim -%}
-      {%- set treffer = state_attr('sensor.marktguru_suche_DEINE_PLZ', 'results') or [] -%}
+      {%- set treffer = state_attr('sensor.wochenkorb_suche_DEINE_PLZ', 'results') or [] -%}
       {%- set rows = namespace(l=[]) -%}
-      {%- if state_attr('sensor.marktguru_suche_DEINE_PLZ', 'query') != q -%}
+      {%- if state_attr('sensor.wochenkorb_suche_DEINE_PLZ', 'query') != q -%}
       {%- set rows.l = [{'type': 'section', 'label': 'Suche nach „' ~ q ~ '“ läuft …'}] -%}
       {%- elif treffer | count == 0 -%}
       {%- set rows.l = [{'type': 'section', 'label': 'Keine Angebote für „' ~ q ~ '“ bei Marktkauf, REWE und EDEKA'}] -%}
@@ -591,7 +591,7 @@ cards:
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Treffer für „' ~ q ~ '“'}] -%}
       {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': 'sensor.marktguru_suche_DEINE_PLZ', 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': z.infos | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': z.notiz}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': 'sensor.wochenkorb_suche_DEINE_PLZ', 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': z.infos | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': z.notiz}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -609,9 +609,9 @@ cards:
   filter:
     template: |-
       {%- set q = states('input_text.angebote_suche_GERAET_1') | trim -%}
-      {%- set treffer = state_attr('sensor.marktguru_suche_DEINE_PLZ_GERAET_1', 'results') or [] -%}
+      {%- set treffer = state_attr('sensor.wochenkorb_suche_DEINE_PLZ_GERAET_1', 'results') or [] -%}
       {%- set rows = namespace(l=[]) -%}
-      {%- if state_attr('sensor.marktguru_suche_DEINE_PLZ_GERAET_1', 'query') != q -%}
+      {%- if state_attr('sensor.wochenkorb_suche_DEINE_PLZ_GERAET_1', 'query') != q -%}
       {%- set rows.l = [{'type': 'section', 'label': 'Suche nach „' ~ q ~ '“ läuft …'}] -%}
       {%- elif treffer | count == 0 -%}
       {%- set rows.l = [{'type': 'section', 'label': 'Keine Angebote für „' ~ q ~ '“ bei Marktkauf, REWE und EDEKA'}] -%}
@@ -640,7 +640,7 @@ cards:
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Treffer für „' ~ q ~ '“'}] -%}
       {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': 'sensor.marktguru_suche_DEINE_PLZ_GERAET_1', 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': z.infos | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': z.notiz}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': 'sensor.wochenkorb_suche_DEINE_PLZ_GERAET_1', 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': z.infos | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': z.notiz}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}

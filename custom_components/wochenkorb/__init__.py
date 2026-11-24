@@ -11,15 +11,21 @@ SERVICE_ADD_PURCHASES = "add_purchases"
 
 
 class PurchaseHistory:
-    """Einkaufsverlauf aus Kassenbons, gespeichert in .storage/marktguru_einkaeufe."""
+    """Einkaufsverlauf aus Kassenbons, gespeichert in .storage/wochenkorb_einkaeufe."""
 
     def __init__(self, hass):
         self.hass = hass
-        self._store = Store(hass, 1, "marktguru_einkaeufe")
+        self._store = Store(hass, 1, "wochenkorb_einkaeufe")
+        # Verlauf aus der Zeit, als die Integration technisch noch "marktguru" hieß
+        self._old_store = Store(hass, 1, "marktguru_einkaeufe")
         self.rows = []
 
     async def async_load(self):
         data = await self._store.async_load()
+        if data is None:
+            data = await self._old_store.async_load()
+            if data:
+                await self._store.async_save(data)
         self.rows = (data or {}).get("rows", [])
 
     async def async_add(self, text):

@@ -34,14 +34,14 @@ cards:
       {%- for x in (alt.split(';') if alt not in ['unknown', 'unavailable', ''] else []) if '=' in x -%}{%- set pm.d = dict(pm.d, **{x.split('=')[0]: x.split('=')[1] | float(0)}) -%}{%- endfor -%}
       {#- Die sieben Tage mit dem, was dort schon steht: Ziele zum Verschieben -#}
       {%- set tage = namespace(l=[]) -%}
-      {%- for p in state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or [] -%}
+      {%- for p in state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or [] -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set diff = (d.date() - now().date()).days -%}
       {%- if diff >= 0 and diff < 7 -%}
       {%- set tage.l = tage.l + [{'d': p.date, 'text': 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')), 'essen': p.dinner | map(attribute='name') | join(', ')}] -%}
       {%- endif -%}
       {%- endfor -%}
-      {%- for p in state_attr('sensor.marktguru_rezepte_DEINE_PLZ', 'plan') or [] -%}
+      {%- for p in state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan') or [] -%}
       {%- set d = strptime(p.date, '%Y-%m-%d') -%}
       {%- set diff = (d.date() - now().date()).days -%}
       {%- if diff >= 0 and diff < 7 -%}

@@ -15,6 +15,6 @@ einkauf_kassenbon_speichern:
         text:
           multiline: true
   sequence:
-  - action: marktguru.add_purchases
+  - action: wochenkorb.add_purchases
     data:
       rows: '{{ zeilen }}'
