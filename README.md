@@ -12,8 +12,8 @@ Home-Assistant-Integration, die aktuelle Prospekt-Angebote aus der Marktguru-Suc
 
 Dies ist ein Fork von [thorschtn/ha-marktguru](https://github.com/thorschtn/ha-marktguru); die ursprüngliche Integration stammt von dort. Der Fork ergänzt:
 
-- **Einstellungen änderbar.** Postleitzahl, Suchbegriffe und Händlerfilter lassen sich unter *Konfigurieren* ändern, ohne die Integration zu löschen. Der Eintrag lädt sich neu, Sensoren entfernter Suchbegriffe werden aufgeräumt.
-- **Händlerfilter.** Optionale, kommagetrennte Liste (zum Beispiel `Marktkauf, REWE, EDEKA`); nur Angebote dieser Händler werden zu Sensoren.
+- **Einstellungen änderbar.** Postleitzahl, Suchbegriffe und Händlerfilter lassen sich unter *Konfigurieren* ändern, ohne die Integration zu löschen. Suchbegriffe und Händler sind Listen, in denen sich einzelne Einträge hinzufügen und entfernen lassen. Der Eintrag lädt sich neu, Sensoren entfernter Suchbegriffe werden aufgeräumt.
+- **Händlerfilter.** Optionale Auswahl (zum Beispiel Marktkauf, REWE, EDEKA); nur Angebote dieser Händler werden zu Sensoren.
 - **Zweite Quelle: meinprospekt.de.** Deckt Händler ab, die Marktguru in manchen Regionen nicht führt (zum Beispiel Marktkauf). Sie wird alle sechs Stunden mit den Heimkoordinaten von Home Assistant abgefragt. Händler, die Marktguru schon liefert, kommen nicht doppelt.
 - **Mehr Attribute.** `source`, `link` (Angebots- oder Prospektseite), `grundpreis` und `grundpreis_einheit` (Preis je Kilogramm oder Liter).
 - **Such-Sensor.** `sensor.marktguru_suche_<plz>` sucht live in beiden Quellen nach dem Text im Helfer `input_text.angebote_suche` und liefert die Treffer im Attribut `results`.
@@ -38,8 +38,9 @@ Home Assistant (Core, OS, Supervised oder Container).
 Unter Einstellungen → Geräte & Dienste → Integration hinzufügen nach „Marktguru“ suchen.
 
 - **Postleitzahl:** die PLZ, für die Angebote gesucht werden (zum Beispiel 10115).
-- **Suchbegriffe:** kommagetrennte Liste der Produkte, zum Beispiel `Butter, Hackfleisch, Pepsi`.
-- **Händler (optional):** kommagetrennte Liste, auf die die Angebote beschränkt werden.
+- **Suchbegriffe:** Liste der Produkte, zum Beispiel Butter, Hackfleisch, Pepsi. Begriff eintippen und mit Enter hinzufügen, mit dem Kreuz wieder entfernen.
+- **Händler (optional):** Auswahl, auf die die Angebote beschränkt werden; eigene Namen lassen sich dazutippen.
+- **Rezepte aus Mealie** und **Einkaufsliste (optional):** siehe Abschnitt 6.
 
 Nach dem Speichern entstehen die Sensoren von selbst. Die Integration lässt sich mehrfach einrichten, etwa für verschiedene Postleitzahlen.
 

@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Marktguru einrichten",
+        "description": "Prospekt-Angebote für eine Postleitzahl und eine Liste von Suchbegriffen.",
+        "data": {
+          "zip_code": "Postleitzahl",
+          "products": "Suchbegriffe",
+          "retailers": "Händler",
+          "mealie_recipes": "Rezepte aus Mealie vorschlagen",
+          "shopping_list": "Einkaufsliste"
+        },
+        "data_description": {
+          "products": "Begriff eintippen und mit Enter hinzufügen, mit dem Kreuz entfernen. Je Begriff entstehen Angebotssensoren.",
+          "retailers": "Leer: alle Händler. Sonst nur Angebote der gewählten Händler; eigene Namen lassen sich dazutippen.",
+          "mealie_recipes": "Braucht die Mealie-Integration. Zeigt Rezepte, deren Hauptzutat im Angebot ist.",
+          "shopping_list": "Optional. Hauptzutaten, die schon auf dieser Liste stehen, werden in den Rezeptvorschlägen markiert."
+        }
+      }
+    },
+    "error": {
+      "zip_required": "Bitte eine Postleitzahl angeben.",
+      "products_required": "Bitte mindestens einen Suchbegriff angeben."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Marktguru anpassen",
+        "description": "Änderungen gelten sofort; Sensoren entfernter Suchbegriffe werden aufgeräumt.",
+        "data": {
+          "zip_code": "Postleitzahl",
+          "products": "Suchbegriffe",
+          "retailers": "Händler",
+          "mealie_recipes": "Rezepte aus Mealie vorschlagen",
+          "shopping_list": "Einkaufsliste"
+        },
+        "data_description": {
+          "products": "Begriff eintippen und mit Enter hinzufügen, mit dem Kreuz entfernen. Je Begriff entstehen Angebotssensoren.",
+          "retailers": "Leer: alle Händler. Sonst nur Angebote der gewählten Händler; eigene Namen lassen sich dazutippen.",
+          "mealie_recipes": "Braucht die Mealie-Integration. Zeigt Rezepte, deren Hauptzutat im Angebot ist.",
+          "shopping_list": "Optional. Hauptzutaten, die schon auf dieser Liste stehen, werden in den Rezeptvorschlägen markiert."
+        }
+      }
+    },
+    "error": {
+      "zip_required": "Bitte eine Postleitzahl angeben.",
+      "products_required": "Bitte mindestens einen Suchbegriff angeben."
+    }
+  }
+}
