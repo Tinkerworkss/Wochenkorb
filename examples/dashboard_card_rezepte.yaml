@@ -35,6 +35,18 @@ cards:
       {%- if not essen and not tage.vor -%}{%- set tage.vor = p.date -%}{%- endif -%}
       {%- set tage.l = tage.l + [{'d': p.date, 'text': wt[d.weekday()] ~ ', ' ~ d.strftime('%d.%m.'), 'essen': essen}] -%}
       {%- endfor -%}
+      {#- Portionen-Zeile: Haushaltsgröße und zwei größere Mengen; die Auswahl liegt in input_number.rezept_portionen_wahl -#}
+      {%- set std = states('input_number.einkauf_portionen') | float(0) -%}
+      {%- set opts = [std] + ([4, 6, 8] | select('gt', std) | list)[:2] -%}
+      {%- set pk = namespace(l=[]) -%}
+      {%- for o in opts -%}
+      {%- set pk.l = pk.l + [{'type': 'custom:button-card', 'entity': 'input_number.rezept_portionen_wahl', 'show_icon': 0, 'show_state': 0,
+        'name': ((o | round(1) | string | replace('.0', '') | replace('.', ',')) ~ ' Port.') if o > 0 else 'wie im Rezept',
+        'tap_action': {'action': 'call-service', 'service': 'input_number.set_value', 'service_data': {'entity_id': 'input_number.rezept_portionen_wahl', 'value': o}},
+        'state': [{'operator': '==', 'value': o, 'styles': {'card': [{'background': 'var(--primary-color)'}, {'color': 'var(--text-primary-color, #fff)'}]}}],
+        'styles': {'card': [{'padding': '8px 6px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
+                   'name': [{'font-size': '14px'}, {'font-weight': '600'}]}}] -%}
+      {%- endfor -%}
       {%- for r in res[:5] -%}
       {%- set o = r.offer -%}
       {%- set h = (o.retailer or '') | lower -%}
@@ -49,7 +61,7 @@ cards:
       {#- Kalender-Knopf: Fenster mit den Abenden; die Auswahl läuft auf dem Gerät selbst und braucht keine browser_mod-Registrierung -#}
       {%- set knoepfe = namespace(l=[{'type': 'markdown', 'content': '**' ~ r.name ~ '**
 
-      Tippe auf den Abend. Der Vorschlag ist der nächste freie.'}]) -%}
+      Tippe auf den Abend. Der Vorschlag ist der nächste freie.'}, {'type': 'horizontal-stack', 'cards': pk.l}]) -%}
       {%- for t in tage.l -%}
       {%- set vor = t.d == tage.vor -%}
       {%- set knoepfe.l = knoepfe.l + [{
@@ -66,7 +78,9 @@ cards:
           'name': [{'justify-self': 'start'}, {'font-size': '15px'}, {'font-weight': '600'}],
           'label': [{'justify-self': 'end'}, {'font-size': '13px'}, {'opacity': '0.8'}, {'text-align': 'right'}]}}] -%}
       {%- endfor -%}
-      {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.notification', 'data': {'message': 'Schon ' ~ geplant}}} if geplant else {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': 'Wann kochen?', 'content': {'type': 'vertical-stack', 'cards': knoepfe.l}}}} -%}
+      {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.notification', 'data': {'message': 'Schon ' ~ geplant}}} if geplant else {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+          {'service': 'input_number.set_value', 'data': {'entity_id': 'input_number.rezept_portionen_wahl', 'value': std}},
+          {'service': 'browser_mod.popup', 'data': {'title': 'Wann kochen?', 'content': {'type': 'vertical-stack', 'cards': knoepfe.l}}}]}}} -%}
       {%- set drauf = ((r.on_list | join(', ')) ~ ' schon auf der Liste') if r.on_list else '' -%}
       {%- set status = [geplant, drauf] | select | join(' · ') -%}
       {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'custom_fields': {'plus': {'card': {'tap_action': tipp}}}, 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'status': status | e, 'geplant': geplant, 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}

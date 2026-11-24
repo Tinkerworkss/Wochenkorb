@@ -4,7 +4,7 @@
 # the to-do entity of the Mealie shopping list and DEINE_PLZ.
 einkauf_rezept_einplanen:
   alias: 'Einkauf: Rezept einplanen'
-  description: 'Fragt in einem Fenster, an welchem Abend ein Mealie-Rezept gekocht werden soll (Vorschlag: der nächste freie Abend), trägt es in den Essensplan ein und legt alle Zutaten auf die Mealie-Einkaufsliste (auch solche, die schon auf der Liste stehen, damit sich die Mengen addieren lassen). Die Mengen werden auf die Haushaltsgröße aus input_number.einkauf_portionen umgerechnet (0 oder kein Helfer: Mengen wie im Rezept). Wird vom Kalender-Knopf der Rezeptkarte aufgerufen. Ohne browser_mod-Kennung wird ohne Nachfrage der nächste freie Abend genommen.'
+  description: 'Fragt in einem Fenster, an welchem Abend ein Mealie-Rezept gekocht werden soll (Vorschlag: der nächste freie Abend), trägt es in den Essensplan ein und legt alle Zutaten auf die Mealie-Einkaufsliste (auch solche, die schon auf der Liste stehen, damit sich die Mengen addieren lassen). Die Mengen werden auf die im Fenster gewählte Portionenzahl umgerechnet, sonst auf die Haushaltsgröße aus input_number.einkauf_portionen (0 oder kein Helfer: Mengen wie im Rezept). Wird vom Kalender-Knopf der Rezeptkarte aufgerufen. Ohne browser_mod-Kennung wird ohne Nachfrage der nächste freie Abend genommen.'
   icon: mdi:calendar-plus
   mode: queued
   max: 10
@@ -30,11 +30,21 @@ einkauf_rezept_einplanen:
       description: 'Tag (JJJJ-MM-TT), auf den das Rezept gelegt wird. Leer: erst nachfragen.'
       selector:
         text: {}
+    portionen:
+      name: Portionen
+      description: 'Für wie viele Portionen eingekauft wird. Leer: die Auswahl aus dem Fenster, sonst die Haushaltsgröße.'
+      selector:
+        number:
+          min: 0
+          max: 12
+          step: 0.5
+          mode: box
   sequence:
   - variables:
       mealie: MEALIE_EINTRAG
       liste: MEALIE_LISTE
       titel: '{{ name | default(slug) }}'
+      portionen_fest: '{#- Ausdrücklich übergeben, sonst die Auswahl aus dem Fenster (0 = Haushaltsgröße) -#}{{ (portionen | default(0) | float(0)) or (states(''input_number.rezept_portionen_wahl'') | float(0)) }}'
       basis: '{{ (now().date() + timedelta(days=(1 if now().hour >= 18 else 0))).isoformat() }}'
   - alias: Wird gerade ein Rezept vom Plan genommen, erst abwarten
     wait_template: '{{ is_state(''script.einkauf_rezept_ausplanen'', ''off'') }}'
@@ -70,9 +80,10 @@ einkauf_rezept_einplanen:
         {%- endfor -%}
         {{ ns.l }}
       zutaten: |-
-        {#- Mengen auf die Haushaltsgröße umrechnen (input_number.einkauf_portionen, 0 = aus). Umgerechnet wird nur eine
+        {#- Mengen auf die gewählte Portionenzahl umrechnen, sonst auf die Haushaltsgröße (input_number.einkauf_portionen, 0 = aus). Umgerechnet wird nur eine
             einfache Zahl am Anfang ("500 g Hack", "2 Paprika"); Spannen und Brüche ("1 - 2 EL", "1 1/2 TL") bleiben, wie sie sind. -#}
-        {%- set pers = states('input_number.einkauf_portionen') | float(0) -%}
+        {%- set fest = portionen_fest | default(0) | float(0) -%}
+        {%- set pers = fest if fest > 0 else states('input_number.einkauf_portionen') | float(0) -%}
         {%- set serv = rezept.recipe.recipe_servings | default(0) | float(0) -%}
         {%- set f = (pers / serv) if pers > 0 and serv > 0 else 1 -%}
         {%- set ns = namespace(l=[]) -%}
@@ -133,6 +144,26 @@ einkauf_rezept_einplanen:
           date: '{{ ziel }}'
           entry_type: dinner
           recipe_id: '{{ rezept.recipe.recipe_id }}'
+        response_variable: neu
+      - alias: Portionenzahl am Planeintrag merken, damit das Ausplanen dieselben Mengen wieder abzieht
+        continue_on_error: true
+        action: input_text.set_value
+        target:
+          entity_id: input_text.einkauf_portionen_plan
+        data:
+          value: |-
+            {%- set id = (neu.mealplan.mealplan_id if neu is defined and neu.mealplan is defined else '') | string -%}
+            {%- set p = (portionen_fest | float(0)) or (states('input_number.einkauf_portionen') | float(0)) -%}
+            {%- set alt = states('input_text.einkauf_portionen_plan') -%}
+            {%- set ns = namespace(l=[]) -%}
+            {%- for x in (alt.split(';') if alt not in ['unknown', 'unavailable', ''] else []) if '=' in x and x.split('=')[0] != id -%}{%- set ns.l = ns.l + [x] -%}{%- endfor -%}
+            {{ (ns.l[-19:] + ([id ~ '=' ~ (p | round(1))] if id and p > 0 else [])) | join(';') }}
+      - continue_on_error: true
+        action: input_number.set_value
+        target:
+          entity_id: input_number.rezept_portionen_wahl
+        data:
+          value: 0
       - repeat:
           for_each: '{{ zutaten }}'
           sequence:
@@ -150,7 +181,7 @@ einkauf_rezept_einplanen:
         then:
         - action: browser_mod.notification
           data:
-            message: '{%- set t = strptime(ziel, ''%Y-%m-%d'') -%}„{{ titel }}“ ist für {{ [''Mo'', ''Di'', ''Mi'', ''Do'', ''Fr'', ''Sa'', ''So''][t.weekday()] }}, {{ t.strftime(''%d.%m.'') }} eingeplant, {{ zutaten | count }} Zutaten kommen auf die Einkaufsliste{% set p = states(''input_number.einkauf_portionen'') | float(0) %}{{ ('' (für '' ~ (p | round(1) | string | replace(''.0'', '''') | replace(''.'', '','')) ~ '' Portionen)'') if p > 0 and rezept.recipe.recipe_servings | default(0) | float(0) > 0 else '''' }}'
+            message: '{%- set t = strptime(ziel, ''%Y-%m-%d'') -%}„{{ titel }}“ ist für {{ [''Mo'', ''Di'', ''Mi'', ''Do'', ''Fr'', ''Sa'', ''So''][t.weekday()] }}, {{ t.strftime(''%d.%m.'') }} eingeplant, {{ zutaten | count }} Zutaten kommen auf die Einkaufsliste{% set p = (portionen_fest | float(0)) or (states(''input_number.einkauf_portionen'') | float(0)) %}{{ ('' (für '' ~ (p | round(1) | string | replace(''.0'', '''') | replace(''.'', '','')) ~ '' Portionen)'') if p > 0 and rezept.recipe.recipe_servings | default(0) | float(0) > 0 else '''' }}'
             duration: 6000
             browser_id:
             - '{{ browser_id }}'
