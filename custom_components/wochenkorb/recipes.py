@@ -10,7 +10,7 @@ MAX_RECIPE_TERMS = 20
 # Höchstens so viele Vorschläge mit derselben Hauptzutat (wird nur gelockert, wenn sonst Plätze frei blieben)
 MAX_PER_INGREDIENT = 1
 # So viele nicht eingeplante Vorschläge stehen mindestens in der Liste, auch wenn schon viel eingeplant ist
-MIN_FREE = 3
+MIN_FREE = 5
 # Bonus in Rabattpunkten für Rezepte, die lange nicht gekocht wurden
 FRESH_BONUS = 5
 # Fleisch und Fisch im Prospekt zählen auch ohne Streichpreis: bei ihnen spart ein Angebot in Euro meist mehr
@@ -287,8 +287,8 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
                 continue
             per_ingredient[top] = per_ingredient.get(top, 0) + 1
             picked.append(slug)
-    # Mindestens ein vegetarischer Vorschlag, wenn es einen passenden gibt
-    if picked and not any(recipes[slug].get("vegetarian") for slug in result + picked):
+    # Unter den neuen Vorschlägen steht immer ein vegetarischer, wenn es einen passenden gibt, egal was schon eingeplant ist
+    if picked and not any(recipes[slug].get("vegetarian") for slug in picked):
         veggie = next((slug for slug in candidates if recipes[slug].get("vegetarian")), None)
         if veggie:
             picked[-1] = veggie

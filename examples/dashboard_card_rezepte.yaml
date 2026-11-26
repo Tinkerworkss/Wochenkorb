@@ -324,7 +324,7 @@ cards:
                    'name': [{'font-size': '14px'}, {'font-weight': '600'}]}}] -%}
       {%- endfor -%}
       {#- Eingeplantes steht oben, darunter die Vorschläge; wie viele, entscheidet der Sensor -#}
-      {%- for r in res[:12] if sucht or not r.planned -%}
+      {%- for r in res[:24] if sucht or not r.planned -%}
       {%- set o = r.offer or {'retailer': '', 'price': 0} -%}
       {%- set h = (o.retailer or '') | lower -%}
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
