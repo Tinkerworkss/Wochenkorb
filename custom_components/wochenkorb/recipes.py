@@ -13,6 +13,9 @@ MAX_PER_INGREDIENT = 1
 MIN_FREE = 3
 # Bonus in Rabattpunkten für Rezepte, die lange nicht gekocht wurden
 FRESH_BONUS = 5
+# Fleisch und Fisch im Prospekt zählen auch ohne Streichpreis: bei ihnen spart ein Angebot in Euro meist mehr
+# als ein hoher Prozentwert auf Gemüse. Der Bonus entspricht 30 % Rabatt auf Fleisch bzw. 50 % auf Gemüse.
+MEAT_BONUS = 30
 
 # Hauptzutaten: (Anzeigename, Suchbegriff, Muster Zutat, Ausschluss Zutat, Muster Angebot, Ausschluss Angebot)
 # Gewürze, Öle, Grundzutaten und Konserven zählen bewusst nicht dazu.
@@ -91,6 +94,13 @@ _MEAT = {"Hähnchenbrust", "Hähnchenschenkel", "Hackfleisch", "Rindfleisch", "S
 _CHEESE = {"Feta", "Mozzarella", "Gouda", "Cheddar", "Hartkäse"}
 WEIGHT = {ing.label: 1.0 if ing.label in _MEAT else 0.8 if ing.label in _CHEESE else 0.6 for ing in INGREDIENTS}
 BY_LABEL = {ing.label: ing for ing in INGREDIENTS}
+# Bacon ist Beiwerk und bekommt den Bonus nicht
+_BONUS = _MEAT - {"Bacon"}
+
+
+def _value(label, discount):
+    """Wie stark ein Angebot für diese Hauptzutat ein Rezept nach vorn bringt."""
+    return discount * WEIGHT[label] + (MEAT_BONUS if label in _BONUS else 0)
 
 
 # Fleisch und Fisch in Zutatentexten, auch außerhalb der Hauptzutaten-Tabelle (für "vegetarisch")
@@ -199,7 +209,7 @@ def offer_for(recipe, best):
     hits = [label for label in recipe.get("mains", []) if label in best]
     if not hits:
         return None
-    hits.sort(key=lambda label: (-best[label][1] * WEIGHT[label], -WEIGHT[label], best[label][0].get("price") or 0))
+    hits.sort(key=lambda label: (-_value(label, best[label][1]), -WEIGHT[label], best[label][0].get("price") or 0))
     top = hits[0]
     return top, best[top][0], best[top][1], hits[1:]
 
@@ -247,10 +257,10 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
         hits = [label for label in recipe.get("mains", []) if label in best]
         if not hits:
             continue
-        # Reihenfolge: gewichteter Rabatt, bei Gleichstand die prägendere Zutat
-        hits.sort(key=lambda label: (-best[label][1] * WEIGHT[label], -WEIGHT[label], best[label][0].get("price") or 0))
+        # Reihenfolge: gewichteter Rabatt plus Fleischbonus, bei Gleichstand die prägendere Zutat
+        hits.sort(key=lambda label: (-_value(label, best[label][1]), -WEIGHT[label], best[label][0].get("price") or 0))
         top = hits[0]
-        score = best[top][1] * WEIGHT[top] + _freshness(recipe, now)
+        score = _value(top, best[top][1]) + _freshness(recipe, now)
         rows[slug] = ((-score, -WEIGHT[top], -len(hits), recipe.get("name") or slug), top, hits[1:])
 
     def row(slug):
