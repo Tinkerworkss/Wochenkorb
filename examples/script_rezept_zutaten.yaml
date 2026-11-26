@@ -1,0 +1,89 @@
+# Puts the ingredients of a recipe that is already on the Mealie meal plan onto the shopping list; called by the week plan card.
+einkauf_rezept_zutaten:
+  alias: 'Einkauf: Zutaten eines geplanten Rezepts auf die Liste'
+  description: Legt die Zutaten eines Rezepts, das schon im Mealie-Essensplan steht (zum Beispiel direkt in Mealie eingeplant), auf die Mealie-Einkaufsliste, umgerechnet auf die Haushaltsgröße, und merkt die Portionenzahl am Planeintrag. Wird von der Wochenplan-Karte aufgerufen.
+  icon: mdi:cart-plus
+  mode: queued
+  max: 10
+  fields:
+    slug:
+      name: Rezept
+      description: Slug des Rezepts in Mealie
+      required: true
+      selector:
+        text: {}
+    datum:
+      name: Datum
+      description: Tag (JJJJ-MM-TT), an dem das Rezept im Plan steht
+      required: true
+      selector:
+        text: {}
+  sequence:
+  - variables:
+      mealie: MEALIE_EINTRAG
+      liste: MEALIE_LISTE
+      portionen_fest: 0
+  - action: mealie.get_mealplan
+    data:
+      config_entry_id: '{{ mealie }}'
+      start_date: '{{ datum }}'
+      end_date: '{{ datum }}'
+    response_variable: plan
+  - variables:
+      eintrag: |-
+        {%- set ns = namespace(i='') -%}
+        {%- for m in plan.mealplan if m.recipe and m.recipe.slug == slug and (m.mealplan_date | string) == datum and not ns.i -%}{%- set ns.i = m.mealplan_id | string -%}{%- endfor -%}
+        {{ ns.i }}
+  - if:
+    - condition: template
+      value_template: '{{ eintrag | string == '''' }}'
+    then:
+    - stop: Rezept steht an diesem Tag nicht im Plan
+  - action: mealie.get_recipe
+    data:
+      config_entry_id: '{{ mealie }}'
+      recipe_id: '{{ slug }}'
+    response_variable: rezept
+  - variables:
+      zutaten: |-
+        {#- Mengen auf die gewählte Portionenzahl umrechnen, sonst auf die Haushaltsgröße (input_number.einkauf_portionen, 0 = aus). Umgerechnet wird nur eine
+            einfache Zahl am Anfang ("500 g Hack", "2 Paprika"); Spannen und Brüche ("1 - 2 EL", "1 1/2 TL") bleiben, wie sie sind. -#}
+        {%- set fest = portionen_fest | default(0) | float(0) -%}
+        {%- set pers = fest if fest > 0 else states('input_number.einkauf_portionen') | float(0) -%}
+        {%- set serv = rezept.recipe.recipe_servings | default(0) | float(0) -%}
+        {%- set f = (pers / serv) if pers > 0 and serv > 0 else 1 -%}
+        {%- set ns = namespace(l=[]) -%}
+        {%- for z in rezept.recipe.ingredients | map(attribute='display') | select -%}
+        {%- set m = z | regex_findall('^(\d+(?:[.,]\d+)?)(\s+(?![\d½¼¾⅓⅔¹²³/–-]).*)$') -%}
+        {%- set v = ((m[0][0] | replace(',', '.') | float(0)) * f) if m else 0 -%}
+        {#- Gewogenes und Gemessenes wird gerundet, Gezähltes (Zwiebeln, Dosen, Eier) auf halbe Stück aufgerundet -#}
+        {%- set gemessen = m and (m[0][1] | trim | lower | regex_search('^(g|gramm|kg|kilogramm|ml|milliliter|cl|dl|l|liter|el|tl|esslöffel|teelöffel|prise|prisen)\s')) -%}
+        {%- set v = ((v | round(0)) if v >= 10 else ((v | round(1)) if v >= 1 else (v | round(2)))) if gemessen else ((v * 2) | round(0, 'ceil')) / 2 -%}
+        {%- if f != 1 and m and v > 0 -%}
+        {%- set ns.l = ns.l + [((v | int) if v == (v | int) else v) ~ m[0][1]] -%}
+        {%- else -%}{%- set ns.l = ns.l + [z] -%}{%- endif -%}
+        {%- endfor -%}
+        {{ ns.l | tojson }}
+  - repeat:
+      for_each: '{{ zutaten }}'
+      sequence:
+      - action: todo.add_item
+        target:
+          entity_id: '{{ liste }}'
+        data:
+          item: '{{ repeat.item }}'
+  - continue_on_error: true
+    action: input_text.set_value
+    target:
+      entity_id: input_text.einkauf_portionen_plan
+    data:
+      value: |-
+        {%- set p = states('input_number.einkauf_portionen') | float(0) -%}
+        {%- set p = p if p > 0 else (rezept.recipe.recipe_servings | default(0) | float(0)) -%}
+        {%- set alt = states('input_text.einkauf_portionen_plan') -%}
+        {%- set ns = namespace(l=[]) -%}
+        {%- for x in (alt.split(';') if alt not in ['unknown', 'unavailable', ''] else []) if '=' in x and x.split('=')[0] != (eintrag | string) -%}{%- set ns.l = ns.l + [x] -%}{%- endfor -%}
+        {{ (ns.l[-19:] + ([eintrag ~ '=' ~ (p | round(1))] if p > 0 else [])) | join(';') }}
+  - action: homeassistant.update_entity
+    target:
+      entity_id: sensor.wochenkorb_rezepte_DEINE_PLZ

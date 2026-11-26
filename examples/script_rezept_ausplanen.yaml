@@ -164,7 +164,7 @@ einkauf_rezept_ausplanen:
         {{ ns.l | join(';') }}
   - if:
     - condition: template
-      value_template: '{{ treffer.weg | count > 0 }}'
+      value_template: '{#- Nur was über die Karte auf die Liste kam, wird wieder abgezogen -#}{{ treffer.weg | count > 0 and (portionen_fest | float(0)) > 0 }}'
     then:
     - action: todo.remove_item
       target:
@@ -173,7 +173,7 @@ einkauf_rezept_ausplanen:
         item: '{{ treffer.weg }}'
   - alias: Stand mehr auf der Liste als das Rezept braucht (zweites Rezept mit derselben Zutat), kommt der Rest zurück
     repeat:
-      for_each: '{{ treffer.neu }}'
+      for_each: '{{ treffer.neu if (portionen_fest | float(0)) > 0 else [] }}'
       sequence:
       - action: todo.add_item
         target:

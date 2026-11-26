@@ -182,8 +182,17 @@ cards:
       {%- endfor -%}
       {%- set tipp = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
           [{'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**. Auf einen anderen Abend legen:'}] + ziele.l +
-          [{'type': 'markdown', 'content': ('Eingekauft wird für **' ~ ptext ~ '** Ändern auf:') if port > 0 else 'Portionen ändern auf:'}, {'type': 'horizontal-stack', 'cards': mengen.l},
-           {'type': 'markdown', 'content': 'Beim Entfernen werden auch die Zutaten dieses Rezepts wieder von der Einkaufsliste genommen.'}, weg]}}}} if e.slug else
+          ([{'type': 'markdown', 'content': 'Eingekauft wird für **' ~ ptext ~ '** Ändern auf:'}, {'type': 'horizontal-stack', 'cards': mengen.l}] if port > 0 else
+           [{'type': 'markdown', 'content': 'Dieses Gericht wurde nicht über diese Karte eingeplant; seine Zutaten stehen noch nicht auf der Einkaufsliste.'},
+            {'type': 'custom:button-card', 'name': 'Zutaten auf die Einkaufsliste', 'icon': 'mdi:cart-plus', 'layout': 'icon_name',
+             'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+               {'service': 'browser_mod.close_popup', 'data': {}},
+               {'service': 'browser_mod.notification', 'data': {'message': 'Die Zutaten für „' ~ e.name ~ '“ kommen auf die Einkaufsliste', 'duration': 6000}},
+               {'service': 'script.einkauf_rezept_zutaten', 'data': {'slug': e.slug, 'datum': p.date}}]}}},
+             'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'var(--primary-color)'}, {'color': 'var(--text-primary-color, #fff)'}],
+                        'icon': [{'width': '20px'}, {'color': 'var(--text-primary-color, #fff)'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}}]) +
+          [
+           {'type': 'markdown', 'content': 'Beim Entfernen werden auch die Zutaten dieses Rezepts wieder von der Einkaufsliste genommen.' if port > 0 else 'Entfernen nimmt nur den Eintrag vom Plan.'}, weg]}}}} if e.slug else
         ({'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards': [
            {'type': 'markdown', 'content': 'Eigener Eintrag für **' ~ tag ~ '**, ohne Rezept.'},
            dict(weg, tap_action={'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [

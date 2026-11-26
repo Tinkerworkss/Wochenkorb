@@ -192,6 +192,30 @@ def best_offers(offers, now=None):
     return {label: (offer, -rank[0]) for label, (rank, offer) in best.items()}
 
 
+def offer_for(recipe, best):
+    """Bestes Angebot zu den Hauptzutaten eines Rezepts: (Zutat, Angebot, Rabatt, weitere Zutaten) oder None."""
+    hits = [label for label in recipe.get("mains", []) if label in best]
+    if not hits:
+        return None
+    hits.sort(key=lambda label: (-best[label][1] * WEIGHT[label], -WEIGHT[label], best[label][0].get("price") or 0))
+    top = hits[0]
+    return top, best[top][0], best[top][1], hits[1:]
+
+
+def search(recipes, text, limit=10):
+    """Rezepte, in deren Name oder Zutaten alle Suchwörter vorkommen; Treffer im Namen zuerst."""
+    words = [w for w in clean(text or "").split() if w]
+    if not words:
+        return []
+    found = []
+    for slug, recipe in recipes.items():
+        name = clean(recipe.get("name") or "")
+        ingredients = " ".join(clean(i) for i in recipe.get("ingredients") or [])
+        if all(w in name or w in ingredients for w in words):
+            found.append((-sum(w in name for w in words), name, slug))
+    return [slug for _, _, slug in sorted(found)[:limit]]
+
+
 def _freshness(recipe, now):
     """Bonus für lange nicht Gekochtes; ohne Datum gilt ein Rezept als lange her."""
     made = recipe.get("last_made")
