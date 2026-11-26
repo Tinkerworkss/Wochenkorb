@@ -188,7 +188,8 @@ cards:
           {'service': 'browser_mod.popup', 'data': {'title': tag ~ ': Was gibt es?', 'content': {'type': 'vertical-stack', 'cards': [
             {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'},
             {'type': 'horizontal-stack', 'cards': schnell.l[:2]}, {'type': 'horizontal-stack', 'cards': schnell.l[2:]},
-            {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}]},
+            {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}],
+             'card_mod': {'style': {'hui-input-text-entity-row $ ha-input $ wa-input $': 'input::placeholder { color: transparent !important; }'}}},
             {'type': 'custom:button-card', 'name': 'Eintragen', 'icon': 'mdi:check', 'layout': 'icon_name',
              'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
                {'service': 'browser_mod.close_popup', 'data': {}},
@@ -249,9 +250,23 @@ cards:
         {%- set text = namespace(s='') -%}
         {%- if bildurl -%}{%- set text.s = '<img src="' ~ bildurl ~ '" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n' -%}{%- endif -%}
         {%- if dt -%}
-        {%- set zut = namespace(l=[]) -%}{%- for z in dt.ingredients -%}{%- set zut.l = zut.l + ['- ' ~ (z | regex_replace('^(\\d+)\\.0(?=\\s)', '\\1'))] -%}{%- endfor -%}
+        {#- Mengen auf die eingeplanten Portionen umrechnen (gleiche Regeln wie beim Einkauf): nur eine einfache Zahl am Anfang, Gewogenes gerundet, Gezähltes auf halbe Stück -#}
+        {%- set serv = dt.servings | float(0) -%}
+        {%- set fak = (port / serv) if port > 0 and serv > 0 else 1 -%}
+        {%- set zut = namespace(l=[]) -%}
+        {%- for z0 in dt.ingredients -%}
+        {%- set z = z0 | regex_replace('^(\\d+)\\.0(?=\\s)', '\\1') -%}
+        {%- set m = z | regex_findall('^(\\d+(?:[.,]\\d+)?)(\\s+(?![\\d½¼¾⅓⅔¹²³/–-]).*)$') -%}
+        {%- set v = ((m[0][0] | replace(',', '.') | float(0)) * fak) if m else 0 -%}
+        {%- set gemessen = m and (m[0][1] | trim | lower | regex_search('^(g|gramm|kg|kilogramm|ml|milliliter|cl|dl|l|liter|el|tl|esslöffel|teelöffel|prise|prisen)\\s')) -%}
+        {%- set v = ((v | round(0)) if v >= 10 else ((v | round(1)) if v >= 1 else (v | round(2)))) if gemessen else ((v * 2) | round(0, 'ceil')) / 2 -%}
+        {%- set zut.l = zut.l + ['- ' ~ ((((v | int) if v == (v | int) else (v | string | replace('.', ','))) ~ m[0][1]) if fak != 1 and m and v > 0 else z)] -%}
+        {%- endfor -%}
+        {%- set pz = port if port > 0 else serv -%}
+        {%- set zkopf = '### Zutaten' ~ ((' für ' ~ (pz | round(1) | string | replace('.0', '') | replace('.', ',')) ~ (' Portion' if pz == 1 else ' Portionen')) if pz > 0 else '') -%}
+        {%- set hinweis = ('*Umgerechnet vom Rezept für ' ~ (serv | round(1) | string | replace('.0', '') | replace('.', ',')) ~ ' Portionen. Im Text der Zubereitung stehen weiter die Mengen des Rezepts.*\n\n') if fak != 1 else '' -%}
         {%- set sch = namespace(l=[]) -%}{%- for z in dt.steps -%}{%- set sch.l = sch.l + [loop.index ~ '. ' ~ (z | regex_replace('\\s*\\n+\\s*', ' '))] -%}{%- endfor -%}
-        {%- set text.s = text.s ~ ('**Dauer:** ' ~ dt.time ~ '\n\n' if dt.time else '') ~ '### Zutaten\n' ~ (zut.l | join('\n')) ~ '\n\n### Zubereitung\n' ~ (sch.l | join('\n')) -%}
+        {%- set text.s = text.s ~ ('**Dauer:** ' ~ dt.time ~ '\n\n' if dt.time else '') ~ zkopf ~ '\n' ~ (zut.l | join('\n')) ~ '\n\n' ~ hinweis ~ '### Zubereitung\n' ~ (sch.l | join('\n')) -%}
         {%- else -%}
         {%- set text.s = text.s ~ 'Zutaten und Zubereitung stehen in Mealie.' -%}
         {%- endif -%}

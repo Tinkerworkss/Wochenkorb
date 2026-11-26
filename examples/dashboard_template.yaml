@@ -242,8 +242,24 @@ button_card_templates:
           if (v.art === 'notiz') {
             // Eigener Eintrag: der Text steht groß in der ganzen Kachel, darüber ein Symbol passend zum Wort
             const n = (v.name || '').toLowerCase();
-            const sym = [['pizza', 'mdi:pizza'], ['burger', 'mdi:hamburger'], ['grill', 'mdi:grill'], ['nudel|pasta|spaghetti', 'mdi:pasta'], ['bestell|liefer', 'mdi:moped'],
-                         ['ausw|restaurant|essen gehen|essen bei|eingeladen', 'mdi:silverware-variant'], ['rest', 'mdi:fridge-outline'], ['brot', 'mdi:bread-slice'], ['suppe|eintopf', 'mdi:pot-steam']]
+            // Reihenfolge = Vorrang: das Speziellere steht oben ("Pizza bestellen" zeigt die Pizza, nicht den Roller)
+            const sym = [
+              ['fällt aus|faellt aus|kein essen|nichts|fasten|unterwegs', 'mdi:food-off'],
+              ['pizza|flammkuchen', 'mdi:pizza'], ['burger', 'mdi:hamburger'],
+              ['döner|doener|china|chines|asia|sushi|thai|imbiss|vietnam|indisch', 'mdi:food-takeout-box'],
+              ['taco|wrap|burrito|fajita|tortilla|enchilada|mexikan', 'mdi:taco'], ['pommes|fritten', 'mdi:french-fries'],
+              ['wurst|würst|wuerst|hot ?dog', 'mdi:sausage'], ['raclette|fondue', 'mdi:cheese'],
+              ['hähnchen|haehnchen|hühnchen|huhn|chicken|nugget|geflügel|pute|ente\\b|gans\\b', 'mdi:food-drumstick'],
+              ['fisch|lachs|forelle|garnele|matjes', 'mdi:fish'],
+              ['steak|schnitzel|braten|gulasch|frikadelle|rouladen?|kotelett|hack|fleisch', 'mdi:food-steak'],
+              ['auflauf|lasagne|gratin', 'mdi:toaster-oven'],
+              ['nudel|pasta|spaghetti|spätzle|spaetzle', 'mdi:pasta'], ['\\breis|risotto|curry', 'mdi:rice'], ['suppe|eintopf', 'mdi:pot-steam'], ['salat|gemüse|gemuese', 'mdi:leaf'],
+              ['\\b(rühr|spiegel)?ei(er)?\\b|omelett', 'mdi:egg-fried'], ['käse|kaese', 'mdi:cheese'],
+              ['pfannkuchen|waffel|milchreis|kuchen|crêpe|crepe|kaiserschmarr', 'mdi:cake-variant'], ['grill', 'mdi:grill'],
+              ['brot|schnittchen|stulle', 'mdi:bread-slice'],
+              ['geburtstag|feier|party|weihnacht|silvester|ostern', 'mdi:party-popper'], ['bestell|liefer', 'mdi:moped'],
+              ['ausw|restaurant|essen gehen', 'mdi:silverware-variant'], ['\\bbei\\b|eingeladen|besuch', 'mdi:account-group'],
+              ['\\breste?\\b|resteessen', 'mdi:fridge-outline']]
               .find((p) => new RegExp(p[0]).test(n));
             return `<div style="position:relative;width:100%;aspect-ratio:1/1;padding-bottom:41px;box-sizing:content-box">${ecke}`
               + `<div style="position:absolute;inset:24px 6px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">`
