@@ -163,11 +163,12 @@ class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
             }
             return self.async_create_entry(title="", data=data)
         current = self._recipe_options()
-        number = lambda low, high=10, unit=None: selector.NumberSelector(
-            selector.NumberSelectorConfig(
-                min=low, max=high, step=1, mode=selector.NumberSelectorMode.BOX, unit_of_measurement=unit
-            )
-        )
+        def number(low, high=10, unit=None):
+            config = {"min": low, "max": high, "step": 1, "mode": selector.NumberSelectorMode.BOX}
+            if unit:
+                config["unit_of_measurement"] = unit
+            return selector.NumberSelector(selector.NumberSelectorConfig(**config))
+
         chips = lambda options: selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=options, multiple=True, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN
