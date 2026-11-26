@@ -415,8 +415,9 @@ cards:
     - input_text.angebote_suche_GERAET_1
   card_mod:
     style: |-
-      #root { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; }
-      #root > * { margin: 0 !important; min-width: 0; }
+      #root { display: flex !important; gap: 8px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+      #root::-webkit-scrollbar { display: none; }
+      #root > * > * { flex: 1 0 96px !important; min-width: 96px; margin: 0 !important; scroll-snap-align: start; }
       {%- set nl = (state_attr('sensor.wochenkorb_suchbegriffe_DEINE_PLZ', 'listen') or []) | count -%}
       {%- if nl <= 0 %}
       #root > :nth-child(1) { display: none !important; }
