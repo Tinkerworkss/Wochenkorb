@@ -378,6 +378,8 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.plan = []
         # Essensplan zum Blättern: Datum -> Abendessen, ein halbes Jahr zurück und acht Wochen voraus
         self.calendar = {}
+        # Zutaten und Zubereitung der Rezepte, die gerade im Plan stehen (Slug -> Angaben)
+        self.plan_details = {}
         # Treffer der Rezeptsuche und was dafür vom letzten Durchlauf gebraucht wird
         self.search_results = []
         self._search_text = ""
@@ -753,7 +755,29 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             suggestions.append(await self._suggestion(entry, slug, label, offer, discount, others))
         self.suggestions = suggestions
         self.search_results = await self._search(entry)
+        await self._enrich_calendar(entry)
         self.async_update_listeners()
+
+    async def _enrich_calendar(self, entry):
+        """Kalendereinträge um das Rezeptbild ergänzen; für die nächsten drei Wochen auch Zutaten und Zubereitung."""
+        today = dt_util.now().date()
+        first = (today - timedelta(days=1)).isoformat()
+        last = (today + timedelta(days=21)).isoformat()
+        details = {}
+        for day, dinners in self.calendar.items():
+            for dinner in dinners:
+                recipe = self._recipes.get(dinner.get("slug") or "")
+                if not recipe:
+                    continue
+                dinner["image"] = await self._recipe_image(entry, recipe)
+                if first <= day <= last:
+                    details[dinner["slug"]] = {
+                        "time": recipe.get("time"),
+                        "servings": recipe.get("servings") or 0,
+                        "ingredients": recipe["ingredients"],
+                        "steps": recipe["steps"],
+                    }
+        self.plan_details = details
 
     async def _suggestion(self, entry, slug, label, offer, discount, others):
         """Ein Rezept so aufbereiten, wie die Rezeptkarte es braucht (Vorschlag oder Suchtreffer)."""
@@ -1031,7 +1055,7 @@ class WochenkorbSearchSensor(SensorEntity):
 class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
 
-    _unrecorded_attributes = frozenset({"results", "plan", "kalender", "search_results"})
+    _unrecorded_attributes = frozenset({"results", "plan", "kalender", "search_results", "plan_details"})
 
     def __init__(self, coordinator, zip_code):
         super().__init__(coordinator)
@@ -1060,6 +1084,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
             "plan": self.coordinator.plan,
             "kalender": self.coordinator.calendar,
             "search_results": self.coordinator.search_results,
+            "plan_details": self.coordinator.plan_details,
             "search_terms": self.coordinator.recipe_terms,
             "zip_code": self._zip_code,
         }
