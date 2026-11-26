@@ -119,151 +119,155 @@ cards:
     style: |-
       #root { display: grid !important; grid-template-columns: 52px 1fr 52px; gap: 8px; }
       #root > * { margin: 0 !important; min-width: 0; }
-- type: custom:auto-entities
-  show_empty: true
-  card_param: cards
+- type: custom:mod-card
+  card_mod:
+    style:
+      hui-horizontal-stack-card $: |-
+        #root { display: flex !important; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 6px; scrollbar-width: thin; }
+        #root > *, #root > * > * { flex: 1 0 96px !important; margin: 0 !important; min-width: 96px !important; max-width: 132px !important; scroll-snap-align: start; }
+      .: 'ha-card { background: none !important; border: none !important; box-shadow: none !important; overflow: visible; }'
   card:
-    type: horizontal-stack
-    card_mod:
-      style: |-
-        #root { display: flex !important; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 4px; }
-        #root > * { flex: 1 0 96px !important; margin: 0 !important; min-width: 96px; max-width: 132px; scroll-snap-align: start; }
-  filter:
-    template: |-
-      {#- Die Abende als Kachelreihe: Rezept, freier Eintrag oder noch frei. Ein Tipp öffnet das Rezept mit den Plan-Aktionen bzw. das Fenster für einen freien Eintrag -#}
-      {%- set wt = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] -%}
-      {%- set stil = {
-        'card': [{'padding': '9px 14px'}, {'border-radius': '0'}, {'border': 'none'}, {'border-bottom': '1px solid var(--divider-color)'}, {'box-shadow': 'none'}, {'background': 'none'}],
-        'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': '96px 1fr'}, {'grid-template-rows': 'auto'}, {'grid-auto-rows': '0px'}, {'column-gap': '10px'}, {'align-items': 'center'}],
-        'name': [{'justify-self': 'start'}, {'font-size': '14px'}, {'font-weight': '600'}],
-        'label': [{'justify-self': 'start'}, {'text-align': 'left'}, {'font-size': '14px'}, {'white-space': 'normal'}]} -%}
-      {%- set rows = namespace(l=[]) -%}
-      {#- Portionenzahl je Planeintrag (nur gemerkt, wenn über die Karte eingeplant) -#}
-      {%- set std = states('input_number.einkauf_portionen') | float(0) -%}
-      {%- set pm = namespace(d={}) -%}
-      {%- set alt = states('input_text.einkauf_portionen_plan') -%}
-      {%- for x in (alt.split(';') if alt not in ['unknown', 'unavailable', ''] else []) if '=' in x -%}{%- set pm.d = dict(pm.d, **{x.split('=')[0]: x.split('=')[1] | float(0)}) -%}{%- endfor -%}
-      {#- Blättern: 0 = die sieben Tage ab heute, -1 = die sieben davor, 1 = die sieben danach (Helfer input_number.essen_woche) -#}
-      {%- set off = states('input_number.essen_woche') | int(0) -%}
-      {%- set kal = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'kalender') or {} -%}
-      {%- set det = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan_details') or {} -%}
-      {%- set woche = namespace(l=[]) -%}
-      {%- for i in range(10) -%}
-      {%- set dd = (now().date() + timedelta(days=off * 7 + i)).isoformat() -%}
-      {%- set woche.l = woche.l + [{'date': dd, 'dinner': kal.get(dd, [])}] -%}
-      {%- endfor -%}
-      {#- Die sieben Tage mit dem, was dort schon steht: Ziele zum Verschieben -#}
-      {%- set tage = namespace(l=[]) -%}
-      {%- for p in woche.l -%}
-      {%- set d = strptime(p.date, '%Y-%m-%d') -%}
-      {%- set diff = (d.date() - now().date()).days -%}
-      {%- if diff >= 0 -%}
-      {%- set tage.l = tage.l + [{'d': p.date, 'text': 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')), 'essen': p.dinner | map(attribute='name') | join(', ')}] -%}
-      {%- endif -%}
-      {%- endfor -%}
-      {%- for p in woche.l -%}
-      {%- set d = strptime(p.date, '%Y-%m-%d') -%}
-      {%- set diff = (d.date() - now().date()).days -%}
-      {#- Vergangene Tage sind nur zum Ansehen -#}
-      {%- if true -%}
-      {%- set tag = 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')) -%}
-      {%- if p.dinner | count == 0 -%}
-      {#- Freier Abend: Tipp öffnet ein Fenster für eine freie Notiz (Pizza auswärts, Reste, ...), die nicht an ein Rezept gebunden ist -#}
-      {%- set schnell = namespace(l=[]) -%}
-      {%- for txt in ['Auswärts essen', 'Bestellen', 'Reste', 'Brotzeit'] -%}
-      {%- set schnell.l = schnell.l + [{'type': 'custom:button-card', 'name': txt, 'show_icon': 0,
-        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-          {'service': 'browser_mod.close_popup', 'data': {}},
-          {'service': 'script.einkauf_essen_notieren', 'data': {'datum': p.date, 'text': txt}}]}}},
-        'styles': {'card': [{'padding': '10px 6px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
-                   'name': [{'font-size': '13px'}, {'font-weight': '600'}]}}] -%}
-      {%- endfor -%}
-      {%- set notiz = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-        {'service': 'input_text.set_value', 'data': {'entity_id': 'input_text.essen_notiz', 'value': ''}},
-        {'service': 'browser_mod.popup', 'data': {'title': tag ~ ': Was gibt es?', 'content': {'type': 'vertical-stack', 'cards': [
-          {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'},
-          {'type': 'horizontal-stack', 'cards': schnell.l[:2]}, {'type': 'horizontal-stack', 'cards': schnell.l[2:]},
-          {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}]},
-          {'type': 'custom:button-card', 'name': 'Eintragen', 'icon': 'mdi:check', 'layout': 'icon_name',
+    type: custom:auto-entities
+    show_empty: true
+    card_param: cards
+    card:
+      type: horizontal-stack
+    filter:
+      template: |-
+        {#- Die Abende als Kachelreihe: Rezept, freier Eintrag oder noch frei. Ein Tipp öffnet das Rezept mit den Plan-Aktionen bzw. das Fenster für einen freien Eintrag -#}
+        {%- set wt = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'] -%}
+        {%- set stil = {
+          'card': [{'padding': '9px 14px'}, {'border-radius': '0'}, {'border': 'none'}, {'border-bottom': '1px solid var(--divider-color)'}, {'box-shadow': 'none'}, {'background': 'none'}],
+          'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': '96px 1fr'}, {'grid-template-rows': 'auto'}, {'grid-auto-rows': '0px'}, {'column-gap': '10px'}, {'align-items': 'center'}],
+          'name': [{'justify-self': 'start'}, {'font-size': '14px'}, {'font-weight': '600'}],
+          'label': [{'justify-self': 'start'}, {'text-align': 'left'}, {'font-size': '14px'}, {'white-space': 'normal'}]} -%}
+        {%- set rows = namespace(l=[]) -%}
+        {#- Portionenzahl je Planeintrag (nur gemerkt, wenn über die Karte eingeplant) -#}
+        {%- set std = states('input_number.einkauf_portionen') | float(0) -%}
+        {%- set pm = namespace(d={}) -%}
+        {%- set alt = states('input_text.einkauf_portionen_plan') -%}
+        {%- for x in (alt.split(';') if alt not in ['unknown', 'unavailable', ''] else []) if '=' in x -%}{%- set pm.d = dict(pm.d, **{x.split('=')[0]: x.split('=')[1] | float(0)}) -%}{%- endfor -%}
+        {#- Blättern: 0 = die sieben Tage ab heute, -1 = die sieben davor, 1 = die sieben danach (Helfer input_number.essen_woche) -#}
+        {%- set off = states('input_number.essen_woche') | int(0) -%}
+        {%- set kal = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'kalender') or {} -%}
+        {%- set det = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'plan_details') or {} -%}
+        {%- set woche = namespace(l=[]) -%}
+        {%- for i in range(10) -%}
+        {%- set dd = (now().date() + timedelta(days=off * 7 + i)).isoformat() -%}
+        {%- set woche.l = woche.l + [{'date': dd, 'dinner': kal.get(dd, [])}] -%}
+        {%- endfor -%}
+        {#- Die sieben Tage mit dem, was dort schon steht: Ziele zum Verschieben -#}
+        {%- set tage = namespace(l=[]) -%}
+        {%- for p in woche.l -%}
+        {%- set d = strptime(p.date, '%Y-%m-%d') -%}
+        {%- set diff = (d.date() - now().date()).days -%}
+        {%- if diff >= 0 -%}
+        {%- set tage.l = tage.l + [{'d': p.date, 'text': 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')), 'essen': p.dinner | map(attribute='name') | join(', ')}] -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {%- for p in woche.l -%}
+        {%- set d = strptime(p.date, '%Y-%m-%d') -%}
+        {%- set diff = (d.date() - now().date()).days -%}
+        {#- Vergangene Tage sind nur zum Ansehen -#}
+        {%- if true -%}
+        {%- set tag = 'Heute' if diff == 0 else ('Morgen' if diff == 1 else wt[d.weekday()][:2] ~ ', ' ~ d.strftime('%d.%m.')) -%}
+        {%- if p.dinner | count == 0 -%}
+        {#- Freier Abend: Tipp öffnet ein Fenster für eine freie Notiz (Pizza auswärts, Reste, ...), die nicht an ein Rezept gebunden ist -#}
+        {%- set schnell = namespace(l=[]) -%}
+        {%- for txt in ['Auswärts essen', 'Bestellen', 'Reste', 'Brotzeit'] -%}
+        {%- set schnell.l = schnell.l + [{'type': 'custom:button-card', 'name': txt, 'show_icon': 0,
+          'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+            {'service': 'browser_mod.close_popup', 'data': {}},
+            {'service': 'script.einkauf_essen_notieren', 'data': {'datum': p.date, 'text': txt}}]}}},
+          'styles': {'card': [{'padding': '10px 6px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
+                     'name': [{'font-size': '13px'}, {'font-weight': '600'}]}}] -%}
+        {%- endfor -%}
+        {%- set notiz = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+          {'service': 'input_text.set_value', 'data': {'entity_id': 'input_text.essen_notiz', 'value': ''}},
+          {'service': 'browser_mod.popup', 'data': {'title': tag ~ ': Was gibt es?', 'content': {'type': 'vertical-stack', 'cards': [
+            {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'},
+            {'type': 'horizontal-stack', 'cards': schnell.l[:2]}, {'type': 'horizontal-stack', 'cards': schnell.l[2:]},
+            {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}]},
+            {'type': 'custom:button-card', 'name': 'Eintragen', 'icon': 'mdi:check', 'layout': 'icon_name',
+             'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+               {'service': 'browser_mod.close_popup', 'data': {}},
+               {'service': 'script.einkauf_essen_notieren', 'data': {'datum': p.date}}]}}},
+             'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'var(--primary-color)'}, {'color': 'var(--text-primary-color, #fff)'}],
+                        'icon': [{'width': '20px'}, {'color': 'var(--text-primary-color, #fff)'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}}]}}}]}}} -%}
+        {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_kachel', 'tap_action': notiz if diff >= 0 else {'action': 'none'}, 'variables': {'art': 'frei', 'bild': '', 'name': '', 'tag': tag, 'heute': 1 if diff == 0 else 0, 'alt': 1 if diff < 0 else 0}}] -%}
+        {%- endif -%}
+        {%- for e in p.dinner -%}
+        {%- set weg = {'type': 'custom:button-card', 'name': 'Vom Plan nehmen', 'icon': 'mdi:calendar-remove', 'layout': 'icon_name',
+          'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+            {'service': 'browser_mod.close_popup', 'data': {}},
+            {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird vom Plan genommen, die Zutaten gehen von der Einkaufsliste', 'duration': 6000}},
+            {'service': 'script.einkauf_rezept_ausplanen', 'data': {'slug': e.slug, 'datum': p.date}}]}}},
+          'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}],
+                     'icon': [{'width': '20px'}, {'color': '#fff'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}} -%}
+        {%- set port = pm.d.get(e.id | string, 0) -%}
+        {%- set ptext = (port | round(1) | string | replace('.0', '') | replace('.', ',')) ~ ' Port.' -%}
+        {%- set mengen = namespace(l=[]) -%}
+        {%- for o in [2, 3, 4, 6, 8] if o != port -%}
+        {%- set mengen.l = mengen.l + [{'type': 'custom:button-card', 'name': o ~ ' Port.', 'show_icon': 0,
+          'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+            {'service': 'browser_mod.close_popup', 'data': {}},
+            {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird auf ' ~ o ~ ' Portionen umgerechnet, die Einkaufsliste wird angepasst', 'duration': 6000}},
+            {'service': 'script.einkauf_rezept_portionen', 'data': {'slug': e.slug, 'datum': p.date, 'portionen': o}}]}}},
+          'styles': {'card': [{'padding': '8px 4px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
+                     'name': [{'font-size': '13px'}, {'font-weight': '600'}]}}] -%}
+        {%- endfor -%}
+        {%- set ziele = namespace(l=[]) -%}
+        {%- for t in tage.l if t.d != p.date -%}
+        {%- set ziele.l = ziele.l + [{'type': 'custom:button-card', 'name': t.text, 'label': t.essen or 'frei', 'show_icon': 0, 'show_label': 1,
+          'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+            {'service': 'browser_mod.close_popup', 'data': {}},
+            {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird auf ' ~ t.text ~ ' verschoben', 'duration': 4000}},
+            {'service': 'script.einkauf_rezept_verschieben', 'data': {'slug': e.slug, 'von': p.date, 'nach': t.d}}]}}},
+          'styles': {
+            'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
+            'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': 'auto 1fr'}, {'column-gap': '12px'}],
+            'name': [{'justify-self': 'start'}, {'font-size': '15px'}, {'font-weight': '600'}],
+            'label': [{'justify-self': 'end'}, {'font-size': '13px'}, {'opacity': '0.8'}, {'text-align': 'right'}]}}] -%}
+        {%- endfor -%}
+        {%- set klein = {'card': [{'padding': '9px 4px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}], 'name': [{'font-size': '13px'}, {'font-weight': '600'}], 'icon': [{'width': '18px'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '5px'}]} -%}
+        {%- set k_schieben = {'type': 'custom:button-card', 'name': 'Verschieben', 'icon': 'mdi:calendar-arrow-right', 'layout': 'icon_name', 'styles': klein,
+          'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
+            [{'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**. Auf einen anderen Abend legen:'}] + ziele.l}}}}} -%}
+        {%- set k_port = ({'type': 'custom:button-card', 'name': ptext, 'icon': 'mdi:account-multiple', 'layout': 'icon_name', 'styles': klein,
+          'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
+            [{'type': 'markdown', 'content': 'Eingekauft wird für **' ~ ptext ~ '** Ändern auf:'}, {'type': 'horizontal-stack', 'cards': mengen.l}]}}}}}) if port > 0 else
+          {'type': 'custom:button-card', 'name': 'Zutaten', 'icon': 'mdi:cart-plus', 'layout': 'icon_name', 'styles': klein,
            'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
              {'service': 'browser_mod.close_popup', 'data': {}},
-             {'service': 'script.einkauf_essen_notieren', 'data': {'datum': p.date}}]}}},
-           'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'var(--primary-color)'}, {'color': 'var(--text-primary-color, #fff)'}],
-                      'icon': [{'width': '20px'}, {'color': 'var(--text-primary-color, #fff)'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}}]}}}]}}} -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_kachel', 'tap_action': notiz if diff >= 0 else {'action': 'none'}, 'variables': {'art': 'frei', 'bild': '', 'name': '', 'tag': tag, 'heute': 1 if diff == 0 else 0, 'alt': 1 if diff < 0 else 0}}] -%}
-      {%- endif -%}
-      {%- for e in p.dinner -%}
-      {%- set weg = {'type': 'custom:button-card', 'name': 'Vom Plan nehmen', 'icon': 'mdi:calendar-remove', 'layout': 'icon_name',
-        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-          {'service': 'browser_mod.close_popup', 'data': {}},
-          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird vom Plan genommen, die Zutaten gehen von der Einkaufsliste', 'duration': 6000}},
-          {'service': 'script.einkauf_rezept_ausplanen', 'data': {'slug': e.slug, 'datum': p.date}}]}}},
-        'styles': {'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}],
-                   'icon': [{'width': '20px'}, {'color': '#fff'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '6px'}]}} -%}
-      {%- set port = pm.d.get(e.id | string, 0) -%}
-      {%- set ptext = (port | round(1) | string | replace('.0', '') | replace('.', ',')) ~ ' Port.' -%}
-      {%- set mengen = namespace(l=[]) -%}
-      {%- for o in [2, 3, 4, 6, 8] if o != port -%}
-      {%- set mengen.l = mengen.l + [{'type': 'custom:button-card', 'name': o ~ ' Port.', 'show_icon': 0,
-        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-          {'service': 'browser_mod.close_popup', 'data': {}},
-          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird auf ' ~ o ~ ' Portionen umgerechnet, die Einkaufsliste wird angepasst', 'duration': 6000}},
-          {'service': 'script.einkauf_rezept_portionen', 'data': {'slug': e.slug, 'datum': p.date, 'portionen': o}}]}}},
-        'styles': {'card': [{'padding': '8px 4px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
-                   'name': [{'font-size': '13px'}, {'font-weight': '600'}]}}] -%}
-      {%- endfor -%}
-      {%- set ziele = namespace(l=[]) -%}
-      {%- for t in tage.l if t.d != p.date -%}
-      {%- set ziele.l = ziele.l + [{'type': 'custom:button-card', 'name': t.text, 'label': t.essen or 'frei', 'show_icon': 0, 'show_label': 1,
-        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-          {'service': 'browser_mod.close_popup', 'data': {}},
-          {'service': 'browser_mod.notification', 'data': {'message': '„' ~ e.name ~ '“ wird auf ' ~ t.text ~ ' verschoben', 'duration': 4000}},
-          {'service': 'script.einkauf_rezept_verschieben', 'data': {'slug': e.slug, 'von': p.date, 'nach': t.d}}]}}},
-        'styles': {
-          'card': [{'padding': '10px 14px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
-          'grid': [{'grid-template-areas': '"n l"'}, {'grid-template-columns': 'auto 1fr'}, {'column-gap': '12px'}],
-          'name': [{'justify-self': 'start'}, {'font-size': '15px'}, {'font-weight': '600'}],
-          'label': [{'justify-self': 'end'}, {'font-size': '13px'}, {'opacity': '0.8'}, {'text-align': 'right'}]}}] -%}
-      {%- endfor -%}
-      {%- set klein = {'card': [{'padding': '9px 4px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}], 'name': [{'font-size': '13px'}, {'font-weight': '600'}], 'icon': [{'width': '18px'}], 'grid': [{'grid-template-columns': 'min-content min-content'}, {'justify-content': 'center'}, {'column-gap': '5px'}]} -%}
-      {%- set k_schieben = {'type': 'custom:button-card', 'name': 'Verschieben', 'icon': 'mdi:calendar-arrow-right', 'layout': 'icon_name', 'styles': klein,
-        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
-          [{'type': 'markdown', 'content': 'Geplant für **' ~ tag ~ '**. Auf einen anderen Abend legen:'}] + ziele.l}}}}} -%}
-      {%- set k_port = ({'type': 'custom:button-card', 'name': ptext, 'icon': 'mdi:account-multiple', 'layout': 'icon_name', 'styles': klein,
-        'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
-          [{'type': 'markdown', 'content': 'Eingekauft wird für **' ~ ptext ~ '** Ändern auf:'}, {'type': 'horizontal-stack', 'cards': mengen.l}]}}}}}) if port > 0 else
-        {'type': 'custom:button-card', 'name': 'Zutaten', 'icon': 'mdi:cart-plus', 'layout': 'icon_name', 'styles': klein,
-         'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-           {'service': 'browser_mod.close_popup', 'data': {}},
-           {'service': 'browser_mod.notification', 'data': {'message': 'Die Zutaten für „' ~ e.name ~ '“ kommen auf die Einkaufsliste', 'duration': 6000}},
-           {'service': 'script.einkauf_rezept_zutaten', 'data': {'slug': e.slug, 'datum': p.date}}]}}}} -%}
-      {%- set k_weg = dict(weg, name='Entfernen', styles=dict(klein, card=klein.card[:4] + [{'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}], icon=[{'width': '18px'}, {'color': '#fff'}])) -%}
-      {#- Rezepttext: Bild, Zutaten, Zubereitung; für weiter entfernte Wochen liegen sie nicht vor -#}
-      {%- set dt = det.get(e.slug or '', none) -%}
-      {%- set bildurl = e.image | default('') -%}
-      {%- set text = namespace(s='') -%}
-      {%- if bildurl -%}{%- set text.s = '<img src="' ~ bildurl ~ '" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n' -%}{%- endif -%}
-      {%- if dt -%}
-      {%- set zut = namespace(l=[]) -%}{%- for z in dt.ingredients -%}{%- set zut.l = zut.l + ['- ' ~ (z | regex_replace('^(\\d+)\\.0(?=\\s)', '\\1'))] -%}{%- endfor -%}
-      {%- set sch = namespace(l=[]) -%}{%- for z in dt.steps -%}{%- set sch.l = sch.l + [loop.index ~ '. ' ~ (z | regex_replace('\\s*\\n+\\s*', ' '))] -%}{%- endfor -%}
-      {%- set text.s = text.s ~ ('**Dauer:** ' ~ dt.time ~ '\n\n' if dt.time else '') ~ '### Zutaten\n' ~ (zut.l | join('\n')) ~ '\n\n### Zubereitung\n' ~ (sch.l | join('\n')) -%}
-      {%- else -%}
-      {%- set text.s = text.s ~ 'Zutaten und Zubereitung stehen in Mealie.' -%}
-      {%- endif -%}
-      {%- set kopf = 'Geplant für **' ~ tag ~ '**' ~ ((' · ' ~ ptext) if port > 0 else '') -%}
-      {%- set tipp = ({'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
-          ([{'type': 'horizontal-stack', 'cards': [k_schieben, k_port, k_weg]}] if diff >= 0 else []) +
-          [{'type': 'markdown', 'content': kopf ~ '\n\n' ~ text.s}]}}}}) if e.slug else
-        ({'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards': [
-           {'type': 'markdown', 'content': 'Eigener Eintrag für **' ~ tag ~ '**, ohne Rezept.'},
-           dict(weg, tap_action={'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
-             {'service': 'browser_mod.close_popup', 'data': {}},
-             {'service': 'script.einkauf_essen_notiz_entfernen', 'data': {'eintrag': e.id}}]}}})]}}}} if e.id and diff >= 0 else {'action': 'none'}) -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_kachel', 'tap_action': tipp, 'variables': {'art': 'rezept' if e.slug else 'notiz', 'bild': e.image | default(''), 'name': e.name | e, 'tag': tag, 'heute': 1 if diff == 0 else 0, 'alt': 1 if diff < 0 else 0}}] -%}
-      {%- endfor -%}
-      {%- endif -%}
-      {%- endfor -%}
-      {{ rows.l | tojson }}
+             {'service': 'browser_mod.notification', 'data': {'message': 'Die Zutaten für „' ~ e.name ~ '“ kommen auf die Einkaufsliste', 'duration': 6000}},
+             {'service': 'script.einkauf_rezept_zutaten', 'data': {'slug': e.slug, 'datum': p.date}}]}}}} -%}
+        {%- set k_weg = dict(weg, name='Entfernen', styles=dict(klein, card=klein.card[:4] + [{'background': 'rgba(214,69,61,0.9)'}, {'color': '#fff'}], icon=[{'width': '18px'}, {'color': '#fff'}])) -%}
+        {#- Rezepttext: Bild, Zutaten, Zubereitung; für weiter entfernte Wochen liegen sie nicht vor -#}
+        {%- set dt = det.get(e.slug or '', none) -%}
+        {%- set bildurl = e.image | default('') -%}
+        {%- set text = namespace(s='') -%}
+        {%- if bildurl -%}{%- set text.s = '<img src="' ~ bildurl ~ '" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n' -%}{%- endif -%}
+        {%- if dt -%}
+        {%- set zut = namespace(l=[]) -%}{%- for z in dt.ingredients -%}{%- set zut.l = zut.l + ['- ' ~ (z | regex_replace('^(\\d+)\\.0(?=\\s)', '\\1'))] -%}{%- endfor -%}
+        {%- set sch = namespace(l=[]) -%}{%- for z in dt.steps -%}{%- set sch.l = sch.l + [loop.index ~ '. ' ~ (z | regex_replace('\\s*\\n+\\s*', ' '))] -%}{%- endfor -%}
+        {%- set text.s = text.s ~ ('**Dauer:** ' ~ dt.time ~ '\n\n' if dt.time else '') ~ '### Zutaten\n' ~ (zut.l | join('\n')) ~ '\n\n### Zubereitung\n' ~ (sch.l | join('\n')) -%}
+        {%- else -%}
+        {%- set text.s = text.s ~ 'Zutaten und Zubereitung stehen in Mealie.' -%}
+        {%- endif -%}
+        {%- set kopf = 'Geplant für **' ~ tag ~ '**' ~ ((' · ' ~ ptext) if port > 0 else '') -%}
+        {%- set tipp = ({'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards':
+            ([{'type': 'horizontal-stack', 'cards': [k_schieben, k_port, k_weg]}] if diff >= 0 else []) +
+            [{'type': 'markdown', 'content': kopf ~ '\n\n' ~ text.s}]}}}}) if e.slug else
+          ({'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.popup', 'data': {'title': e.name, 'content': {'type': 'vertical-stack', 'cards': [
+             {'type': 'markdown', 'content': 'Eigener Eintrag für **' ~ tag ~ '**, ohne Rezept.'},
+             dict(weg, tap_action={'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
+               {'service': 'browser_mod.close_popup', 'data': {}},
+               {'service': 'script.einkauf_essen_notiz_entfernen', 'data': {'eintrag': e.id}}]}}})]}}}} if e.id and diff >= 0 else {'action': 'none'}) -%}
+        {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_kachel', 'tap_action': tipp, 'variables': {'art': 'rezept' if e.slug else 'notiz', 'bild': e.image | default(''), 'name': e.name | e, 'tag': tag, 'heute': 1 if diff == 0 else 0, 'alt': 1 if diff < 0 else 0}}] -%}
+        {%- endfor -%}
+        {%- endif -%}
+        {%- endfor -%}
+        {{ rows.l | tojson }}
 - type: custom:auto-entities
   show_empty: true
   card:
