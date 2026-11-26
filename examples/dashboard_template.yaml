@@ -110,7 +110,7 @@ button_card_templates:
       action: none
     styles:
       card:
-      - padding: 9px 8px 9px 12px
+      - padding: '[[[ return variables.geplant ? ''5px 8px 5px 12px'' : ''9px 8px 9px 12px''; ]]]'
       - border-radius: '0'
       - border: none
       - border-bottom: 1px solid var(--divider-color)
@@ -161,18 +161,31 @@ button_card_templates:
             - cursor: pointer
             grid:
             - grid-template-areas: '"img text"'
-            - grid-template-columns: 64px 1fr
+            - grid-template-columns: '[[[ return variables.geplant ? ''40px 1fr'' : ''64px 1fr''; ]]]'
             - column-gap: 10px
             - align-items: center
             custom_fields:
               text:
-              - justify-self: start
+              - justify-self: stretch
               - text-align: left
               - white-space: normal
               - min-width: '0'
+              - overflow: hidden
           custom_fields:
-            img: '[[[ return variables.bild ? `<img src="${variables.bild}" style="width:64px;height:64px;object-fit:cover;border-radius:10px;display:block">` : `<div style="width:64px;height:64px;border-radius:10px;background:rgba(127,127,127,0.2)"></div>`; ]]]'
-            text: '[[[ return `<div style="font-size:15px;line-height:1.3;font-weight:500">${variables.name}</div><div style="font-size:12px;line-height:1.4;color:var(--secondary-text-color)">` + (variables.rabatt > 0 ? `<span style="font-size:11px;font-weight:600;color:#fff;background:#d6453d;border-radius:4px;padding:1px 5px">−${variables.rabatt} %</span> ` : '''') + `${variables.info}</div>` + (variables.status ? `<div style="font-size:12px;line-height:1.3;color:var(--success-color, #43a047)">✓ ${variables.status}</div>` : '''') + (variables.mehr ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)">${variables.mehr}</div>` : ''''); ]]]'
+            img: '[[[ const s = variables.geplant ? 40 : 64; return variables.bild ? `<img src="${variables.bild}" style="width:${s}px;height:${s}px;object-fit:cover;border-radius:${s > 40 ? 10 : 8}px;display:block">` : `<div style="width:${s}px;height:${s}px;border-radius:10px;background:rgba(127,127,127,0.2)"></div>`; ]]]'
+            text: |-
+              [[[
+                const v = variables;
+                const rabatt = v.rabatt > 0 ? `<span style="font-size:11px;font-weight:600;color:#fff;background:#d6453d;border-radius:4px;padding:1px 5px">−${v.rabatt} %</span> ` : '';
+                if (v.geplant) {
+                  return `<div style="font-size:14px;line-height:1.3;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.name}</div>`
+                    + `<div style="font-size:12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:#b5d98a;font-weight:600">✓ ${v.tag}</span>`
+                    + (v.rabatt > 0 ? ` <span style="color:var(--secondary-text-color)">· ${rabatt}${v.info}</span>` : '') + `</div>`;
+                }
+                return `<div style="font-size:15px;line-height:1.3;font-weight:500">${v.name}</div><div style="font-size:12px;line-height:1.4;color:var(--secondary-text-color)">${rabatt}${v.info}</div>`
+                  + (v.status ? `<div style="font-size:12px;line-height:1.3;color:var(--success-color, #43a047)">✓ ${v.status}</div>` : '')
+                  + (v.mehr ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)">${v.mehr}</div>` : '');
+              ]]]
       plus:
         card:
           type: custom:button-card
@@ -187,7 +200,7 @@ button_card_templates:
             - border-radius: 50%
             - border: none
             - box-shadow: none
-            - background: rgba(127,127,127,0.2)
+            - background: '[[[ return variables.geplant ? ''rgba(181,217,138,0.16)'' : ''rgba(127,127,127,0.2)''; ]]]'
             icon:
             - width: 20px
-            - color: var(--primary-text-color)
+            - color: '[[[ return variables.geplant ? ''#b5d98a'' : ''var(--primary-text-color)''; ]]]'
