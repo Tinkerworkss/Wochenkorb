@@ -1,4 +1,4 @@
-# Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move or remove it. Paste as a manual card.
+# Alternative to dashboard_card_wochenleiste.yaml: the same plan as a plain list. Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move or remove it. Paste as a manual card.
 # Needs the option mealie_recipes of the integration. Replace DEINE_PLZ with your ZIP code.
 type: vertical-stack
 cards:
