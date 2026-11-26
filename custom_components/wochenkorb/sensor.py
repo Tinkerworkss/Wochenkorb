@@ -736,13 +736,15 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         offers = [offer for group in results.values() for offer in group] + self._recipe_offers
         suggestions = []
         # Kürzlich Gekochtes fällt weg; Eingeplantes steht immer oben und wird als eingeplant markiert
-        pinned = sorted(self._planned, key=lambda slug: self._planned[slug])
+        # In der Liste steht, was in den nächsten 14 Tagen eingeplant ist, in der Reihenfolge der Abende
+        horizon = (dt_util.now().date() + timedelta(days=14)).isoformat()
+        pinned = sorted((s for s, day in self._planned.items() if day <= horizon), key=lambda slug: self._planned[slug])
         # "Lange nicht gekocht" richtet sich nach dem Essensplan; Mealies eigenes Datum zählt, wenn es neuer ist
         for slug, recipe in self._recipes.items():
             dates = [str(d)[:10] for d in (recipe.get("last_made_mealie"), self._last_cooked.get(slug)) if d]
             recipe["last_made"] = max(dates) if dates else None
         rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped)
-        if self._skipped and len(rows) < 5:
+        if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < rc.MIN_FREE:
             # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
             self._skipped = set()
             rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned)

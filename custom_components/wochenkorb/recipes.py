@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 MAX_RECIPE_TERMS = 20
 # Höchstens so viele Vorschläge mit derselben Hauptzutat (wird nur gelockert, wenn sonst Plätze frei blieben)
 MAX_PER_INGREDIENT = 1
+# So viele nicht eingeplante Vorschläge stehen mindestens in der Liste, auch wenn schon viel eingeplant ist
+MIN_FREE = 3
 # Bonus in Rabattpunkten für Rezepte, die lange nicht gekocht wurden
 FRESH_BONUS = 5
 
@@ -231,7 +233,7 @@ def _freshness(recipe, now):
 def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=()):
     """Rezepte, deren Hauptzutat im Angebot ist.
 
-    - pinned: Rezepte, die immer zuerst stehen, solange eine Hauptzutat im Angebot ist (schon Eingeplantes)
+    - pinned: Rezepte, die immer zuerst stehen, auch ohne Angebot (schon Eingeplantes)
     - skipped: Rezepte, die gerade nicht gezeigt werden sollen ("andere Vorschläge")
     - von jeder Hauptzutat zunächst nur ein Rezept, mindestens ein vegetarisches, lange nicht Gekochtes bevorzugt
 
@@ -252,11 +254,15 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
         rows[slug] = ((-score, -WEIGHT[top], -len(hits), recipe.get("name") or slug), top, hits[1:])
 
     def row(slug):
+        if slug not in rows:
+            # Eingeplantes Rezept ohne passendes Angebot
+            return (slug, None, None, 0, [])
         _, top, others = rows[slug]
         return (slug, top, best[top][0], best[top][1], others)
 
-    result = [slug for slug in pinned if slug in rows][:limit]
-    free = limit - len(result)
+    # Eingeplantes steht immer in der Liste, auch ohne Angebot; darunter mindestens MIN_FREE neue Vorschläge
+    result = [slug for slug in pinned if slug in recipes]
+    free = max(limit - len(result), MIN_FREE)
     candidates = sorted(
         (slug for slug in rows if slug not in blocked and slug not in skipped and slug not in result),
         key=lambda slug: rows[slug][0],

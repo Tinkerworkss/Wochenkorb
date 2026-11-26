@@ -12,6 +12,12 @@ cards:
   - entity: input_text.rezept_suche
     name: Rezept suchen (Name oder Zutat)
     icon: mdi:magnify
+  card_mod:
+    style:
+      .: |-
+        ha-card { border-radius: 16px; }
+        #states { padding: 0 12px; }
+      hui-input-text-entity-row $ ha-input $ wa-input $: 'input::placeholder { color: transparent !important; }'
 - type: conditional
   conditions:
   - condition: state
@@ -98,7 +104,8 @@ cards:
         'styles': {'card': [{'padding': '8px 6px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
                    'name': [{'font-size': '14px'}, {'font-weight': '600'}]}}] -%}
       {%- endfor -%}
-      {%- for r in res[:(10 if sucht else 5)] -%}
+      {#- Eingeplantes steht oben, darunter die Vorschläge; wie viele, entscheidet der Sensor -#}
+      {%- for r in res[:12] -%}
       {%- set o = r.offer or {'retailer': '', 'price': 0} -%}
       {%- set h = (o.retailer or '') | lower -%}
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
