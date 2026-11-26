@@ -25,6 +25,11 @@ from .const import (
     CONF_RETAILERS,
     CONF_RECIPES,
     CONF_SHOPPING_LIST,
+    CONF_SUGGESTIONS,
+    CONF_MEATLESS,
+    CONF_MEATLESS_KIND,
+    DEFAULT_SUGGESTIONS,
+    DEFAULT_MEATLESS,
     API_URL,
     HEADERS,
     SEARCH_ENTITY,
@@ -212,6 +217,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
         hass, zip_code, products, retailers, recipes_enabled, shopping_list
     )
     coordinator.lists = lists
+    coordinator.suggestion_count = max(1, int(conf.get(CONF_SUGGESTIONS, DEFAULT_SUGGESTIONS) or DEFAULT_SUGGESTIONS))
+    coordinator.meatless_count = max(0, int(conf.get(CONF_MEATLESS, DEFAULT_MEATLESS) or 0))
+    coordinator.meatless_vegan = conf.get(CONF_MEATLESS_KIND) == "vegan"
     # Suchbegriff (klein) -> Liste, zu der er gehört
     coordinator.list_of = {term.lower(): entry for entry in lists for term in entry["terms"]}
     await coordinator.async_config_entry_first_refresh()
@@ -360,6 +368,9 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.products = products
         self.lists = []
         self.list_of = {}
+        self.suggestion_count = DEFAULT_SUGGESTIONS
+        self.meatless_count = DEFAULT_MEATLESS
+        self.meatless_vegan = False
         self.retailers = retailers or []
         self._mp_cache = {}
         self._mp_time = None
@@ -569,6 +580,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                 "last_made": recipe.get("last_made"),
                 "last_made_mealie": recipe.get("last_made"),
                 "vegetarian": rc.is_vegetarian(texts),
+                "vegan": rc.is_vegan(texts),
                 "ingredients": texts,
                 "steps": steps,
                 "mains": rc.main_ingredients(texts),
@@ -745,11 +757,12 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         for slug, recipe in self._recipes.items():
             dates = [str(d)[:10] for d in (recipe.get("last_made_mealie"), self._last_cooked.get(slug)) if d]
             recipe["last_made"] = max(dates) if dates else None
-        rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped)
-        if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < rc.MIN_FREE:
+        wish = {"free": self.suggestion_count, "meatless": self.meatless_count, "vegan": self.meatless_vegan}
+        rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped, **wish)
+        if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < self.suggestion_count:
             # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
             self._skipped = set()
-            rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned)
+            rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, **wish)
         self._offers, self._listed = offers, listed
         for slug, label, offer, discount, others in rows:
             suggestions.append(await self._suggestion(entry, slug, label, offer, discount, others))
@@ -796,6 +809,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             "time": recipe.get("time"),
             "servings": recipe.get("servings") or 0,
             "vegetarian": bool(recipe.get("vegetarian")),
+            "vegan": bool(recipe.get("vegan")),
             # Bei Suchtreffern ohne passendes Angebot bleiben Zutat, Rabatt und Angebot leer
             "ingredient": label or "",
             "discount": discount or 0,

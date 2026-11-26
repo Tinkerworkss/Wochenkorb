@@ -121,6 +121,31 @@ def is_vegetarian(ingredient_texts):
     return True
 
 
+# Tierisches außer Fleisch und Fisch (für "vegan"); pflanzliche Namensvettern wie Kokosmilch oder Erdnussbutter zählen nicht
+_PLANT_RE = re.compile(
+    r"(kokos|hafer|soja|mandel|reis|erbsen|cashew|dinkel|nuss|lupinen)[ -]?(milch|sahne|drink|joghurt|jogurt|creme|cuisine|quark|butter)|"
+    r"(erdnuss|mandel|kakao|cashew|nuss|sesam)(butter|mus)|butter(bohne|nut)|kokosfett|pflanzen(milch|sahne|butter|margarine)"
+)
+_ANIMAL_RE = re.compile(
+    r"milch|sahne|rahm|butter|käse|kaese|quark|joghurt|jogurt|schmand|cr[eè]me fra[iî]che|creme double|mascarpone|ricotta|"
+    r"mozzarella|parmesan|parmigiano|grana padano|pecorino|feta|gouda|cheddar|emmentaler|gruy|bergkäse|gorgonzola|camembert|"
+    r"halloumi|skyr|kefir|molke|ghee|\bei(er|ern|gelb|weiß|weiss|klar)?\b|eiernudel|honig|gelatine|mayonnaise|\bmayo\b|worcester"
+)
+
+
+def is_vegan(ingredient_texts):
+    """Vegetarisch und zusätzlich ohne Milchprodukte, Ei und Honig. Zutaten, die sich selbst vegan oder pflanzlich nennen, gelten."""
+    if not is_vegetarian(ingredient_texts):
+        return False
+    for text in ingredient_texts:
+        text = clean(text)
+        if re.search(r"vegan|pflanzlich", text):
+            continue
+        if _ANIMAL_RE.search(_PLANT_RE.sub(" ", text)):
+            return False
+    return True
+
+
 def clean(text):
     """Kleinschreibung, ohne weiche Trennstriche (stecken in importierten Rezepten)."""
     return (text or "").replace("­", "").lower()
@@ -240,12 +265,15 @@ def _freshness(recipe, now):
     return FRESH_BONUS if days > 60 else (FRESH_BONUS * 0.6 if days > 30 else 0)
 
 
-def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=()):
+def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=(), free=MIN_FREE, meatless=1, vegan=False):
     """Rezepte, deren Hauptzutat im Angebot ist.
 
     - pinned: Rezepte, die immer zuerst stehen, auch ohne Angebot (schon Eingeplantes)
     - skipped: Rezepte, die gerade nicht gezeigt werden sollen ("andere Vorschläge")
-    - von jeder Hauptzutat zunächst nur ein Rezept, mindestens ein vegetarisches, lange nicht Gekochtes bevorzugt
+    - free: so viele neue Vorschläge stehen unter dem Eingeplanten
+    - meatless: so viele der neuen Vorschläge sind ohne Fleisch und Fisch (vegan=True: vegan), soweit es passende gibt;
+      ist die Zahl so groß wie free, gibt es nur solche Vorschläge
+    - von jeder Hauptzutat zunächst nur ein Rezept, lange nicht Gekochtes bevorzugt
 
     Liefert Tupel (slug, Anzeigename der Zutat, Angebot, Rabatt in Prozent, weitere Zutaten im Angebot).
     """
@@ -270,26 +298,35 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
         _, top, others = rows[slug]
         return (slug, top, best[top][0], best[top][1], others)
 
-    # Eingeplantes steht immer in der Liste, auch ohne Angebot; darunter mindestens MIN_FREE neue Vorschläge
+    # Eingeplantes steht immer in der Liste, auch ohne Angebot; darunter die neuen Vorschläge
     result = [slug for slug in pinned if slug in recipes]
-    free = max(limit - len(result), MIN_FREE)
+    free = max(1, int(free))
+    wanted = max(0, min(int(meatless), free))
+    flag = "vegan" if vegan else "vegetarian"
     candidates = sorted(
         (slug for slug in rows if slug not in blocked and slug not in skipped and slug not in result),
         key=lambda slug: rows[slug][0],
     )
-    picked, per_ingredient = [], {}
-    for cap in (MAX_PER_INGREDIENT, MAX_PER_INGREDIENT + 1, limit):
-        for slug in candidates:
-            if len(picked) >= free:
-                break
-            top = rows[slug][1]
-            if slug in picked or per_ingredient.get(top, 0) >= cap:
-                continue
-            per_ingredient[top] = per_ingredient.get(top, 0) + 1
-            picked.append(slug)
-    # Unter den neuen Vorschlägen steht immer ein vegetarischer, wenn es einen passenden gibt, egal was schon eingeplant ist
-    if picked and not any(recipes[slug].get("vegetarian") for slug in picked):
-        veggie = next((slug for slug in candidates if recipes[slug].get("vegetarian")), None)
-        if veggie:
-            picked[-1] = veggie
+    picked, per_ingredient, tier = [], {}, {}
+
+    def pick(pool, count):
+        """Die besten aus pool dazunehmen: erst ein Rezept je Hauptzutat, dann zwei, dann ohne Grenze."""
+        target = len(picked) + count
+        for step, cap in enumerate((MAX_PER_INGREDIENT, MAX_PER_INGREDIENT + 1, len(rows) + 1)):
+            for slug in pool:
+                if len(picked) >= target:
+                    return
+                top = rows[slug][1]
+                if slug in picked or per_ingredient.get(top, 0) >= cap:
+                    continue
+                per_ingredient[top] = per_ingredient.get(top, 0) + 1
+                picked.append(slug)
+                tier[slug] = step
+
+    # Erst die Plätze ohne Fleisch und Fisch, dann der Rest; sollen alle fleischlos sein, wird nicht mit anderem aufgefüllt
+    pick([slug for slug in candidates if recipes[slug].get(flag)], wanted)
+    if wanted < free:
+        pick(candidates, free - len(picked))
+    # Reihenfolge: erst je Hauptzutat das beste Rezept, dann die zweiten; darin nach Wertung
+    picked.sort(key=lambda slug: (tier[slug], rows[slug][0]))
     return [row(slug) for slug in result + picked]

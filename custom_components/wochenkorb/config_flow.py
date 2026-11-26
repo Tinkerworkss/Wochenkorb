@@ -2,7 +2,10 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
-from .const import DOMAIN, CONF_PRODUCTS, CONF_ZIP, CONF_RETAILERS, CONF_RECIPES, CONF_SHOPPING_LIST, CONF_LISTS
+from .const import (
+    DOMAIN, CONF_PRODUCTS, CONF_ZIP, CONF_RETAILERS, CONF_RECIPES, CONF_SHOPPING_LIST, CONF_LISTS,
+    CONF_SUGGESTIONS, CONF_MEATLESS, CONF_MEATLESS_KIND, DEFAULT_SUGGESTIONS, DEFAULT_MEATLESS,
+)
 
 # Auswahl-Eintrag zum Anlegen einer neuen Liste
 NEW_LIST = "__new__"
@@ -119,7 +122,43 @@ class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
         return [dict(entry) for entry in self._current().get(CONF_LISTS) or []]
 
     async def async_step_init(self, user_input=None):
-        return self.async_show_menu(step_id="init", menu_options=["general", "lists"])
+        return self.async_show_menu(step_id="init", menu_options=["general", "recipes", "lists"])
+
+    def _recipe_options(self):
+        current = self._current()
+        return {
+            CONF_SUGGESTIONS: int(current.get(CONF_SUGGESTIONS, DEFAULT_SUGGESTIONS) or DEFAULT_SUGGESTIONS),
+            CONF_MEATLESS: int(current.get(CONF_MEATLESS, DEFAULT_MEATLESS) or 0),
+            CONF_MEATLESS_KIND: current.get(CONF_MEATLESS_KIND) or "vegetarian",
+        }
+
+    async def async_step_recipes(self, user_input=None):
+        """Rezeptvorschläge: Anzahl und wie viele davon ohne Fleisch und Fisch sind."""
+        if user_input is not None:
+            count = int(user_input[CONF_SUGGESTIONS])
+            data = {
+                **self._current(),
+                CONF_SUGGESTIONS: count,
+                # Mehr fleischlose Plätze als Vorschläge gibt es nicht
+                CONF_MEATLESS: min(int(user_input[CONF_MEATLESS]), count),
+                CONF_MEATLESS_KIND: user_input[CONF_MEATLESS_KIND],
+            }
+            return self.async_create_entry(title="", data=data)
+        current = self._recipe_options()
+        number = lambda low: selector.NumberSelector(
+            selector.NumberSelectorConfig(min=low, max=10, step=1, mode=selector.NumberSelectorMode.BOX)
+        )
+        schema = vol.Schema({
+            vol.Required(CONF_SUGGESTIONS, default=current[CONF_SUGGESTIONS]): number(1),
+            vol.Required(CONF_MEATLESS, default=current[CONF_MEATLESS]): number(0),
+            vol.Required(CONF_MEATLESS_KIND, default=current[CONF_MEATLESS_KIND]): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=["vegetarian", "vegan"], translation_key="meatless_kind",
+                    mode=selector.SelectSelectorMode.LIST,
+                )
+            ),
+        })
+        return self.async_show_form(step_id="recipes", data_schema=schema)
 
     async def async_step_general(self, user_input=None):
         errors = {}
@@ -132,6 +171,7 @@ class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
             else:
                 # Die freien Listen werden in einem eigenen Schritt gepflegt und bleiben hier erhalten
                 data[CONF_LISTS] = self._lists()
+                data.update(self._recipe_options())
                 return self.async_create_entry(title="", data=data)
 
         current = {**self._current(), **(user_input or {})}
