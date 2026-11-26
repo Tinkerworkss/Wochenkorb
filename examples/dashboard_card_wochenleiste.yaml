@@ -121,7 +121,8 @@ cards:
           {%- if p.dinner | count == 0 -%}
           {#- Freier Abend: Tipp öffnet ein Fenster für eine freie Notiz (Pizza auswärts, Reste, ...), die nicht an ein Rezept gebunden ist -#}
           {%- set schnell = namespace(l=[]) -%}
-          {%- for txt in ['Auswärts essen', 'Bestellen', 'Reste', 'Brotzeit'] -%}
+          {#- Die Schnellauswahl kommt aus den Einstellungen der Integration -#}
+          {%- for txt in (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'schnellauswahl') or ['Auswärts essen', 'Bestellen', 'Reste', 'Brotzeit']) -%}
           {%- set schnell.l = schnell.l + [{'type': 'custom:button-card', 'name': txt, 'show_icon': 0,
             'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
               {'service': 'browser_mod.close_popup', 'data': {}},
@@ -129,11 +130,12 @@ cards:
             'styles': {'card': [{'padding': '10px 6px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
                        'name': [{'font-size': '13px'}, {'font-weight': '600'}]}}] -%}
           {%- endfor -%}
+          {%- set zeilen = namespace(l=[]) -%}
+          {%- for paar in schnell.l | batch(2) -%}{%- set zeilen.l = zeilen.l + [{'type': 'horizontal-stack', 'cards': paar | list}] -%}{%- endfor -%}
           {%- set notiz = {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
             {'service': 'input_text.set_value', 'data': {'entity_id': 'input_text.essen_notiz', 'value': ''}},
             {'service': 'browser_mod.popup', 'data': {'title': tag ~ ': Was gibt es?', 'content': {'type': 'vertical-stack', 'cards': [
-              {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'},
-              {'type': 'horizontal-stack', 'cards': schnell.l[:2]}, {'type': 'horizontal-stack', 'cards': schnell.l[2:]},
+              {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'}] + zeilen.l + [
               {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}],
                'card_mod': {'style': {'hui-input-text-entity-row $ ha-input $ wa-input $': 'input::placeholder { color: transparent !important; }'}}},
               {'type': 'custom:button-card', 'name': 'Eintragen', 'icon': 'mdi:check', 'layout': 'icon_name',

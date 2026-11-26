@@ -98,9 +98,30 @@ BY_LABEL = {ing.label: ing for ing in INGREDIENTS}
 _BONUS = _MEAT - {"Bacon"}
 
 
-def _value(label, discount):
+def _value(label, discount, bonus=MEAT_BONUS):
     """Wie stark ein Angebot für diese Hauptzutat ein Rezept nach vorn bringt."""
-    return discount * WEIGHT[label] + (MEAT_BONUS if label in _BONUS else 0)
+    return discount * WEIGHT[label] + (bonus if label in _BONUS else 0)
+
+
+def minutes(text):
+    """Dauer aus einer Zeitangabe wie "45 Minuten", "1 Std. 10 Min." oder "1,5 h"; None, wenn keine zu erkennen ist."""
+    text = clean(str(text or ""))
+    hours = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:h(?![a-z])|std|stunde|hour)", text)
+    mins = re.search(r"(\d+)\s*(?:m(?![a-z])|min)", text)
+    if not hours and not mins:
+        bare = re.fullmatch(r"\s*(\d+)\s*", text)
+        return int(bare.group(1)) if bare else None
+    total = float(hours.group(1).replace(",", ".")) * 60 if hours else 0
+    return round(total + (int(mins.group(1)) if mins else 0))
+
+
+def mentions(recipe, words):
+    """Kommt eines der Wörter im Namen oder in den Zutaten des Rezepts vor?"""
+    words = [clean(w).strip() for w in words or [] if clean(w).strip()]
+    if not words:
+        return False
+    text = " ".join([clean(recipe.get("name"))] + [clean(i) for i in recipe.get("ingredients") or []])
+    return any(w in text for w in words)
 
 
 # Fleisch und Fisch in Zutatentexten, auch außerhalb der Hauptzutaten-Tabelle (für "vegetarisch")
@@ -265,7 +286,8 @@ def _freshness(recipe, now):
     return FRESH_BONUS if days > 60 else (FRESH_BONUS * 0.6 if days > 30 else 0)
 
 
-def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=(), free=MIN_FREE, meatless=1, vegan=False):
+def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=(), free=MIN_FREE, meatless=1, vegan=False,
+            meat_bonus=MEAT_BONUS, max_minutes=0, exclude=()):
     """Rezepte, deren Hauptzutat im Angebot ist.
 
     - pinned: Rezepte, die immer zuerst stehen, auch ohne Angebot (schon Eingeplantes)
@@ -273,6 +295,9 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
     - free: so viele neue Vorschläge stehen unter dem Eingeplanten
     - meatless: so viele der neuen Vorschläge sind ohne Fleisch und Fisch (vegan=True: vegan), soweit es passende gibt;
       ist die Zahl so groß wie free, gibt es nur solche Vorschläge
+    - meat_bonus: Bonus für Fleisch und Fisch im Angebot (0: nur der Rabatt zählt)
+    - max_minutes: Rezepte mit längerer Zubereitungszeit bleiben weg (0: keine Grenze; ohne Zeitangabe bleiben sie drin)
+    - exclude: Rezepte mit einem dieser Wörter in Name oder Zutaten bleiben weg
     - von jeder Hauptzutat zunächst nur ein Rezept, lange nicht Gekochtes bevorzugt
 
     Liefert Tupel (slug, Anzeigename der Zutat, Angebot, Rabatt in Prozent, weitere Zutaten im Angebot).
@@ -286,9 +311,9 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
         if not hits:
             continue
         # Reihenfolge: gewichteter Rabatt plus Fleischbonus, bei Gleichstand die prägendere Zutat
-        hits.sort(key=lambda label: (-_value(label, best[label][1]), -WEIGHT[label], best[label][0].get("price") or 0))
+        hits.sort(key=lambda label: (-_value(label, best[label][1], meat_bonus), -WEIGHT[label], best[label][0].get("price") or 0))
         top = hits[0]
-        score = _value(top, best[top][1]) + _freshness(recipe, now)
+        score = _value(top, best[top][1], meat_bonus) + _freshness(recipe, now)
         rows[slug] = ((-score, -WEIGHT[top], -len(hits), recipe.get("name") or slug), top, hits[1:])
 
     def row(slug):
@@ -303,8 +328,14 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
     free = max(1, int(free))
     wanted = max(0, min(int(meatless), free))
     flag = "vegan" if vegan else "vegetarian"
+    def allowed(slug):
+        recipe = recipes[slug]
+        if max_minutes and (minutes(recipe.get("time")) or 0) > max_minutes:
+            return False
+        return not mentions(recipe, exclude)
+
     candidates = sorted(
-        (slug for slug in rows if slug not in blocked and slug not in skipped and slug not in result),
+        (slug for slug in rows if slug not in blocked and slug not in skipped and slug not in result and allowed(slug)),
         key=lambda slug: rows[slug][0],
     )
     picked, per_ingredient, tier = [], {}, {}

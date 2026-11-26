@@ -30,3 +30,16 @@ CONF_MEATLESS = "meatless"
 CONF_MEATLESS_KIND = "meatless_kind"
 DEFAULT_SUGGESTIONS = 5
 DEFAULT_MEATLESS = 1
+# Rezepte mit diesen Wörtern in Name oder Zutaten werden nie vorgeschlagen
+CONF_EXCLUDE = "exclude_ingredients"
+# So viele Tage bleibt ein gekochtes Rezept aus den Vorschlägen (0: keine Sperre)
+CONF_REPEAT_DAYS = "repeat_days"
+DEFAULT_REPEAT_DAYS = 14
+# Wie stark Fleisch und Fisch ohne Streichpreis zählen: "off", "normal" oder "strong"
+CONF_MEAT_BONUS = "meat_bonus"
+MEAT_BONUS_LEVELS = {"off": 0, "normal": 30, "strong": 50}
+# Längste Zubereitungszeit in Minuten (0: keine Grenze); Rezepte ohne Zeitangabe bleiben drin
+CONF_MAX_TIME = "max_time"
+# Schnellauswahl im Fenster für einen eigenen Eintrag ohne Rezept
+CONF_QUICK = "quick_entries"
+DEFAULT_QUICK = ["Auswärts essen", "Bestellen", "Reste", "Brotzeit"]
