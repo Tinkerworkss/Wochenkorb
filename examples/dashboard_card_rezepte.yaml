@@ -51,6 +51,30 @@ cards:
       - justify-content: center
       - column-gap: 6px
 - type: custom:auto-entities
+  show_empty: false
+  card_param: cards
+  card:
+    type: horizontal-stack
+    card_mod:
+      style: |-
+        #root { display: flex !important; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 2px; }
+        #root > * { flex: 1 0 96px !important; margin: 0 !important; min-width: 96px; max-width: 132px; scroll-snap-align: start; }
+  filter:
+    template: |-
+      {#- Eingeplante Rezepte der nächsten Tage als Kacheln; bei der Suche stehen sie stattdessen in der Liste -#}
+      {%- set wt = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] -%}
+      {%- set sq = states('input_text.rezept_suche') -%}
+      {%- set rows = namespace(l=[]) -%}
+      {%- if sq in ['', 'unknown', 'unavailable'] -%}
+      {%- for r in (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'results') or []) if r.planned -%}
+      {%- set tag = strptime(r.planned, '%Y-%m-%d') -%}
+      {%- set o = r.offer or {'retailer': '', 'price': 0} -%}
+      {%- set info = (r.ingredient ~ ' · ' ~ (o.retailer or '') ~ ' ' ~ ('%.2f' | format(o.price | float(0)) | replace('.', ',')) ~ ' €') if r.offer else 'gerade nicht im Angebot' -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_kachel', 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': '', 'status': 'eingeplant für ' ~ wt[tag.weekday()] ~ ', ' ~ tag.strftime('%d.%m.'), 'tag': wt[tag.weekday()] ~ ', ' ~ tag.strftime('%d.%m.'), 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {{ rows.l | tojson }}
+- type: custom:auto-entities
   show_empty: true
   card:
     type: entities
@@ -105,7 +129,7 @@ cards:
                    'name': [{'font-size': '14px'}, {'font-weight': '600'}]}}] -%}
       {%- endfor -%}
       {#- Eingeplantes steht oben, darunter die Vorschläge; wie viele, entscheidet der Sensor -#}
-      {%- for r in res[:12] -%}
+      {%- for r in res[:12] if sucht or not r.planned -%}
       {%- set o = r.offer or {'retailer': '', 'price': 0} -%}
       {%- set h = (o.retailer or '') | lower -%}
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
