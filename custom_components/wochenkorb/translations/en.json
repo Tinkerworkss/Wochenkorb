@@ -30,6 +30,7 @@
         "title": "Configure Wochenkorb",
         "menu_options": {
           "general": "General: postal code, search terms, retailers",
+          "recipes": "Recipes: number of suggestions, vegetarian or vegan",
           "lists": "Lists: own tabs such as \"Obst\""
         }
       },
@@ -48,6 +49,20 @@
           "retailers": "Empty: all retailers. Otherwise only offers of the selected retailers; you can type your own names.",
           "mealie_recipes": "Needs the Mealie integration. Shows recipes whose main ingredient is on offer.",
           "shopping_list": "Optional. Main ingredients already on this list are marked in the recipe suggestions."
+        }
+      },
+      "recipes": {
+        "title": "Recipe suggestions",
+        "description": "Applies to the new suggestions in the recipe card. Planned dishes are shown in the week strip regardless.",
+        "data": {
+          "suggestions": "Number of new suggestions",
+          "meatless": "Of these without meat and fish",
+          "meatless_kind": "These slots are"
+        },
+        "data_description": {
+          "suggestions": "The card shows this many recipes that are not planned yet.",
+          "meatless": "0: no requirement. Same number as above: only such suggestions. If fewer matching recipes fit the offers, slots stay empty or, with a smaller number, are filled with others.",
+          "meatless_kind": "Vegan is detected from the ingredients (no meat, fish, dairy, egg, honey) and can be wrong."
         }
       },
       "lists": {
@@ -80,6 +95,14 @@
       "list_name_required": "Please enter a name.",
       "list_name_exists": "A list with this name already exists.",
       "list_terms_required": "Please enter at least one term."
+    }
+  },
+  "selector": {
+    "meatless_kind": {
+      "options": {
+        "vegetarian": "vegetarian",
+        "vegan": "vegan"
+      }
     }
   }
 }

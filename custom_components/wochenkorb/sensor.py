@@ -25,6 +25,11 @@ from .const import (
     CONF_RETAILERS,
     CONF_RECIPES,
     CONF_SHOPPING_LIST,
+    CONF_SUGGESTIONS,
+    CONF_MEATLESS,
+    CONF_MEATLESS_KIND,
+    DEFAULT_SUGGESTIONS,
+    DEFAULT_MEATLESS,
     API_URL,
     HEADERS,
     SEARCH_ENTITY,
@@ -212,6 +217,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
         hass, zip_code, products, retailers, recipes_enabled, shopping_list
     )
     coordinator.lists = lists
+    coordinator.suggestion_count = max(1, int(conf.get(CONF_SUGGESTIONS, DEFAULT_SUGGESTIONS) or DEFAULT_SUGGESTIONS))
+    coordinator.meatless_count = max(0, int(conf.get(CONF_MEATLESS, DEFAULT_MEATLESS) or 0))
+    coordinator.meatless_vegan = conf.get(CONF_MEATLESS_KIND) == "vegan"
     # Suchbegriff (klein) -> Liste, zu der er gehört
     coordinator.list_of = {term.lower(): entry for entry in lists for term in entry["terms"]}
     await coordinator.async_config_entry_first_refresh()
@@ -360,6 +368,9 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.products = products
         self.lists = []
         self.list_of = {}
+        self.suggestion_count = DEFAULT_SUGGESTIONS
+        self.meatless_count = DEFAULT_MEATLESS
+        self.meatless_vegan = False
         self.retailers = retailers or []
         self._mp_cache = {}
         self._mp_time = None
@@ -378,6 +389,8 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.plan = []
         # Essensplan zum Blättern: Datum -> Abendessen, ein halbes Jahr zurück und acht Wochen voraus
         self.calendar = {}
+        # Zutaten und Zubereitung der Rezepte, die gerade im Plan stehen (Slug -> Angaben)
+        self.plan_details = {}
         # Treffer der Rezeptsuche und was dafür vom letzten Durchlauf gebraucht wird
         self.search_results = []
         self._search_text = ""
@@ -567,6 +580,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                 "last_made": recipe.get("last_made"),
                 "last_made_mealie": recipe.get("last_made"),
                 "vegetarian": rc.is_vegetarian(texts),
+                "vegan": rc.is_vegan(texts),
                 "ingredients": texts,
                 "steps": steps,
                 "mains": rc.main_ingredients(texts),
@@ -743,17 +757,40 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         for slug, recipe in self._recipes.items():
             dates = [str(d)[:10] for d in (recipe.get("last_made_mealie"), self._last_cooked.get(slug)) if d]
             recipe["last_made"] = max(dates) if dates else None
-        rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped)
-        if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < rc.MIN_FREE:
+        wish = {"free": self.suggestion_count, "meatless": self.meatless_count, "vegan": self.meatless_vegan}
+        rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped, **wish)
+        if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < self.suggestion_count:
             # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
             self._skipped = set()
-            rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned)
+            rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, **wish)
         self._offers, self._listed = offers, listed
         for slug, label, offer, discount, others in rows:
             suggestions.append(await self._suggestion(entry, slug, label, offer, discount, others))
         self.suggestions = suggestions
         self.search_results = await self._search(entry)
+        await self._enrich_calendar(entry)
         self.async_update_listeners()
+
+    async def _enrich_calendar(self, entry):
+        """Kalendereinträge um das Rezeptbild ergänzen; für die nächsten drei Wochen auch Zutaten und Zubereitung."""
+        today = dt_util.now().date()
+        first = (today - timedelta(days=1)).isoformat()
+        last = (today + timedelta(days=21)).isoformat()
+        details = {}
+        for day, dinners in self.calendar.items():
+            for dinner in dinners:
+                recipe = self._recipes.get(dinner.get("slug") or "")
+                if not recipe:
+                    continue
+                dinner["image"] = await self._recipe_image(entry, recipe)
+                if first <= day <= last:
+                    details[dinner["slug"]] = {
+                        "time": recipe.get("time"),
+                        "servings": recipe.get("servings") or 0,
+                        "ingredients": recipe["ingredients"],
+                        "steps": recipe["steps"],
+                    }
+        self.plan_details = details
 
     async def _suggestion(self, entry, slug, label, offer, discount, others):
         """Ein Rezept so aufbereiten, wie die Rezeptkarte es braucht (Vorschlag oder Suchtreffer)."""
@@ -772,6 +809,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             "time": recipe.get("time"),
             "servings": recipe.get("servings") or 0,
             "vegetarian": bool(recipe.get("vegetarian")),
+            "vegan": bool(recipe.get("vegan")),
             # Bei Suchtreffern ohne passendes Angebot bleiben Zutat, Rabatt und Angebot leer
             "ingredient": label or "",
             "discount": discount or 0,
@@ -1031,7 +1069,7 @@ class WochenkorbSearchSensor(SensorEntity):
 class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
 
-    _unrecorded_attributes = frozenset({"results", "plan", "kalender", "search_results"})
+    _unrecorded_attributes = frozenset({"results", "plan", "kalender", "search_results", "plan_details"})
 
     def __init__(self, coordinator, zip_code):
         super().__init__(coordinator)
@@ -1060,6 +1098,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
             "plan": self.coordinator.plan,
             "kalender": self.coordinator.calendar,
             "search_results": self.coordinator.search_results,
+            "plan_details": self.coordinator.plan_details,
             "search_terms": self.coordinator.recipe_terms,
             "zip_code": self._zip_code,
         }

@@ -23,3 +23,10 @@ CONF_LISTS = "lists"
 TAB_ENTITY_PREFIX = "input_select.angebote_reiter"
 # Text-Helfer der Rezeptsuche in der Rezeptkarte
 RECIPE_SEARCH_ENTITY = "input_text.rezept_suche"
+# Rezeptvorschläge: wie viele neue Vorschläge gezeigt werden, wie viele davon ohne Fleisch und Fisch sein müssen
+# und ob diese Plätze vegetarisch oder vegan sein sollen
+CONF_SUGGESTIONS = "suggestions"
+CONF_MEATLESS = "meatless"
+CONF_MEATLESS_KIND = "meatless_kind"
+DEFAULT_SUGGESTIONS = 5
+DEFAULT_MEATLESS = 1

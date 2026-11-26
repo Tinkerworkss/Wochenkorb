@@ -1,4 +1,4 @@
-# Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move or remove it. Paste as a manual card.
+# Alternative to dashboard_card_wochenleiste.yaml: the same plan as a plain list. Dinners of the next seven days from the Mealie meal plan; a tap on a dish offers to move or remove it. Paste as a manual card.
 # Needs the option mealie_recipes of the integration. Replace DEINE_PLZ with your ZIP code.
 type: vertical-stack
 cards:
@@ -140,7 +140,8 @@ cards:
         {'service': 'browser_mod.popup', 'data': {'title': tag ~ ': Was gibt es?', 'content': {'type': 'vertical-stack', 'cards': [
           {'type': 'markdown', 'content': 'Eigener Eintrag ohne Rezept, zum Beispiel „Pizza auswärts“. Es kommt nichts auf die Einkaufsliste.'},
           {'type': 'horizontal-stack', 'cards': schnell.l[:2]}, {'type': 'horizontal-stack', 'cards': schnell.l[2:]},
-          {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}]},
+          {'type': 'entities', 'entities': [{'entity': 'input_text.essen_notiz', 'name': 'Eigener Text'}],
+           'card_mod': {'style': {'hui-input-text-entity-row $ ha-input $ wa-input $': 'input::placeholder { color: transparent !important; }'}}},
           {'type': 'custom:button-card', 'name': 'Eintragen', 'icon': 'mdi:check', 'layout': 'icon_name',
            'tap_action': {'action': 'fire-dom-event', 'browser_mod': {'service': 'browser_mod.sequence', 'data': {'sequence': [
              {'service': 'browser_mod.close_popup', 'data': {}},
