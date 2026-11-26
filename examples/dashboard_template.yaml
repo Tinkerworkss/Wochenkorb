@@ -239,6 +239,17 @@ button_card_templates:
           const ecke = `<span style="position:absolute;left:5px;top:5px;background:${v.art === 'frei' ? 'rgba(127,127,127,0.35)' : '#b5d98a'};color:${v.art === 'frei' ? 'var(--primary-text-color)' : '#1c2b12'};font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px">${v.tag}</span>`;
           const mitte = (zeichen) => `<div style="width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:30px;opacity:0.7">${zeichen}</div>`;
           const bild = v.art === 'frei' ? mitte('+') : (v.bild ? `<img src="${v.bild}" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block">` : mitte('🍴'));
+          if (v.art === 'notiz') {
+            // Eigener Eintrag: der Text steht groß in der ganzen Kachel, darüber ein Symbol passend zum Wort
+            const n = (v.name || '').toLowerCase();
+            const sym = [['pizza', 'mdi:pizza'], ['burger', 'mdi:hamburger'], ['grill', 'mdi:grill'], ['nudel|pasta|spaghetti', 'mdi:pasta'], ['bestell|liefer', 'mdi:moped'],
+                         ['ausw|restaurant|essen gehen|essen bei|eingeladen', 'mdi:silverware-variant'], ['rest', 'mdi:fridge-outline'], ['brot', 'mdi:bread-slice'], ['suppe|eintopf', 'mdi:pot-steam']]
+              .find((p) => new RegExp(p[0]).test(n));
+            return `<div style="position:relative;width:100%;aspect-ratio:1/1;padding-bottom:41px;box-sizing:content-box">${ecke}`
+              + `<div style="position:absolute;inset:24px 6px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">`
+              + `<ha-icon icon="${sym ? sym[1] : 'mdi:silverware-fork-knife'}" style="--mdc-icon-size:26px;color:#b5d98a"></ha-icon>`
+              + `<div style="font-size:14px;font-weight:600;line-height:17px;text-align:center;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow-wrap:anywhere">${v.name}</div></div></div>`;
+          }
           const text = v.art === 'frei' ? (v.alt ? '–' : 'noch frei') : v.name;
           return `<div style="position:relative">${bild}${ecke}</div>`
             + `<div style="padding:5px 6px 6px"><div style="font-size:12px;line-height:15px;height:30px;text-align:left;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;${v.art === 'frei' ? 'color:var(--secondary-text-color)' : ''}">${text}</div></div>`;
