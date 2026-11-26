@@ -177,12 +177,14 @@ button_card_templates:
               [[[
                 const v = variables;
                 const rabatt = v.rabatt > 0 ? `<span style="font-size:11px;font-weight:600;color:#fff;background:#d6453d;border-radius:4px;padding:1px 5px">−${v.rabatt} %</span> ` : '';
+                // Kennzeichen für Rezepte ohne Fleisch und Fisch
+                const kost = v.kost ? `<span style="font-size:11px;font-weight:600;color:#1c2b12;background:#b5d98a;border-radius:4px;padding:1px 5px">${v.kost}</span> ` : '';
                 if (v.geplant) {
                   return `<div style="font-size:14px;line-height:1.3;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.name}</div>`
                     + `<div style="font-size:12px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:#b5d98a;font-weight:600">✓ ${v.tag}</span>`
                     + (v.rabatt > 0 ? ` <span style="color:var(--secondary-text-color)">· ${rabatt}${v.info}</span>` : '') + `</div>`;
                 }
-                return `<div style="font-size:15px;line-height:1.3;font-weight:500">${v.name}</div><div style="font-size:12px;line-height:1.4;color:var(--secondary-text-color)">${rabatt}${v.info}</div>`
+                return `<div style="font-size:15px;line-height:1.3;font-weight:500">${v.name}</div><div style="font-size:12px;line-height:1.4;color:var(--secondary-text-color)">${kost}${rabatt}${v.info}</div>`
                   + (v.status ? `<div style="font-size:12px;line-height:1.3;color:var(--success-color, #43a047)">✓ ${v.status}</div>` : '')
                   + (v.mehr ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)">${v.mehr}</div>` : '');
               ]]]

@@ -142,7 +142,7 @@ cards:
           {'service': 'browser_mod.popup', 'data': {'title': 'Wann kochen?', 'content': {'type': 'vertical-stack', 'cards': knoepfe.l}}}]}}} -%}
       {%- set drauf = ((r.on_list | join(', ')) ~ ' schon auf der Liste') if r.on_list else '' -%}
       {%- set status = [geplant, drauf] | select | join(' · ') -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'custom_fields': {'plus': {'card': {'tap_action': tipp}}}, 'variables': {'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'status': status | e, 'geplant': geplant, 'tag': (wt[tag.weekday()][:2] ~ ', ' ~ tag.strftime('%d.%m.')) if tag else '', 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'rezept_zeile', 'custom_fields': {'plus': {'card': {'tap_action': tipp}}}, 'variables': {'kost': 'vegan' if r.vegan | default(false) else ('vegetarisch' if r.vegetarian | default(false) else ''), 'bild': r.image or '', 'name': r.name | e, 'titel': r.name, 'info': info | e, 'mehr': mehr | e, 'status': status | e, 'geplant': geplant, 'tag': (wt[tag.weekday()][:2] ~ ', ' ~ tag.strftime('%d.%m.')) if tag else '', 'rabatt': r.discount | int(0), 'slug': r.slug, 'zeit': r.time or '', 'zutaten': r.ingredients, 'schritte': r.steps}}] -%}
       {%- endfor -%}
       {{ rows.l | tojson }}
 - type: custom:button-card
