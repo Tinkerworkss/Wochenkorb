@@ -99,7 +99,7 @@ cards:
                    'name': [{'font-size': '14px'}, {'font-weight': '600'}]}}] -%}
       {%- endfor -%}
       {%- for r in res[:(10 if sucht else 5)] -%}
-      {%- set o = r.offer or {} -%}
+      {%- set o = r.offer or {'retailer': '', 'price': 0} -%}
       {%- set h = (o.retailer or '') | lower -%}
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
       {%- set preis = '%.2f' | format(o.price | float(0)) | replace('.', ',') -%}
