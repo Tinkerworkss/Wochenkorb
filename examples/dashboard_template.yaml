@@ -148,7 +148,7 @@ button_card_templates:
                       const v = variables;
                       return (v.bild ? `<img src="${v.bild}" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n` : '')
                         + `**Im Angebot:** ${v.info}` + (v.mehr ? ` (${v.mehr})` : '') + (v.status ? `\n\n✓ ${v.status}` : '') + (v.zeit ? `\n\n**Dauer:** ${v.zeit}` : '')
-                        + `\n\n### Zutaten\n` + v.zutaten.map(z => `- ${z}`).join('\n')
+                        + `\n\n### Zutaten\n` + v.zutaten.map(z => `- ${z.replace(/^(\d+)\.0(?=\s)/, '$1')}`).join('\n')
                         + `\n\n### Zubereitung\n` + v.schritte.map((s, i) => `${i + 1}. ${s.replace(/\s*\n+\s*/g, ' ')}`).join('\n');
                     ]]]
           styles:
@@ -222,7 +222,7 @@ button_card_templates:
                 const v = variables;
                 return (v.bild ? `<img src="${v.bild}" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n` : '')
                   + `**Im Angebot:** ${v.info}` + (v.mehr ? ` (${v.mehr})` : '') + (v.status ? `\n\n✓ ${v.status}` : '') + (v.zeit ? `\n\n**Dauer:** ${v.zeit}` : '')
-                  + `\n\n### Zutaten\n` + v.zutaten.map(z => `- ${z}`).join('\n')
+                  + `\n\n### Zutaten\n` + v.zutaten.map(z => `- ${z.replace(/^(\d+)\.0(?=\s)/, '$1')}`).join('\n')
                   + `\n\n### Zubereitung\n` + v.schritte.map((s, i) => `${i + 1}. ${s.replace(/\s*\n+\s*/g, ' ')}`).join('\n');
               ]]]
     hold_action:
