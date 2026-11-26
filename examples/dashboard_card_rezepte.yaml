@@ -123,8 +123,9 @@ cards:
   card_mod:
     style:
       hui-horizontal-stack-card $: |-
-        #root { display: flex !important; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px 2px 6px; scrollbar-width: thin; }
-        #root > *, #root > * > * { flex: 1 0 96px !important; margin: 0 !important; min-width: 96px !important; max-width: 132px !important; scroll-snap-align: start; }
+        #root { display: flex !important; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding: 2px; scrollbar-width: none; }
+        #root::-webkit-scrollbar { display: none; }
+        #root > *, #root > * > * { flex: 1 0 76px !important; margin: 0 !important; min-width: 76px !important; max-width: 132px !important; scroll-snap-align: start; }
       .: 'ha-card { background: none !important; border: none !important; box-shadow: none !important; overflow: visible; }'
   card:
     type: custom:auto-entities
