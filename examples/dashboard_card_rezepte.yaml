@@ -58,7 +58,7 @@ cards:
     card_mod:
       style: |-
         #root { display: flex !important; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 2px; }
-        #root > * { flex: 0 0 104px !important; margin: 0 !important; min-width: 0; scroll-snap-align: start; }
+        #root > * { flex: 1 0 96px !important; margin: 0 !important; min-width: 96px; max-width: 132px; scroll-snap-align: start; }
   filter:
     template: |-
       {#- Eingeplante Rezepte der nächsten Tage als Kacheln; bei der Suche stehen sie stattdessen in der Liste -#}
