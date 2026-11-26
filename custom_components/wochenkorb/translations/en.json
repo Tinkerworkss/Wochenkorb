@@ -30,7 +30,7 @@
         "title": "Configure Wochenkorb",
         "menu_options": {
           "general": "General: postal code, search terms, retailers",
-          "recipes": "Recipes: number of suggestions, vegetarian or vegan",
+          "recipes": "Recipes: suggestions, vegetarian/vegan, exclusions, cooking time",
           "lists": "Lists: own tabs such as \"Obst\""
         }
       },
@@ -57,12 +57,22 @@
         "data": {
           "suggestions": "Number of new suggestions",
           "meatless": "Of these without meat and fish",
-          "meatless_kind": "These slots are"
+          "meatless_kind": "These slots are",
+          "exclude_ingredients": "Exclude ingredients",
+          "max_time": "Longest cooking time",
+          "repeat_days": "Pause after cooking",
+          "meat_bonus": "Meat and fish without a crossed-out price",
+          "quick_entries": "Quick choices for own entries"
         },
         "data_description": {
           "suggestions": "The card shows this many recipes that are not planned yet.",
           "meatless": "0: no requirement. Same number as above: only such suggestions. If fewer matching recipes fit the offers, slots stay empty or, with a smaller number, are filled with others.",
-          "meatless_kind": "Vegan is detected from the ingredients (no meat, fish, dairy, egg, honey) and can be wrong."
+          "meatless_kind": "Vegan is detected from the ingredients (no meat, fish, dairy, egg, honey) and can be wrong.",
+          "exclude_ingredients": "Recipes with one of these words in the name or the ingredients are not suggested, for example mushrooms. The recipe search still finds them.",
+          "max_time": "In minutes; 0: no limit. Recipes without a time stay in the suggestions.",
+          "repeat_days": "A recipe is not suggested for this many days after it was cooked; 0: no pause.",
+          "meat_bonus": "How much an offer for meat or fish counts even when no old price is given.",
+          "quick_entries": "The buttons in the window for an own entry in the week strip, at most eight. Empty: the default again."
         }
       },
       "lists": {
@@ -102,6 +112,13 @@
       "options": {
         "vegetarian": "vegetarian",
         "vegan": "vegan"
+      }
+    },
+    "meat_bonus": {
+      "options": {
+        "off": "not at all (only the discount counts)",
+        "normal": "normal",
+        "strong": "strong"
       }
     }
   }

@@ -30,6 +30,14 @@ from .const import (
     CONF_MEATLESS_KIND,
     DEFAULT_SUGGESTIONS,
     DEFAULT_MEATLESS,
+    CONF_EXCLUDE,
+    CONF_REPEAT_DAYS,
+    DEFAULT_REPEAT_DAYS,
+    CONF_MEAT_BONUS,
+    MEAT_BONUS_LEVELS,
+    CONF_MAX_TIME,
+    CONF_QUICK,
+    DEFAULT_QUICK,
     API_URL,
     HEADERS,
     SEARCH_ENTITY,
@@ -220,6 +228,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator.suggestion_count = max(1, int(conf.get(CONF_SUGGESTIONS, DEFAULT_SUGGESTIONS) or DEFAULT_SUGGESTIONS))
     coordinator.meatless_count = max(0, int(conf.get(CONF_MEATLESS, DEFAULT_MEATLESS) or 0))
     coordinator.meatless_vegan = conf.get(CONF_MEATLESS_KIND) == "vegan"
+    coordinator.exclude_words = [str(w).strip() for w in conf.get(CONF_EXCLUDE) or [] if str(w).strip()]
+    repeat = conf.get(CONF_REPEAT_DAYS, DEFAULT_REPEAT_DAYS)
+    coordinator.repeat_days = max(0, int(DEFAULT_REPEAT_DAYS if repeat is None else repeat))
+    coordinator.meat_bonus = MEAT_BONUS_LEVELS.get(conf.get(CONF_MEAT_BONUS) or "normal", MEAT_BONUS_LEVELS["normal"])
+    coordinator.max_minutes = max(0, int(conf.get(CONF_MAX_TIME) or 0))
+    coordinator.quick_entries = [str(t).strip() for t in conf.get(CONF_QUICK) or DEFAULT_QUICK if str(t).strip()][:8]
     # Suchbegriff (klein) -> Liste, zu der er gehört
     coordinator.list_of = {term.lower(): entry for entry in lists for term in entry["terms"]}
     await coordinator.async_config_entry_first_refresh()
@@ -356,6 +370,19 @@ def _offer_summary(offer):
     }
 
 
+def _duration(recipe):
+    """Zubereitungszeit als Text; neuere Mealie-Versionen liefern sie nur noch in Sekunden."""
+    def seconds(key):
+        value = recipe.get(key)
+        return value if isinstance(value, (int, float)) and value > 0 else 0
+
+    total = seconds("total_time_seconds") or seconds("prep_time_seconds") + seconds("perform_time_seconds")
+    if not total:
+        return None
+    hours, mins = divmod(round(total / 60), 60)
+    return " ".join(part for part in (f"{hours} Std." if hours else "", f"{mins} Min." if mins or not hours else "") if part)
+
+
 class WochenkorbDataCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, zip_code, products, retailers=None, recipes_enabled=False, shopping_list=None):
         super().__init__(
@@ -371,6 +398,11 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.suggestion_count = DEFAULT_SUGGESTIONS
         self.meatless_count = DEFAULT_MEATLESS
         self.meatless_vegan = False
+        self.exclude_words = []
+        self.repeat_days = DEFAULT_REPEAT_DAYS
+        self.meat_bonus = MEAT_BONUS_LEVELS["normal"]
+        self.max_minutes = 0
+        self.quick_entries = list(DEFAULT_QUICK)
         self.retailers = retailers or []
         self._mp_cache = {}
         self._mp_time = None
@@ -575,7 +607,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                 "name": recipe.get("name") or item.get("name"),
                 "recipe_id": recipe.get("recipe_id") or item.get("recipe_id"),
                 "has_image": bool(recipe.get("image")),
-                "time": recipe.get("total_time"),
+                "time": recipe.get("total_time") or _duration(recipe),
                 "servings": recipe.get("recipe_servings") or 0,
                 "last_made": recipe.get("last_made"),
                 "last_made_mealie": recipe.get("last_made"),
@@ -604,7 +636,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         )
         planned, cooked = {}, set()
         calendar, last_cooked = {}, {}
-        recent = (today - timedelta(days=14)).isoformat()
+        recent = (today - timedelta(days=self.repeat_days)).isoformat()
         # Abendessen der nächsten acht Tage für Wochenplan und Tagesauswahl
         dinners = {(today + timedelta(days=offset)).isoformat(): [] for offset in range(8)}
         for item in plan.get("mealplan") or []:
@@ -757,7 +789,10 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         for slug, recipe in self._recipes.items():
             dates = [str(d)[:10] for d in (recipe.get("last_made_mealie"), self._last_cooked.get(slug)) if d]
             recipe["last_made"] = max(dates) if dates else None
-        wish = {"free": self.suggestion_count, "meatless": self.meatless_count, "vegan": self.meatless_vegan}
+        wish = {
+            "free": self.suggestion_count, "meatless": self.meatless_count, "vegan": self.meatless_vegan,
+            "meat_bonus": self.meat_bonus, "max_minutes": self.max_minutes, "exclude": self.exclude_words,
+        }
         rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped, **wish)
         if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < self.suggestion_count:
             # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
@@ -1099,6 +1134,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
             "kalender": self.coordinator.calendar,
             "search_results": self.coordinator.search_results,
             "plan_details": self.coordinator.plan_details,
+            "schnellauswahl": self.coordinator.quick_entries,
             "search_terms": self.coordinator.recipe_terms,
             "zip_code": self._zip_code,
         }

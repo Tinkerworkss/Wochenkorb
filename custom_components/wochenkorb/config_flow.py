@@ -5,6 +5,8 @@ from homeassistant.helpers import selector
 from .const import (
     DOMAIN, CONF_PRODUCTS, CONF_ZIP, CONF_RETAILERS, CONF_RECIPES, CONF_SHOPPING_LIST, CONF_LISTS,
     CONF_SUGGESTIONS, CONF_MEATLESS, CONF_MEATLESS_KIND, DEFAULT_SUGGESTIONS, DEFAULT_MEATLESS,
+    CONF_EXCLUDE, CONF_REPEAT_DAYS, DEFAULT_REPEAT_DAYS, CONF_MEAT_BONUS, MEAT_BONUS_LEVELS, CONF_MAX_TIME,
+    CONF_QUICK, DEFAULT_QUICK,
 )
 
 # Auswahl-Eintrag zum Anlegen einer neuen Liste
@@ -41,6 +43,11 @@ def _retailer_names(retailers):
     if isinstance(retailers, list):
         return [str(r).strip() for r in retailers if str(r).strip()]
     return [r.strip() for r in (retailers or "").split(",") if r.strip()]
+
+
+def _words(value):
+    """Liste von Texten ohne Leeres und ohne Doppelte, Reihenfolge bleibt."""
+    return list(dict.fromkeys(str(v).strip() for v in value or [] if str(v).strip()))
 
 
 def _schema(zip_code, products, retailers, recipes, shopping_list):
@@ -130,6 +137,11 @@ class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
             CONF_SUGGESTIONS: int(current.get(CONF_SUGGESTIONS, DEFAULT_SUGGESTIONS) or DEFAULT_SUGGESTIONS),
             CONF_MEATLESS: int(current.get(CONF_MEATLESS, DEFAULT_MEATLESS) or 0),
             CONF_MEATLESS_KIND: current.get(CONF_MEATLESS_KIND) or "vegetarian",
+            CONF_EXCLUDE: _words(current.get(CONF_EXCLUDE)),
+            CONF_REPEAT_DAYS: int(DEFAULT_REPEAT_DAYS if current.get(CONF_REPEAT_DAYS) is None else current[CONF_REPEAT_DAYS]),
+            CONF_MEAT_BONUS: current.get(CONF_MEAT_BONUS) if current.get(CONF_MEAT_BONUS) in MEAT_BONUS_LEVELS else "normal",
+            CONF_MAX_TIME: int(current.get(CONF_MAX_TIME) or 0),
+            CONF_QUICK: _words(current.get(CONF_QUICK)) or list(DEFAULT_QUICK),
         }
 
     async def async_step_recipes(self, user_input=None):
@@ -142,11 +154,25 @@ class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
                 # Mehr fleischlose Plätze als Vorschläge gibt es nicht
                 CONF_MEATLESS: min(int(user_input[CONF_MEATLESS]), count),
                 CONF_MEATLESS_KIND: user_input[CONF_MEATLESS_KIND],
+                CONF_EXCLUDE: _words(user_input.get(CONF_EXCLUDE)),
+                CONF_REPEAT_DAYS: int(user_input[CONF_REPEAT_DAYS]),
+                CONF_MEAT_BONUS: user_input[CONF_MEAT_BONUS],
+                CONF_MAX_TIME: int(user_input[CONF_MAX_TIME]),
+                # Ohne Einträge gilt wieder die Vorgabe
+                CONF_QUICK: _words(user_input.get(CONF_QUICK))[:8] or list(DEFAULT_QUICK),
             }
             return self.async_create_entry(title="", data=data)
         current = self._recipe_options()
-        number = lambda low: selector.NumberSelector(
-            selector.NumberSelectorConfig(min=low, max=10, step=1, mode=selector.NumberSelectorMode.BOX)
+        def number(low, high=10, unit=None):
+            config = {"min": low, "max": high, "step": 1, "mode": selector.NumberSelectorMode.BOX}
+            if unit:
+                config["unit_of_measurement"] = unit
+            return selector.NumberSelector(selector.NumberSelectorConfig(**config))
+
+        chips = lambda options: selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=options, multiple=True, custom_value=True, mode=selector.SelectSelectorMode.DROPDOWN
+            )
         )
         schema = vol.Schema({
             vol.Required(CONF_SUGGESTIONS, default=current[CONF_SUGGESTIONS]): number(1),
@@ -156,6 +182,18 @@ class WochenkorbOptionsFlowHandler(config_entries.OptionsFlow):
                     options=["vegetarian", "vegan"], translation_key="meatless_kind",
                     mode=selector.SelectSelectorMode.LIST,
                 )
+            ),
+            vol.Optional(CONF_EXCLUDE, default=current[CONF_EXCLUDE]): chips(sorted(current[CONF_EXCLUDE], key=str.lower)),
+            vol.Required(CONF_MAX_TIME, default=current[CONF_MAX_TIME]): number(0, 600, "min"),
+            vol.Required(CONF_REPEAT_DAYS, default=current[CONF_REPEAT_DAYS]): number(0, 180, "d"),
+            vol.Required(CONF_MEAT_BONUS, default=current[CONF_MEAT_BONUS]): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(MEAT_BONUS_LEVELS), translation_key="meat_bonus",
+                    mode=selector.SelectSelectorMode.LIST,
+                )
+            ),
+            vol.Optional(CONF_QUICK, default=current[CONF_QUICK]): chips(
+                list(dict.fromkeys(current[CONF_QUICK] + DEFAULT_QUICK))
             ),
         })
         return self.async_show_form(step_id="recipes", data_schema=schema)

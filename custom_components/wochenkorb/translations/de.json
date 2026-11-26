@@ -30,7 +30,7 @@
         "title": "Wochenkorb anpassen",
         "menu_options": {
           "general": "Allgemein: Postleitzahl, Suchbegriffe, Händler",
-          "recipes": "Rezepte: Anzahl der Vorschläge, vegetarisch oder vegan",
+          "recipes": "Rezepte: Vorschläge, vegetarisch/vegan, Ausschlüsse, Kochzeit",
           "lists": "Listen: eigene Reiter wie „Obst“"
         }
       },
@@ -57,12 +57,22 @@
         "data": {
           "suggestions": "Anzahl neuer Vorschläge",
           "meatless": "Davon ohne Fleisch und Fisch",
-          "meatless_kind": "Diese Plätze sind"
+          "meatless_kind": "Diese Plätze sind",
+          "exclude_ingredients": "Zutaten ausschließen",
+          "max_time": "Höchste Kochzeit",
+          "repeat_days": "Gekochtes aussetzen",
+          "meat_bonus": "Fleisch und Fisch ohne Streichpreis",
+          "quick_entries": "Schnellauswahl für eigene Einträge"
         },
         "data_description": {
           "suggestions": "So viele noch nicht eingeplante Rezepte zeigt die Karte.",
           "meatless": "0: keine Vorgabe. Gleiche Zahl wie oben: nur noch solche Vorschläge. Gibt es zu den Angeboten weniger passende Rezepte, bleiben Plätze leer bzw. werden bei kleinerer Zahl mit anderen gefüllt.",
-          "meatless_kind": "Vegan wird aus den Zutaten erkannt (kein Fleisch, Fisch, Milchprodukt, Ei, Honig) und kann danebenliegen."
+          "meatless_kind": "Vegan wird aus den Zutaten erkannt (kein Fleisch, Fisch, Milchprodukt, Ei, Honig) und kann danebenliegen.",
+          "exclude_ingredients": "Rezepte mit einem dieser Wörter im Namen oder in den Zutaten werden nicht vorgeschlagen, zum Beispiel Pilze oder Rosenkohl. Die Rezeptsuche findet sie weiterhin.",
+          "max_time": "In Minuten; 0: keine Grenze. Rezepte ohne Zeitangabe bleiben in den Vorschlägen.",
+          "repeat_days": "So viele Tage wird ein Rezept nach dem Kochen nicht vorgeschlagen; 0: keine Pause.",
+          "meat_bonus": "Wie stark ein Angebot für Fleisch oder Fisch zählt, auch wenn kein alter Preis dabeisteht.",
+          "quick_entries": "Die Knöpfe im Fenster „Was gibt es?“ der Wochenleiste, höchstens acht. Leer: wieder die Vorgabe."
         }
       },
       "lists": {
@@ -102,6 +112,13 @@
       "options": {
         "vegetarian": "vegetarisch",
         "vegan": "vegan"
+      }
+    },
+    "meat_bonus": {
+      "options": {
+        "off": "gar nicht (nur der Rabatt zählt)",
+        "normal": "normal",
+        "strong": "stark"
       }
     }
   }
