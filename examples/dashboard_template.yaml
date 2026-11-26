@@ -1,5 +1,5 @@
 # Add this block at the top level of the dashboard (raw configuration editor).
-# If the dashboard already has button_card_templates, add only the two entries.
+# If the dashboard already has button_card_templates, add only the three entries.
 button_card_templates:
   angebot_zeile:
     show_icon: false
@@ -204,3 +204,52 @@ button_card_templates:
             icon:
             - width: 20px
             - color: '[[[ return variables.geplant ? ''#b5d98a'' : ''var(--primary-text-color)''; ]]]'
+  rezept_kachel:
+    show_icon: false
+    show_name: false
+    show_state: false
+    show_label: false
+    tap_action:
+      action: fire-dom-event
+      browser_mod:
+        service: browser_mod.popup
+        data:
+          title: '[[[ return variables.titel ]]]'
+          content:
+            type: markdown
+            content: |-
+              [[[
+                const v = variables;
+                return (v.bild ? `<img src="${v.bild}" style="width:100%;max-height:240px;object-fit:cover;border-radius:12px">\n\n` : '')
+                  + `**Im Angebot:** ${v.info}` + (v.mehr ? ` (${v.mehr})` : '') + (v.status ? `\n\n✓ ${v.status}` : '') + (v.zeit ? `\n\n**Dauer:** ${v.zeit}` : '')
+                  + `\n\n### Zutaten\n` + v.zutaten.map(z => `- ${z}`).join('\n')
+                  + `\n\n### Zubereitung\n` + v.schritte.map((s, i) => `${i + 1}. ${s.replace(/\s*\n+\s*/g, ' ')}`).join('\n');
+              ]]]
+    hold_action:
+      action: none
+    double_tap_action:
+      action: none
+    styles:
+      card:
+      - padding: '0'
+      - border: none
+      - box-shadow: none
+      - border-radius: 12px
+      - overflow: hidden
+      - background: rgba(127,127,127,0.14)
+      - cursor: pointer
+      grid:
+      - grid-template-areas: '"k"'
+      - grid-template-columns: 1fr
+      custom_fields:
+        k:
+        - justify-self: stretch
+        - min-width: '0'
+    custom_fields:
+      k: |-
+        [[[
+          const v = variables;
+          const bild = v.bild ? `<img src="${v.bild}" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block">` : `<div style="width:100%;aspect-ratio:1/1;background:rgba(127,127,127,0.2)"></div>`;
+          return `<div style="position:relative">${bild}<span style="position:absolute;left:5px;top:5px;background:#b5d98a;color:#1c2b12;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px">${v.tag}</span></div>`
+            + `<div style="font-size:12px;line-height:1.25;padding:5px 6px 6px;text-align:left;white-space:normal;height:30px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${v.name}</div>`;
+        ]]]
