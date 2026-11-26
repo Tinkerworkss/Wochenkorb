@@ -21,3 +21,5 @@ PURCHASES_SIGNAL = "wochenkorb_purchases_updated"
 CONF_LISTS = "lists"
 # Auswahl-Helfer der Angebotskarte; ihre Optionen (Listen und Händler) hält die Integration aktuell
 TAB_ENTITY_PREFIX = "input_select.angebote_reiter"
+# Text-Helfer der Rezeptsuche in der Rezeptkarte
+RECIPE_SEARCH_ENTITY = "input_text.rezept_suche"

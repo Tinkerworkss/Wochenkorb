@@ -29,6 +29,7 @@ from .const import (
     HEADERS,
     SEARCH_ENTITY,
     RESHUFFLE_ENTITY,
+    RECIPE_SEARCH_ENTITY,
     PURCHASES_SIGNAL,
     CONF_LISTS,
     TAB_ENTITY_PREFIX,
@@ -377,6 +378,11 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.plan = []
         # Essensplan zum Blättern: Datum -> Abendessen, ein halbes Jahr zurück und acht Wochen voraus
         self.calendar = {}
+        # Treffer der Rezeptsuche und was dafür vom letzten Durchlauf gebraucht wird
+        self.search_results = []
+        self._search_text = ""
+        self._offers = []
+        self._listed = []
         # Rezept -> letzter Tag, an dem es im Essensplan stand
         self._last_cooked = {}
         # Rezepte, die nach "andere Vorschläge" gerade nicht gezeigt werden
@@ -740,42 +746,66 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             # Alle Kandidaten wurden einmal gezeigt: von vorn beginnen
             self._skipped = set()
             rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned)
+        self._offers, self._listed = offers, listed
         for slug, label, offer, discount, others in rows:
-            recipe = self._recipes[slug]
-            last = self._last_cooked.get(slug)
-            on_list = [
-                main
-                for main in recipe["mains"]
-                if any(rc.BY_LABEL[main].in_ingredient(text) for text in listed)
-            ]
-            suggestions.append(
-                {
-                    "name": recipe["name"],
-                    "slug": slug,
-                    "recipe_id": recipe.get("recipe_id"),
-                    "image": await self._recipe_image(entry, recipe),
-                    "time": recipe.get("time"),
-                    "servings": recipe.get("servings") or 0,
-                    "vegetarian": bool(recipe.get("vegetarian")),
-                    "ingredient": label,
-                    "discount": discount,
-                    "offer": _offer_summary(offer),
-                    "also_on_offer": others,
-                    "planned": self._planned.get(slug),
-                    # Letzter Tag, an dem das Rezept im Essensplan stand (leer: im letzten halben Jahr nicht)
-                    "last_cooked": last,
-                    "on_list": on_list,
-                    "ingredients": recipe["ingredients"],
-                    # Zutaten, die noch zu kaufen sind: ohne Hauptzutaten, die schon auf der Liste stehen
-                    "shopping": [
-                        text
-                        for text in recipe["ingredients"]
-                        if not any(rc.BY_LABEL[main].in_ingredient(rc.clean(text)) for main in on_list)
-                    ],
-                    "steps": recipe["steps"],
-                }
-            )
+            suggestions.append(await self._suggestion(entry, slug, label, offer, discount, others))
         self.suggestions = suggestions
+        self.search_results = await self._search(entry)
+        self.async_update_listeners()
+
+    async def _suggestion(self, entry, slug, label, offer, discount, others):
+        """Ein Rezept so aufbereiten, wie die Rezeptkarte es braucht (Vorschlag oder Suchtreffer)."""
+        recipe = self._recipes[slug]
+        listed = self._listed
+        on_list = [
+            main
+            for main in recipe["mains"]
+            if any(rc.BY_LABEL[main].in_ingredient(text) for text in listed)
+        ]
+        return {
+            "name": recipe["name"],
+            "slug": slug,
+            "recipe_id": recipe.get("recipe_id"),
+            "image": await self._recipe_image(entry, recipe),
+            "time": recipe.get("time"),
+            "servings": recipe.get("servings") or 0,
+            "vegetarian": bool(recipe.get("vegetarian")),
+            # Bei Suchtreffern ohne passendes Angebot bleiben Zutat, Rabatt und Angebot leer
+            "ingredient": label or "",
+            "discount": discount or 0,
+            "offer": _offer_summary(offer) if offer else None,
+            "also_on_offer": others or [],
+            "planned": self._planned.get(slug),
+            # Letzter Tag, an dem das Rezept im Essensplan stand (leer: im letzten halben Jahr nicht)
+            "last_cooked": self._last_cooked.get(slug),
+            "on_list": on_list,
+            "ingredients": recipe["ingredients"],
+            # Zutaten, die noch zu kaufen sind: ohne Hauptzutaten, die schon auf der Liste stehen
+            "shopping": [
+                text
+                for text in recipe["ingredients"]
+                if not any(rc.BY_LABEL[main].in_ingredient(rc.clean(text)) for main in on_list)
+            ],
+            "steps": recipe["steps"],
+        }
+
+    async def _search(self, entry):
+        """Rezeptsuche über die ganze Sammlung; ein passendes Angebot wird mit angezeigt."""
+        slugs = rc.search(self._recipes, self._search_text)
+        if not slugs:
+            return []
+        best = rc.best_offers(self._offers)
+        found = []
+        for slug in slugs:
+            hit = rc.offer_for(self._recipes[slug], best) or (None, None, 0, [])
+            found.append(await self._suggestion(entry, slug, *hit))
+        return found
+
+    async def async_search(self, text):
+        """Suchtext hat sich geändert: Treffer neu bestimmen."""
+        self._search_text = text if text not in ("unknown", "unavailable") else ""
+        entry = self._mealie_entry()
+        self.search_results = await self._search(entry) if entry is not None else []
         self.async_update_listeners()
 
     async def async_reshuffle(self):
@@ -999,7 +1029,7 @@ class WochenkorbSearchSensor(SensorEntity):
 class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     """Rezepte aus Mealie, deren Hauptzutat gerade im Angebot ist."""
 
-    _unrecorded_attributes = frozenset({"results", "plan", "kalender"})
+    _unrecorded_attributes = frozenset({"results", "plan", "kalender", "search_results"})
 
     def __init__(self, coordinator, zip_code):
         super().__init__(coordinator)
@@ -1027,6 +1057,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
             "results": self.coordinator.suggestions,
             "plan": self.coordinator.plan,
             "kalender": self.coordinator.calendar,
+            "search_results": self.coordinator.search_results,
             "search_terms": self.coordinator.recipe_terms,
             "zip_code": self._zip_code,
         }
@@ -1037,6 +1068,13 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
         self.async_on_remove(
             async_track_state_change_event(self.hass, [RESHUFFLE_ENTITY], self._handle_reshuffle)
         )
+        # Rezeptsuche: der Text steht in einem input_text-Helfer
+        self.async_on_remove(
+            async_track_state_change_event(self.hass, [RECIPE_SEARCH_ENTITY], self._handle_recipe_search)
+        )
+        state = self.hass.states.get(RECIPE_SEARCH_ENTITY)
+        if state and state.state not in ("", "unknown", "unavailable"):
+            self.hass.async_create_task(self.coordinator.async_search(state.state))
         # Ändert sich die Einkaufsliste, die Markierung "schon auf der Liste" nachziehen
         if self.coordinator.shopping_list:
             self.async_on_remove(
@@ -1044,6 +1082,11 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
                     self.hass, [self.coordinator.shopping_list], self._handle_list_change
                 )
             )
+
+    @callback
+    def _handle_recipe_search(self, event):
+        new = event.data.get("new_state")
+        self.hass.async_create_task(self.coordinator.async_search(new.state if new else ""))
 
     @callback
     def _handle_reshuffle(self, event):

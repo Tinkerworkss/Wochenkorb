@@ -7,6 +7,43 @@ cards:
   heading: Rezepte zu den Angeboten
   icon: mdi:chef-hat
   heading_style: title
+- type: entities
+  entities:
+  - entity: input_text.rezept_suche
+    name: Rezept suchen (Name oder Zutat)
+    icon: mdi:magnify
+- type: conditional
+  conditions:
+  - condition: state
+    entity: input_text.rezept_suche
+    state_not: ''
+  card:
+    type: custom:button-card
+    name: Suche beenden, Vorschläge zeigen
+    icon: mdi:close
+    layout: icon_name
+    tap_action:
+      action: call-service
+      service: input_text.set_value
+      service_data:
+        entity_id: input_text.rezept_suche
+        value: ''
+    styles:
+      card:
+      - padding: 9px 14px
+      - border-radius: 12px
+      - border: none
+      - box-shadow: none
+      - background: rgba(127,127,127,0.18)
+      icon:
+      - width: 20px
+      name:
+      - font-size: 14px
+      - font-weight: '600'
+      grid:
+      - grid-template-columns: min-content min-content
+      - justify-content: center
+      - column-gap: 6px
 - type: custom:auto-entities
   show_empty: true
   card:
@@ -20,10 +57,13 @@ cards:
           #states > div > * { overflow: visible; }
   filter:
     template: |-
-      {%- set res = state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'results') or [] -%}
+      {#- Steht etwas im Suchfeld, zeigt die Karte Treffer aus der ganzen Mealie-Sammlung statt der Vorschläge zu den Angeboten -#}
+      {%- set sq = states('input_text.rezept_suche') -%}
+      {%- set sucht = sq not in ['', 'unknown', 'unavailable'] -%}
+      {%- set res = (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'search_results') if sucht else state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'results')) or [] -%}
       {%- set rows = namespace(l=[]) -%}
       {%- if res | count == 0 -%}
-      {%- set rows.l = [{'type': 'section', 'label': 'Gerade passt kein Rezept zu den Angeboten'}] -%}
+      {%- set rows.l = [{'type': 'section', 'label': ('Kein Rezept mit „' ~ sq ~ '“ gefunden') if sucht else 'Gerade passt kein Rezept zu den Angeboten'}] -%}
       {%- endif -%}
       {#- Die nächsten Abende für die Tagesauswahl; nach 18 Uhr beginnt die Liste mit morgen -#}
       {%- set wt = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] -%}
@@ -58,12 +98,12 @@ cards:
         'styles': {'card': [{'padding': '8px 6px'}, {'border-radius': '12px'}, {'border': 'none'}, {'box-shadow': 'none'}, {'background': 'rgba(127,127,127,0.18)'}],
                    'name': [{'font-size': '14px'}, {'font-weight': '600'}]}}] -%}
       {%- endfor -%}
-      {%- for r in res[:5] -%}
-      {%- set o = r.offer -%}
+      {%- for r in res[:(10 if sucht else 5)] -%}
+      {%- set o = r.offer or {} -%}
       {%- set h = (o.retailer or '') | lower -%}
       {%- set markt = 'Marktkauf' if h.startswith('marktkauf') else ('REWE' if h.startswith('rewe') else ('EDEKA' if h.startswith('edeka') else (o.retailer or ''))) -%}
       {%- set preis = '%.2f' | format(o.price | float(0)) | replace('.', ',') -%}
-      {%- set info = r.ingredient ~ ' · ' ~ markt ~ ' ' ~ preis ~ ' €' -%}
+      {%- set info = (r.ingredient ~ ' · ' ~ markt ~ ' ' ~ preis ~ ' €') if r.offer else 'gerade nicht im Angebot' -%}
       {%- set zl = strptime(r.last_cooked, '%Y-%m-%d') if r.last_cooked | default('') else none -%}
       {%- set mehr = [('auch im Angebot: ' ~ (r.also_on_offer[:3] | join(', '))) if r.also_on_offer else '', ('zuletzt am ' ~ wt[zl.weekday()] ~ ', ' ~ zl.strftime('%d.%m.')) if zl else ''] | select | join(' · ') -%}
       {#- Eingeplante Rezepte bleiben stehen; Hauptzutaten, die schon auf der Einkaufsliste stehen, werden genannt -#}
