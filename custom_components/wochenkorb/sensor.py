@@ -370,6 +370,19 @@ def _offer_summary(offer):
     }
 
 
+def _duration(recipe):
+    """Zubereitungszeit als Text; neuere Mealie-Versionen liefern sie nur noch in Sekunden."""
+    def seconds(key):
+        value = recipe.get(key)
+        return value if isinstance(value, (int, float)) and value > 0 else 0
+
+    total = seconds("total_time_seconds") or seconds("prep_time_seconds") + seconds("perform_time_seconds")
+    if not total:
+        return None
+    hours, mins = divmod(round(total / 60), 60)
+    return " ".join(part for part in (f"{hours} Std." if hours else "", f"{mins} Min." if mins or not hours else "") if part)
+
+
 class WochenkorbDataCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, zip_code, products, retailers=None, recipes_enabled=False, shopping_list=None):
         super().__init__(
@@ -594,7 +607,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                 "name": recipe.get("name") or item.get("name"),
                 "recipe_id": recipe.get("recipe_id") or item.get("recipe_id"),
                 "has_image": bool(recipe.get("image")),
-                "time": recipe.get("total_time"),
+                "time": recipe.get("total_time") or _duration(recipe),
                 "servings": recipe.get("recipe_servings") or 0,
                 "last_made": recipe.get("last_made"),
                 "last_made_mealie": recipe.get("last_made"),
