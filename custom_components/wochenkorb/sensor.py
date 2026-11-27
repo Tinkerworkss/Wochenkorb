@@ -430,7 +430,9 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.plan_details = {}
         # Treffer der Rezeptsuche und was dafür vom letzten Durchlauf gebraucht wird
         self.search_results = []
-        self._search_text = ""
+        self.search_text = ""
+        # Eingabe, zu der search_results gehören
+        self.search_done = ""
         self._offers = []
         self._listed = []
         # Rezept -> letzter Tag, an dem es im Essensplan stand
@@ -809,6 +811,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             suggestions.append(await self._suggestion(entry, slug, label, offer, discount, others))
         self.suggestions = suggestions
         self.search_results = await self._search(entry)
+        self.search_done = self.search_text
         await self._enrich_calendar(entry)
         self.async_update_listeners()
 
@@ -880,7 +883,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
 
     async def _search(self, entry):
         """Rezeptsuche über die ganze Sammlung; ein passendes Angebot wird mit angezeigt."""
-        slugs = rc.search(self._recipes, self._search_text)
+        slugs = rc.search(self._recipes, self.search_text)
         if not slugs:
             return []
         best = rc.best_offers(self._offers, own=self._own_saving)
@@ -892,9 +895,15 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
 
     async def async_search(self, text):
         """Suchtext hat sich geändert: Treffer neu bestimmen."""
-        self._search_text = text if text not in ("unknown", "unavailable") else ""
+        text = text if text not in ("unknown", "unavailable") else ""
+        self.search_text = text
         entry = self._mealie_entry()
-        self.search_results = await self._search(entry) if entry is not None else []
+        results = await self._search(entry) if entry is not None else []
+        if self.search_text != text:
+            # Inzwischen wurde weitergetippt: diese Treffer sind überholt
+            return
+        self.search_results = results
+        self.search_done = text
         self.async_update_listeners()
 
     async def async_reshuffle(self):
@@ -1156,6 +1165,8 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
             "plan": self.coordinator.plan,
             "kalender": self.coordinator.calendar,
             "search_results": self.coordinator.search_results,
+            # Eingabe, zu der die Treffer gehören (die Karte erkennt daran, ob die Suche noch läuft)
+            "search_query": self.coordinator.search_done,
             "plan_details": self.coordinator.plan_details,
             "schnellauswahl": self.coordinator.quick_entries,
             "search_terms": self.coordinator.recipe_terms,
