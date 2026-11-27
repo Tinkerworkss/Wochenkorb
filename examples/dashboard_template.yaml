@@ -67,7 +67,20 @@ button_card_templates:
           custom_fields:
             img: '[[[ return variables.bild ? `<img src="${variables.bild}" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:#fff;display:block">` : ''''; ]]]'
             text: '[[[ return `<div style="font-size:14px;line-height:1.3">${variables.name}</div>` + (variables.infos ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)">${variables.infos}</div>` : ''''); ]]]'
-      preis: '[[[ return `<div style="font-size:17px;font-weight:600;line-height:1.25">${variables.preis} €</div>` + (variables.alt ? `<div style="font-size:12px;line-height:1.3;color:var(--secondary-text-color)"><s>${variables.alt} €</s> <span style="font-size:11px;font-weight:600;color:#fff;background:#d6453d;border-radius:4px;padding:1px 5px">−${variables.rabatt} %</span></div>` : ''''); ]]]'
+      preis: |-
+        [[[
+          const v = variables;
+          const marke = (text, farbe, rand) => `<span style="font-size:11px;font-weight:600;color:${rand ? farbe : '#fff'};background:${rand ? 'none' : farbe};border:1px solid ${farbe};border-radius:4px;padding:0 4px">${text}</span>`;
+          let unten = '';
+          if (v.bon !== undefined && v.bon !== '') {
+            const b = Number(v.bon);
+            unten = b >= 3 ? marke('−' + b + ' %', '#d6453d') : (b <= -3 ? marke('+' + (-b) + ' %', '#8a8a8a') : marke('wie sonst', '#8a8a8a', true));
+          } else if (v.alt) {
+            unten = `<s>${v.alt} €</s> ` + marke('−' + v.rabatt + ' %', '#d6453d', true);
+          }
+          return `<div style="font-size:17px;font-weight:600;line-height:1.25">${v.preis} €</div>`
+            + (unten ? `<div style="font-size:12px;line-height:1.5;color:var(--secondary-text-color)">${unten}</div>` : '');
+        ]]]
       plus:
         card:
           type: custom:button-card
