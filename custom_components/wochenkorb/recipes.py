@@ -226,8 +226,12 @@ def _valid(offer, now):
         return True
 
 
-def best_offers(offers, now=None):
-    """Bestes laufendes Angebot je Hauptzutat: höchster Rabatt, sonst niedrigster Preis."""
+def best_offers(offers, now=None, own=None):
+    """Bestes laufendes Angebot je Hauptzutat: höchster Rabatt, sonst niedrigster Preis.
+
+    own(Zutat, Angebot) liefert die Ersparnis in Prozent gegenüber dem eigenen Preis aus den Kassenbons oder None.
+    Gibt es sie, zählt sie statt des Streichpreises; ein Angebot, das teurer ist als sonst, zählt als 0 %.
+    """
     now = now or datetime.now(timezone.utc)
     best = {}
     for offer in offers:
@@ -243,9 +247,12 @@ def best_offers(offers, now=None):
         price = offer.get("price")
         if not text or not isinstance(price, (int, float)):
             continue
-        rank = (-_discount(offer), price)
         for ing in INGREDIENTS:
-            if ing.in_offer(text) and (ing.label not in best or rank < best[ing.label][0]):
+            if not ing.in_offer(text):
+                continue
+            saving = own(ing.label, offer) if own else None
+            rank = (-(max(saving, 0) if saving is not None else _discount(offer)), price)
+            if ing.label not in best or rank < best[ing.label][0]:
                 best[ing.label] = (rank, offer)
     return {label: (offer, -rank[0]) for label, (rank, offer) in best.items()}
 
@@ -287,7 +294,7 @@ def _freshness(recipe, now):
 
 
 def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), skipped=(), free=MIN_FREE, meatless=1, vegan=False,
-            meat_bonus=MEAT_BONUS, max_minutes=0, exclude=()):
+            meat_bonus=MEAT_BONUS, max_minutes=0, exclude=(), own=None):
     """Rezepte, deren Hauptzutat im Angebot ist.
 
     - pinned: Rezepte, die immer zuerst stehen, auch ohne Angebot (schon Eingeplantes)
@@ -298,12 +305,13 @@ def suggest(recipes, offers, blocked_slugs=(), limit=5, now=None, pinned=(), ski
     - meat_bonus: Bonus für Fleisch und Fisch im Angebot (0: nur der Rabatt zählt)
     - max_minutes: Rezepte mit längerer Zubereitungszeit bleiben weg (0: keine Grenze; ohne Zeitangabe bleiben sie drin)
     - exclude: Rezepte mit einem dieser Wörter in Name oder Zutaten bleiben weg
+    - own: Ersparnis gegenüber dem eigenen Bonpreis, siehe best_offers
     - von jeder Hauptzutat zunächst nur ein Rezept, lange nicht Gekochtes bevorzugt
 
     Liefert Tupel (slug, Anzeigename der Zutat, Angebot, Rabatt in Prozent, weitere Zutaten im Angebot).
     """
     now = now or datetime.now(timezone.utc)
-    best = best_offers(offers, now)
+    best = best_offers(offers, now, own)
     blocked, skipped = set(blocked_slugs), set(skipped)
     rows = {}
     for slug, recipe in recipes.items():
