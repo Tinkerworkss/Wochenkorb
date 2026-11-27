@@ -11,28 +11,16 @@ cards:
   heading: Angebote der Woche
   icon: mdi:tag-multiple
   heading_style: title
-- type: entities
-  entities:
-  - entity: input_text.angebote_suche
-    name: Suche in den Prospekten
-    icon: mdi:magnify
-  card_mod:
-    style:
-      .: |-
-        ha-card { border-radius: 16px; }
-        #states { padding: 0 12px; }
-      hui-input-text-entity-row $ ha-input $ wa-input $: 'input::placeholder { color: transparent !important; }'
-- type: entities
-  entities:
-  - entity: input_text.angebote_suche_GERAET_1
-    name: Suche in den Prospekten
-    icon: mdi:magnify
-  card_mod:
-    style:
-      .: |-
-        ha-card { border-radius: 16px; }
-        #states { padding: 0 12px; }
-      hui-input-text-entity-row $ ha-input $ wa-input $: 'input::placeholder { color: transparent !important; }'
+- type: custom:wochenkorb-suche
+  entity: input_text.angebote_suche
+  label: In den Prospekten suchen
+  delay: 600
+  min_length: 3
+- type: custom:wochenkorb-suche
+  entity: input_text.angebote_suche_GERAET_1
+  label: In den Prospekten suchen
+  delay: 600
+  min_length: 3
 - type: horizontal-stack
   cards:
   - type: custom:button-card

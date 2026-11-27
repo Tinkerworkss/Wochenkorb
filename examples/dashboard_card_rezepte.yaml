@@ -7,17 +7,10 @@ cards:
   heading: Rezepte zu den Angeboten
   icon: mdi:chef-hat
   heading_style: title
-- type: entities
-  entities:
-  - entity: input_text.rezept_suche
-    name: Rezept suchen (Name oder Zutat)
-    icon: mdi:magnify
-  card_mod:
-    style:
-      .: |-
-        ha-card { border-radius: 16px; }
-        #states { padding: 0 12px; }
-      hui-input-text-entity-row $ ha-input $ wa-input $: 'input::placeholder { color: transparent !important; }'
+- type: custom:wochenkorb-suche
+  entity: input_text.rezept_suche
+  label: Rezept suchen (Name oder Zutat)
+  delay: 300
 - type: conditional
   conditions:
   - condition: state
