@@ -289,6 +289,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     # Einkaufsverlauf: ein Sensor für die ganze Integration, auch bei mehreren Einträgen
     domain_data = hass.data.get(DOMAIN, {})
+    coordinator.purchases = domain_data.get("purchases")
+    # Neue Bons ändern den Vergleichspreis der Angebote
+    entry.async_on_unload(async_dispatcher_connect(hass, PURCHASES_SIGNAL, coordinator.async_update_listeners))
     if domain_data.get("purchases") and domain_data.setdefault("purchases_entry", entry.entry_id) == entry.entry_id:
         history_sensor = PurchaseHistorySensor(domain_data["purchases"])
         sensors.append(history_sensor)
@@ -398,6 +401,8 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.suggestion_count = DEFAULT_SUGGESTIONS
         self.meatless_count = DEFAULT_MEATLESS
         self.meatless_vegan = False
+        # Einkaufsverlauf aus den Kassenbons, für den Vergleich der Angebote mit dem eigenen Preis
+        self.purchases = None
         self.exclude_words = []
         self.repeat_days = DEFAULT_REPEAT_DAYS
         self.meat_bonus = MEAT_BONUS_LEVELS["normal"]
@@ -792,6 +797,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         wish = {
             "free": self.suggestion_count, "meatless": self.meatless_count, "vegan": self.meatless_vegan,
             "meat_bonus": self.meat_bonus, "max_minutes": self.max_minutes, "exclude": self.exclude_words,
+            "own": self._own_saving,
         }
         rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped, **wish)
         if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < self.suggestion_count:
@@ -826,6 +832,14 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                         "steps": recipe["steps"],
                     }
         self.plan_details = details
+
+    def _own_saving(self, label, offer):
+        """Ersparnis eines Angebots gegenüber dem eigenen Bonpreis der Hauptzutat, in Prozent; None ohne Vergleich."""
+        if not self.purchases:
+            return None
+        unit = _base_unit((offer.get("unit") or {}).get("shortName"))
+        hit = pu.compare(self.purchases.rows, label, unit, offer.get("referencePrice"))
+        return hit["rabatt"] if hit else None
 
     async def _suggestion(self, entry, slug, label, offer, discount, others):
         """Ein Rezept so aufbereiten, wie die Rezeptkarte es braucht (Vorschlag oder Suchtreffer)."""
@@ -869,7 +883,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         slugs = rc.search(self._recipes, self._search_text)
         if not slugs:
             return []
-        best = rc.best_offers(self._offers)
+        best = rc.best_offers(self._offers, own=self._own_saving)
         found = []
         for slug in slugs:
             hit = rc.offer_for(self._recipes[slug], best) or (None, None, 0, [])
@@ -999,8 +1013,17 @@ class WochenkorbSensor(CoordinatorEntity, SensorEntity):
                 or (f"https://www.marktguru.de/offers/{result_id}" if result_id else None),
                 "grundpreis": reference_price,
                 "grundpreis_einheit": _base_unit((offer.get("unit") or {}).get("shortName")),
+                **self._own_price(reference_price, _base_unit((offer.get("unit") or {}).get("shortName"))),
             }
         return {}
+
+    def _own_price(self, base_price, unit):
+        """Vergleich mit dem eigenen Preis aus den Kassenbons, wenn es für den Suchbegriff einen gibt."""
+        history = self.coordinator.purchases
+        hit = pu.compare(history.rows, self._query, unit, base_price) if history and base_price else None
+        if not hit:
+            return {}
+        return {"bon_grundpreis": hit["preis"], "bon_rabatt": hit["rabatt"], "bon_kaeufe": hit["kaeufe"]}
 
 class WochenkorbQueriesSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, products, zip_code):

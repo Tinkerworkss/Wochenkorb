@@ -534,8 +534,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -551,9 +555,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -614,8 +618,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -631,9 +639,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -694,8 +702,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -711,9 +723,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -774,8 +786,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -791,9 +807,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -854,8 +870,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -871,9 +891,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -934,8 +954,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -951,9 +975,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -1012,8 +1036,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -1029,9 +1057,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -1090,8 +1118,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -1107,9 +1139,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
@@ -1168,8 +1200,12 @@ cards:
       {%- set ende = (a.valid_to | as_datetime) if a.valid_to else none -%}
       {%- set ab = (von | as_local).strftime('%d.%m.') if von is not none and von > now() else '' -%}
       {%- set bis = (ende | as_local).strftime('%d.%m.') if ende is not none else (a.bis_datum or '') -%}
-      {%- set infos = [markt if ist_obst else '', einheit, gp] | select | join(' · ') -%}
-      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': ((1 - preis / alt) * 100) | round | int if alt > preis else 0, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
+      {#- Eigener Preis aus den Kassenbons, wenn es zum Suchbegriff einen gibt; sonst zählt der Streichpreis -#}
+      {%- set bon = a.bon_rabatt if a.bon_rabatt is defined and a.bon_rabatt is not none else '' -%}
+      {%- set sonst = ('sonst ' ~ ('%.2f' | format(a.bon_grundpreis | float(0)) | replace('.', ',')) ~ '&nbsp;€/' ~ a.grundpreis_einheit) if bon != '' else '' -%}
+      {%- set rab = (((1 - preis / alt) * 100) | round | int) if alt > preis else 0 -%}
+      {%- set infos = [markt if ist_obst else '', einheit, gp, sonst] | select | join(' · ') -%}
+      {%- set ns.zeilen = ns.zeilen + [{'eid': s.entity_id, 'markt': markt, 'einheit': einheit, 'bild': a.result_image_url or '', 'link': a.link or '', 'name': (((marke ~ ' ') if marke else '') ~ (produkt | title)) | replace('|', '/'), 'infos': infos | replace('|', '/'), 'preis': '%.2f' | format(preis) | replace('.', ','), 'alt': ('%.2f' | format(alt) | replace('.', ',')) if alt > preis else '', 'rabatt': rab, 'bon': bon | string, 'wert': bon if bon != '' else rab, 'zeit': (('ab ' ~ ab ~ ' ') if ab else '') ~ 'bis ' ~ bis}] -%}
       {%- endif -%}
       {%- endif -%}
       {%- endif -%}
@@ -1185,9 +1221,9 @@ cards:
       {%- if c > haupt.n -%}{%- set haupt.zeit = u -%}{%- set haupt.n = c -%}{%- endif -%}
       {%- endfor -%}
       {%- set rows.l = [{'type': 'section', 'label': ns.zeilen | count ~ ' Angebote · gültig ' ~ haupt.zeit ~ ((' · ' ~ (ns.weg | unique | list | count) ~ ' schon auf der Liste') if ns.weg else '')}] -%}
-      {%- for z in ns.zeilen | sort(attribute='rabatt', reverse=true) -%}
+      {%- for z in ns.zeilen | sort(attribute='wert', reverse=true) -%}
       {%- set zeit = '' if z.zeit == haupt.zeit else z.zeit -%}
-      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
+      {%- set rows.l = rows.l + [{'type': 'custom:button-card', 'template': 'angebot_zeile', 'entity': z.eid, 'variables': {'bild': z.bild, 'link': z.link, 'name': z.name | e, 'infos': ([z.infos | replace('&nbsp;', ' '), zeit] | select | join(' · ')) | e, 'preis': z.preis, 'alt': z.alt, 'rabatt': z.rabatt | string, 'bon': z.bon, 'eintrag': z.name, 'notiz': [z.markt ~ ' ' ~ z.preis ~ ' €', z.einheit, z.zeit] | select | join(' · ')}}] -%}
       {%- endfor -%}
       {%- endif -%}
       {{ rows.l | tojson }}
