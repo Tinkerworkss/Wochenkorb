@@ -893,8 +893,11 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             found.append(await self._suggestion(entry, slug, *hit))
         return found
 
-    async def async_search(self, text):
-        """Suchtext hat sich geändert: Treffer neu bestimmen."""
+    async def async_search_recipes(self, text):
+        """Suchtext der Rezeptsuche hat sich geändert: Treffer neu bestimmen.
+
+        Eigener Name: async_search ist die Suche in den Prospekten und darf nicht überschrieben werden.
+        """
         text = text if text not in ("unknown", "unavailable") else ""
         self.search_text = text
         entry = self._mealie_entry()
@@ -1185,7 +1188,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
         )
         state = self.hass.states.get(RECIPE_SEARCH_ENTITY)
         if state and state.state not in ("", "unknown", "unavailable"):
-            self.hass.async_create_task(self.coordinator.async_search(state.state))
+            self.hass.async_create_task(self.coordinator.async_search_recipes(state.state))
         # Ändert sich die Einkaufsliste, die Markierung "schon auf der Liste" nachziehen
         if self.coordinator.shopping_list:
             self.async_on_remove(
@@ -1197,7 +1200,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     @callback
     def _handle_recipe_search(self, event):
         new = event.data.get("new_state")
-        self.hass.async_create_task(self.coordinator.async_search(new.state if new else ""))
+        self.hass.async_create_task(self.coordinator.async_search_recipes(new.state if new else ""))
 
     @callback
     def _handle_reshuffle(self, event):
