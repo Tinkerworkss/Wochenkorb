@@ -102,6 +102,7 @@ actions:
            'asiatische fischsauce': ['Fischsauce', ''],
            'mittelscharfer senf': ['Senf', ''], 'senf, mittelscharf': ['Senf', ''],
            'knoblauch, frisch': ['Knoblauch', ''],
+           'tomaten geschält': ['Tomaten geschält (Dose)', ''], 'parmesankäse': ['Hartkäse', ''],
          } %}
       {# Vorrat: wird nicht übertragen und direkt aus Mealie gelöscht #} {% set ignore = [
            'wasser', 'salz', 'meersalz', 'pfeffer', 'schwarzer pfeffer', 'pfeffer, schwarz',
@@ -125,23 +126,29 @@ actions:
            'getrockneter thymian', 'rosmarin, getrocknet', 'basilikum, getrocknet', 'meersalz',
            'brühe', 'brüh', 'bouillon', 'soja', 'worcester', 'tomatenmark', 'balsamico',
          ] %}
-      {# ======================== #} {% set units = 'Kilogramm|Gramm|Milliliter|Liter|Stück|Zehen|Zehe|Esslöffel|Teelöffel|EL|TL|Prisen|Prise|Packungen|Packung|Päckchen|Bund|Dosen|Dose|Gläser|Glas|Becher|Beutel|Scheiben|Scheibe|Zweige|Zweig|Stangen|Stange|Stiele|Stiel|Knollen|Knolle|Köpfe|Kopf|Blätter|Blatt|Tassen|Tasse|Msp|Handvoll|kg|ml|g|l' %} {% set einheit = {'g': 'Gramm', 'kg': 'Kilogramm', 'ml': 'Milliliter', 'l': 'Liter',
+      {# ======================== #} {% set units = 'Kilogramm|Gramm|Milliliter|Liter|Stück|Zehen|Zehe|Esslöffel|Teelöffel|EL|TL|Prisen|Prise|Packungen|Packung|Pck\\.|Pck|Päckchen|Bund|Dosen|Dose|Gläser|Glas|Becher|Beutel|Scheiben|Scheibe|Zweige|Zweig|Stangen|Stange|Stiele|Stiel|Knollen|Knolle|Köpfe|Kopf|Blätter|Blatt|Tassen|Tasse|Msp|Handvoll|kg|ml|g|l' %} {% set einheit = {'g': 'Gramm', 'kg': 'Kilogramm', 'ml': 'Milliliter', 'l': 'Liter',
                         'EL': 'Esslöffel', 'TL': 'Teelöffel', 'Zehen': 'Zehe', 'Prisen': 'Prise',
-                        'Packungen': 'Packung', 'Dosen': 'Dose', 'Scheiben': 'Scheibe', 'Zweige': 'Zweig'} %}
+                        'Packungen': 'Packung', 'Pck.': 'Packung', 'Pck': 'Packung', 'Dosen': 'Dose', 'Scheiben': 'Scheibe', 'Zweige': 'Zweig'} %}
       {% set ns = namespace(e=[]) %} {% for i in listen['todo.mealie_to_bring']['items'] %}
         {% set s = i.summary | replace('¹/₂', '½') | replace('¹⁄₂', '½') | replace('¹/₄', '¼') | replace('¹⁄₄', '¼') | replace('³/₄', '¾') | replace('³⁄₄', '¾') | replace('⁄', '/') | replace('¹', '1') | replace('²', '2') | replace('³', '3') | replace('⁴', '4') | replace('⁵', '5') | replace('⁷', '7') | replace('₂', '2') | replace('₃', '3') | replace('₄', '4') | replace('₅', '5') | replace('₆', '6') | replace('₈', '8') | regex_replace('^(\\d+) ?½', '\\1.5') | regex_replace('^(\\d+) ?¼', '\\1.25') | regex_replace('^(\\d+) ?¾', '\\1.75') | regex_replace('\\([^()]*\\)', '') | regex_replace('\\([^()]*\\)', '')
                  | regex_replace('\\(.*$', '') | regex_replace('\\s+', ' ') | trim %}
         {% set geschmack = (s | lower).startswith('nach geschmack') %}
-        {% set m = s | regex_findall('^([\d.,/½¼¾]+(?:\s*-\s*[\d.,/½¼¾]+)?)\s*(?:(' ~ units ~ ')\s+)?(.+)$') %}
+        {# Menge: Zahl, Bereich (2-3) oder gemischter Bruch (2 1/5) #}
+        {% set m = s | regex_findall('^(\d+ \d+/\d+|[\d.,/½¼¾]+(?:\s*-\s*[\d.,/½¼¾]+)?)\s*(?:(' ~ units ~ ')\s+)?(.+)$') %}
         {% set n = (m[0][0].split('-') | last | trim) if m else '' %}
         {% set u = (einheit.get(m[0][1], m[0][1]) or 'Stück') if m else '' %}
         {% set name = (m[0][2] if m else s) | trim(' ,.') %}
         {% set n = n | replace(',', '.') | replace('½', '0.5') | replace('¼', '0.25') | replace('¾', '0.75') %}
+        {% set ganz = 0 %}
+        {% if ' ' in n %}
+          {% set ganz = n.split(' ')[0] | float(0) %}
+          {% set n = n.split(' ')[1] %}
+        {% endif %}
         {% if '/' in n %}
           {% set p = n.split('/') %}
-          {% set q = (p[0] | float(0)) / ([p[1] | float(1), 1] | max) %}
+          {% set q = ganz + (p[0] | float(0)) / ([p[1] | float(1), 1] | max) %}
         {% else %}
-          {% set q = n | float(0) %}
+          {% set q = ganz + (n | float(0)) %}
         {% endif %}
         {# Kräuterpacks wie 'Petersilie glatt/Rosmarin' in Einzelartikel ohne Menge aufteilen #}
         {% set teile = name.split('/') %}
@@ -157,10 +164,14 @@ actions:
               | regex_replace('^(.+?), ?(rot|gelb|grün|weiß)(?:e[rsn]?)?(?=$|[ ,]).*$', '\\2e \\1', ignorecase=True)
               | regex_replace('^(.*(?:käse|gouda|parmesan|cheddar|mozzarella|emmentaler|pecorino|grana).*?), ?(?:frisch )?(?:und )?(?:fein )?(gerieben|gehobelt)(?=$|[ ,]).*$', '\\1 \\2', ignorecase=True)
               | regex_replace('^(.+?), ?(passiert|stückig|getrocknet|geräuchert|gesalzen|braun|vorwiegend festkochend|festkochend|mehlig ?kochend|tiefgekühlt)(?=$|[ ,]).*$', '\\1 \\2', ignorecase=True)
+              | regex_replace('^([a-zäöüß]+e[rsn]?), (?=[a-zäöüß]* ?[A-ZÄÖÜ])', '\\1 ')
+              | regex_replace('^([a-zäöüß]+e[rsn]?), (?=[a-zäöüß]* ?[A-ZÄÖÜ])', '\\1 ')
               | regex_replace(',.*$', '', ignorecase=True)
-              | regex_replace('^(?:bio[- ]|frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
-              | regex_replace('^(?:bio[- ]|frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
-              | regex_replace('^(?:bio[- ]|frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace('^(?:bio[- ]|ja! |rewe bio |rewe beste wahl |edeka bio |gut & günstig |frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace('^(?:bio[- ]|ja! |rewe bio |rewe beste wahl |edeka bio |gut & günstig |frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace('^(?:bio[- ]|ja! |rewe bio |rewe beste wahl |edeka bio |gut & günstig |frische[rsn]? |reife[rsn]? |essreife[rsn]? |kleine[rsn]? |große[rsn]? |mittelgroße[rsn]? |unbehandelte[rsn]? |gehackte[rsn]? |junge[rsn]? |würzige[rsn]? |kl\\. |gr\\. |kleines stück |guter spritzer |spritzer |dosen? |gläser |glas |stängel |topf |bund |eßlöffel |₂ |g |gr |circa |ca\\. ?[0-9]+ ?g )', '', ignorecase=True)
+              | regex_replace(' aus der dose$', '', ignorecase=True)
+              | regex_replace('^geschälte[rsn]? (?:ganze[rsn]? )?(.+)$', '\\1 geschält', ignorecase=True)
               | regex_replace('^passierte[rsn]? (.+)$', '\\1 passiert', ignorecase=True)
               | regex_replace('^stückige[rsn]? (.+)$', '\\1 stückig', ignorecase=True)
               | regex_replace('^getrocknete[rsn]? (.+)$', '\\1 getrocknet', ignorecase=True)
@@ -191,7 +202,7 @@ actions:
           {% for w in gewuerze %}{% if w in key %}{% set g.hit = true %}{% endif %}{% endfor %}
           {% if tname %}
             {% set ns.e = ns.e + [{'key': key, 'name': tname, 'unit': tu, 'qty': tq, 'uid': i.uid,
-                                   'vorrat': key in ignore or geschmack or g.hit}] %}
+                                   'vorrat': key in ignore or geschmack or g.hit or key is search('(^| )(oliven|pflanzen|raps|sonnenblumen|brat|speise)?öl$')}] %}
           {% endif %}
         {% endfor %}
       {% endfor %} {{ ns.e }}
