@@ -158,10 +158,13 @@ def summary(rows, today=None):
         month["maerkte"][r["markt"]] = month["maerkte"].get(r["markt"], 0) + r["preis"]
         month["gruppen"][r["gruppe"]] = month["gruppen"].get(r["gruppe"], 0) + r["preis"]
         if r["grundartikel"]:
-            staple = staples.setdefault(r["grundartikel"], {"days": set(), "prices": []})
+            staple = staples.setdefault(r["grundartikel"], {"days": set(), "prices": [], "pieces": []})
             staple["days"].add(day)
-            if r["menge"] > 0 and r["einheit"] in ("l", "kg") and r["preis"] > 0:
-                staple["prices"].append((r["bon"], r["preis"] / r["menge"]))
+            if r["menge"] > 0 and r["preis"] > 0:
+                if r["einheit"] in ("l", "kg"):
+                    staple["prices"].append((r["bon"], r["preis"] / r["menge"], r["einheit"]))
+                elif r["einheit"] == "stk":
+                    staple["pieces"].append((r["bon"], r["preis"] / r["menge"]))
         article = articles.setdefault(
             r["artikel"].lower(), {"artikel": r["artikel"], "gruppe": r["gruppe"], "days": set(), "prices": [], "staple": False}
         )
@@ -190,12 +193,18 @@ def summary(rows, today=None):
         weeks = _weeks(days)
         if weeks:
             entry["wochen"] = weeks
-        last = [p for _, p in sorted(s["prices"])[-5:]]
-        if len(last) >= 2:
-            price = round(median(last), 2)
+        prices = sorted(s["prices"])[-5:]
+        if len(prices) >= 2:
+            price = round(median(p for _, p, _ in prices), 2)
             low, high = PLAUSIBLE.get(name, (0.05, 100))
             if low <= price <= high:
                 entry["preis"] = price
+                entry["einheit"] = prices[-1][2]
+        # Stückware (Eier): Preis je Stück als eigenes Feld. „preis“ bleibt der Grundpreis je kg oder l,
+        # weil die Grundartikel-Automation ihn mit dem Grundpreis der Angebote vergleicht.
+        pieces = [p for _, p in sorted(s["pieces"])[-5:]]
+        if "preis" not in entry and len(pieces) >= 2:
+            entry["stueckpreis"] = round(median(pieces), 2)
         staple_out[name] = entry
 
     article_out, suggestions = [], []
