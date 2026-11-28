@@ -202,8 +202,10 @@ def summary(rows, today=None):
                 entry["einheit"] = prices[-1][2]
         # Stückware (Eier): Preis je Stück als eigenes Feld. „preis“ bleibt der Grundpreis je kg oder l,
         # weil die Grundartikel-Automation ihn mit dem Grundpreis der Angebote vergleicht.
+        # Nur wenn der Grundartikel ausschließlich in Stück gekauft wird: Bei gemischten Einheiten
+        # (Obst mal gewogen, mal einzeln) wäre ein Stückpreis eine Zahl ohne Aussage.
         pieces = [p for _, p in sorted(s["pieces"])[-5:]]
-        if "preis" not in entry and len(pieces) >= 2:
+        if not s["prices"] and len(pieces) >= 2:
             entry["stueckpreis"] = round(median(pieces), 2)
         staple_out[name] = entry
 
