@@ -289,6 +289,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     # Einkaufsverlauf: ein Sensor für die ganze Integration, auch bei mehreren Einträgen
     domain_data = hass.data.get(DOMAIN, {})
+    coordinator.purchases = domain_data.get("purchases")
+    # Neue Bons ändern den Vergleichspreis der Angebote
+    entry.async_on_unload(async_dispatcher_connect(hass, PURCHASES_SIGNAL, coordinator.async_update_listeners))
     if domain_data.get("purchases") and domain_data.setdefault("purchases_entry", entry.entry_id) == entry.entry_id:
         history_sensor = PurchaseHistorySensor(domain_data["purchases"])
         sensors.append(history_sensor)
@@ -398,6 +401,8 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.suggestion_count = DEFAULT_SUGGESTIONS
         self.meatless_count = DEFAULT_MEATLESS
         self.meatless_vegan = False
+        # Einkaufsverlauf aus den Kassenbons, für den Vergleich der Angebote mit dem eigenen Preis
+        self.purchases = None
         self.exclude_words = []
         self.repeat_days = DEFAULT_REPEAT_DAYS
         self.meat_bonus = MEAT_BONUS_LEVELS["normal"]
@@ -425,7 +430,9 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         self.plan_details = {}
         # Treffer der Rezeptsuche und was dafür vom letzten Durchlauf gebraucht wird
         self.search_results = []
-        self._search_text = ""
+        self.search_text = ""
+        # Eingabe, zu der search_results gehören
+        self.search_done = ""
         self._offers = []
         self._listed = []
         # Rezept -> letzter Tag, an dem es im Essensplan stand
@@ -792,6 +799,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
         wish = {
             "free": self.suggestion_count, "meatless": self.meatless_count, "vegan": self.meatless_vegan,
             "meat_bonus": self.meat_bonus, "max_minutes": self.max_minutes, "exclude": self.exclude_words,
+            "own": self._own_saving,
         }
         rows = rc.suggest(self._recipes, offers, self._cooked, pinned=pinned, skipped=self._skipped, **wish)
         if self._skipped and len(rows) - len([r for r in rows if r[0] in pinned]) < self.suggestion_count:
@@ -803,6 +811,7 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
             suggestions.append(await self._suggestion(entry, slug, label, offer, discount, others))
         self.suggestions = suggestions
         self.search_results = await self._search(entry)
+        self.search_done = self.search_text
         await self._enrich_calendar(entry)
         self.async_update_listeners()
 
@@ -826,6 +835,14 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
                         "steps": recipe["steps"],
                     }
         self.plan_details = details
+
+    def _own_saving(self, label, offer):
+        """Ersparnis eines Angebots gegenüber dem eigenen Bonpreis der Hauptzutat, in Prozent; None ohne Vergleich."""
+        if not self.purchases:
+            return None
+        unit = _base_unit((offer.get("unit") or {}).get("shortName"))
+        hit = pu.compare(self.purchases.rows, label, unit, offer.get("referencePrice"))
+        return hit["rabatt"] if hit else None
 
     async def _suggestion(self, entry, slug, label, offer, discount, others):
         """Ein Rezept so aufbereiten, wie die Rezeptkarte es braucht (Vorschlag oder Suchtreffer)."""
@@ -866,21 +883,30 @@ class WochenkorbDataCoordinator(DataUpdateCoordinator):
 
     async def _search(self, entry):
         """Rezeptsuche über die ganze Sammlung; ein passendes Angebot wird mit angezeigt."""
-        slugs = rc.search(self._recipes, self._search_text)
+        slugs = rc.search(self._recipes, self.search_text)
         if not slugs:
             return []
-        best = rc.best_offers(self._offers)
+        best = rc.best_offers(self._offers, own=self._own_saving)
         found = []
         for slug in slugs:
             hit = rc.offer_for(self._recipes[slug], best) or (None, None, 0, [])
             found.append(await self._suggestion(entry, slug, *hit))
         return found
 
-    async def async_search(self, text):
-        """Suchtext hat sich geändert: Treffer neu bestimmen."""
-        self._search_text = text if text not in ("unknown", "unavailable") else ""
+    async def async_search_recipes(self, text):
+        """Suchtext der Rezeptsuche hat sich geändert: Treffer neu bestimmen.
+
+        Eigener Name: async_search ist die Suche in den Prospekten und darf nicht überschrieben werden.
+        """
+        text = text if text not in ("unknown", "unavailable") else ""
+        self.search_text = text
         entry = self._mealie_entry()
-        self.search_results = await self._search(entry) if entry is not None else []
+        results = await self._search(entry) if entry is not None else []
+        if self.search_text != text:
+            # Inzwischen wurde weitergetippt: diese Treffer sind überholt
+            return
+        self.search_results = results
+        self.search_done = text
         self.async_update_listeners()
 
     async def async_reshuffle(self):
@@ -999,8 +1025,17 @@ class WochenkorbSensor(CoordinatorEntity, SensorEntity):
                 or (f"https://www.marktguru.de/offers/{result_id}" if result_id else None),
                 "grundpreis": reference_price,
                 "grundpreis_einheit": _base_unit((offer.get("unit") or {}).get("shortName")),
+                **self._own_price(reference_price, _base_unit((offer.get("unit") or {}).get("shortName"))),
             }
         return {}
+
+    def _own_price(self, base_price, unit):
+        """Vergleich mit dem eigenen Preis aus den Kassenbons, wenn es für den Suchbegriff einen gibt."""
+        history = self.coordinator.purchases
+        hit = pu.compare(history.rows, self._query, unit, base_price) if history and base_price else None
+        if not hit:
+            return {}
+        return {"bon_grundpreis": hit["preis"], "bon_rabatt": hit["rabatt"], "bon_kaeufe": hit["kaeufe"]}
 
 class WochenkorbQueriesSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, products, zip_code):
@@ -1133,6 +1168,8 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
             "plan": self.coordinator.plan,
             "kalender": self.coordinator.calendar,
             "search_results": self.coordinator.search_results,
+            # Eingabe, zu der die Treffer gehören (die Karte erkennt daran, ob die Suche noch läuft)
+            "search_query": self.coordinator.search_done,
             "plan_details": self.coordinator.plan_details,
             "schnellauswahl": self.coordinator.quick_entries,
             "search_terms": self.coordinator.recipe_terms,
@@ -1151,7 +1188,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
         )
         state = self.hass.states.get(RECIPE_SEARCH_ENTITY)
         if state and state.state not in ("", "unknown", "unavailable"):
-            self.hass.async_create_task(self.coordinator.async_search(state.state))
+            self.hass.async_create_task(self.coordinator.async_search_recipes(state.state))
         # Ändert sich die Einkaufsliste, die Markierung "schon auf der Liste" nachziehen
         if self.coordinator.shopping_list:
             self.async_on_remove(
@@ -1163,7 +1200,7 @@ class WochenkorbRecipesSensor(CoordinatorEntity, SensorEntity):
     @callback
     def _handle_recipe_search(self, event):
         new = event.data.get("new_state")
-        self.hass.async_create_task(self.coordinator.async_search(new.state if new else ""))
+        self.hass.async_create_task(self.coordinator.async_search_recipes(new.state if new else ""))
 
     @callback
     def _handle_reshuffle(self, event):

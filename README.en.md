@@ -93,6 +93,7 @@ The folder [`examples/`](examples/) contains the setup this fork was built for. 
 Requirements:
 
 - Frontend (HACS): [auto-entities](https://github.com/thomasloven/lovelace-auto-entities), [button-card](https://github.com/custom-cards/button-card), [card-mod](https://github.com/thomasloven/lovelace-card-mod)
+- Search field: copy the file [`www/wochenkorb-suche.js`](www/wochenkorb-suche.js) to `config/www/wochenkorb/` and add it under Settings → Dashboards → Resources as a JavaScript module: `/local/wochenkorb/wochenkorb-suche.js`. It provides the card `custom:wochenkorb-suche`, a search field that searches while you type (the standard text field passes the text on only with Enter). The brochure search and the recipe search use it; the brochures are searched only from three characters on and after a short pause, because every search queries the brochure services. Reload the page completely once after adding it.
 - Helpers: `input_select.angebote_reiter` (options: the names of the lists and the retailers; the integration keeps them up to date on every start), `input_text.angebote_suche`, and, each with the maximum length of 255, `input_text.einkauf_vorrat`, `input_text.einkauf_preise`, `input_text.einkauf_rhythmus`, `input_text.einkauf_uebernommen`
 - Per device (optional): `input_select.angebote_reiter_<id>` and `input_text.angebote_suche_<id>`, where `<id>` is the device's browser_mod id without the leading `browser_mod_`. This needs [browser_mod](https://github.com/thomasloven/hass-browser_mod). Reload the integration after creating the helpers, it adds one search sensor per search helper. Devices without their own helpers share the two general ones.
 - A to-do list entity for the shopping list (here `todo.einkauf_bring` from the Bring! integration)
@@ -141,6 +142,8 @@ bon;markt;bontext;artikel;gruppe;anzahl;menge;einheit;preis;grundartikel
 ```
 
 `menge` is the total quantity in `l`, `kg` or `stk` (empty if unknown), `preis` the amount paid for the line, `grundartikel` the staple of the weekly automation the position belongs to (or empty).
+
+**A real offer?** Where receipt positions carry a quantity, the integration compares every offer with the price you usually pay: the base price of the offer against the median of your last five purchases for the same search term (euros per kg or l). A receipt position belongs to a search term if a word of its article name is the term or ends with it ("Markenbutter" for "Butter", not "Buttercroissant") or if it carries the term as its staple. The offer then gets the attributes `bon_grundpreis`, `bon_rabatt` (saving in percent, negative: more expensive than usual) and `bon_kaeufe`. The offer card shows a filled badge for it (red: cheaper, grey: more expensive or "wie sonst") and "sonst 0,70 €/l" in the line, and sorts by it. Without an own price the crossed-out price from the brochure stays, as an outlined badge. If offer and receipt price differ by more than three to four times, that counts as a wrong match and there is no comparison. The recipe suggestions use the same comparison for their main ingredients: with an own price the saving against it counts instead of the crossed-out price; an offer that is more expensive than usual counts like one without a discount.
 
 `sensor.einkauf_verlauf` (state: number of receipts) evaluates the history in its attributes:
 

@@ -49,9 +49,8 @@ sections:
       | Artikel | Käufe | Rhythmus | üblich | zuletzt |
       |:--|--:|--:|--:|:--|
       {% for k, v in g.items() | sort -%}
-      | {{ k }} | {{ v.kaeufe }} | {{ (v.wochen ~ ' Wo.') if v.wochen is defined else '–' }} | {{ ('%.2f' | format(v.preis) | replace('.', ',') ~ ' €') if v.preis is defined else '–' }} | {{ v.letzter[8:] }}.{{ v.letzter[5:7] }}. |
+      | {{ k }} | {{ v.kaeufe }} | {{ (v.wochen ~ ' Wo.') if v.wochen is defined else '–' }} | {{ ('%.2f' | format(v.preis) | replace('.', ',') ~ ' €/' ~ (v.einheit | default('kg'))) if v.preis is defined else (('%.2f' | format(v.stueckpreis) | replace('.', ',') ~ ' €/Stk.') if v.stueckpreis is defined else '–') }} | {{ v.letzter[8:] }}.{{ v.letzter[5:7] }}. |
       {% endfor %}
-      Üblich ist der Grundpreis je Liter oder Kilogramm.
       {%- endif %}
   - type: heading
     heading: Kauft ihr regelmäßig

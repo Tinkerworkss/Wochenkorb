@@ -7,17 +7,10 @@ cards:
   heading: Rezepte zu den Angeboten
   icon: mdi:chef-hat
   heading_style: title
-- type: entities
-  entities:
-  - entity: input_text.rezept_suche
-    name: Rezept suchen (Name oder Zutat)
-    icon: mdi:magnify
-  card_mod:
-    style:
-      .: |-
-        ha-card { border-radius: 16px; }
-        #states { padding: 0 12px; }
-      hui-input-text-entity-row $ ha-input $ wa-input $: 'input::placeholder { color: transparent !important; }'
+- type: custom:wochenkorb-suche
+  entity: input_text.rezept_suche
+  label: Rezept suchen (Name oder Zutat)
+  delay: 300
 - type: conditional
   conditions:
   - condition: state
@@ -69,7 +62,9 @@ cards:
       {%- set res = (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'search_results') if sucht else state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'results')) or [] -%}
       {%- set rows = namespace(l=[]) -%}
       {%- if res | count == 0 -%}
-      {%- set rows.l = [{'type': 'section', 'label': ('Kein Rezept mit „' ~ sq ~ '“ gefunden') if sucht else 'Gerade passt kein Rezept zu den Angeboten'}] -%}
+      {#- Solange die Treffer noch zur vorigen Eingabe gehören, läuft die Suche noch -#}
+      {%- set fertig = (state_attr('sensor.wochenkorb_rezepte_DEINE_PLZ', 'search_query') | default(sq, true)) == sq -%}
+      {%- set rows.l = [{'type': 'section', 'label': (('Kein Rezept mit „' ~ sq ~ '“ gefunden') if fertig else 'Suche läuft …') if sucht else 'Gerade passt kein Rezept zu den Angeboten'}] -%}
       {%- endif -%}
       {#- Die nächsten Abende für die Tagesauswahl; nach 18 Uhr beginnt die Liste mit morgen -#}
       {%- set wt = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] -%}
